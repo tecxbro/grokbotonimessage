@@ -1,0 +1,8 @@
+node_modules/
+.worktrees/
+dist/
+.env
+.env.*
+tmp-agents/
+*.log
+.DS_Store
