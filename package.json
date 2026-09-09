@@ -17,7 +17,9 @@
     "test": "node --test test/*.test.js",
     "photon:build": "npm run build --workspace=@grokbot/photon-features",
     "photon:test": "npm run test --workspace=@grokbot/photon-features",
-    "photon:check": "npm run check --workspace=@grokbot/photon-features"
+    "photon:check": "npm run check --workspace=@grokbot/photon-features",
+    "photon:f0": "node scripts/verify-lane.mjs wt-00",
+    "photon:verify-all": "node scripts/verify-all.mjs"
   },
   "repository": {
     "type": "git",
@@ -49,7 +51,7 @@
     "@changesets/cli": "3.0.1"
   },
   "dependencies": {
-    "spectrum-ts": "^12.8.0"
+    "spectrum-ts": "12.8.0"
   },
   "workspaces": [
     "packages/photon-features"

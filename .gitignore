@@ -6,3 +6,6 @@ dist/
 tmp-agents/
 *.log
 .DS_Store
+
+# Isolated Photon tooling, databases and test output
+.photon-local/
