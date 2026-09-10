@@ -150,7 +150,8 @@ export class InboundRouter {
             if (!conversational(e) && !reducer)
               throw new CorrelationPending("missing-feature-reducer");
             const wantsWork =
-              conversational(e) || this.policy.continuation?.(e) === true;
+              conversational(e) || (e.direction === "inbound" && ["poll", "reaction", "app-interaction"].includes(e.type) &&
+                this.policy.continuation?.(e) === true);
             if (wantsWork) {
               const next = this.policy.route(e, tx);
               if (!next || !activeRoute(tx, row.scope, next))
@@ -260,4 +261,10 @@ export class InboundRouter {
         );
     });
   }
+}
+
+/** Capture/receipt acquisition is the ingress caller's responsibility. This commits
+ * individual input, then reduces structured input through registered reducers. */
+export function routeInboundEvent(router: InboundRouter, event: IncomingEvent): Promise<void> {
+  return router.accept(event);
 }
