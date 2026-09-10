@@ -56,8 +56,7 @@
       "tests": "70/70 lane; 65 foundation; 60 legacy foundation; 31 CLI; local/offline",
       "approvedSharedRequests": ["atomic admission-time resource retention", "authoritative no-consumer cleanup proof", "shared media capacity", "lane-aware verification"],
       "limitations": ["cleanup disabled until consumer proof is wired", "provider callbacks are fixtures", "no native media/device evidence"],
-      "integrationStatus": "integrated",
-      "integrationCommits": ["f343a46f2a57256b57fa372d1b10ac924e472ab6"]
+      "integrationStatus": "selected"
     },
     {
       "lane": "wt-05",
@@ -101,7 +100,8 @@
       "tests": "11/11 focused; 6 CLI; 7 distribution; 31 root CLI; 60 inherited Photon; local/offline",
       "approvedSharedRequests": ["grok-photon package bin", "photon:test:integration script", "assembled-candidate package metadata", "lane-aware verification"],
       "limitations": ["synthetic installer fixtures only", "no assembled archive, install, activation, or live evidence"],
-      "integrationStatus": "selected"
+      "integrationStatus": "integrated",
+      "integrationCommits": ["f343a46f2a57256b57fa372d1b10ac924e472ab6"]
     },
     {
       "lane": "wt-09",
