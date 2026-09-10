@@ -75,3 +75,10 @@ and a genuine workflow approval bound to its SHA. Synthetic distribution fixture
 prove inactive install/reinstall/verification/rollback mechanics only. There was
 no installation, activation, provider delivery/read, rendering, interaction, or
 device behavior.
+
+The first post-commit aggregate exposed a WT-08 test assumption: its dirty-candidate
+guard used the current checkout, so a clean integration commit advanced to the
+deliberately missing approval file instead of exercising the guard. Integration
+reassigned that aggregate test and now creates a temporary isolated Git repository
+with one committed and one untracked file. The production package guard was not
+changed.
