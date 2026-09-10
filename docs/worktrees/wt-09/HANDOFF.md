@@ -1,6 +1,8 @@
 # WT-09 handoff
 
-Status: independent test development and F0 execution complete; assembled-candidate execution pending. The focused commit identifiers will be appended after staging and commit inspection.
+Status: independent test development and F0 execution complete; assembled-candidate execution pending.
+
+Focused test/source/report commit: `dacae5e6626c7ec05b9c1a8f624ae342d0463004` (`test(photon): add WT-09 acceptance lane`). This commit contains only the assigned WT-09 tests, worktree documentation/reference lock, and the three assigned report files.
 
 The integration destination is `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-integration`. The integration owner must incorporate the exact focused WT-09 commit without merging feature branches into WT-09, check out an exact assembled candidate, and rerun the commands recorded here. F0 results cannot be promoted to product verification.
 

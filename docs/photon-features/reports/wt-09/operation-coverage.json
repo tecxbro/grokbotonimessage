@@ -1,6 +1,7 @@
 {
   "schemaVersion": 2,
   "testedProductSha": "ee2f8576b55973eee312bca5cad0549b6f959a88",
+  "testCommit": "dacae5e6626c7ec05b9c1a8f624ae342d0463004",
   "testDevelopmentBase": "photon-v3-f0",
   "node": "24.13.0",
   "ownedSuite": {"tests":76,"passed":71,"failed":4,"skipped":1},
