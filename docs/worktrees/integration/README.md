@@ -17,8 +17,10 @@ replayed into integration.
 
 ## Status
 
-Input review and the WT-01/02/03/08 working-path integration are complete. The
+Input review and all reviewed WT-01 through WT-09 inputs are integrated. The
 public F0 executor now reaches the offline Spectrum text send exactly once through
 the authenticated local socket and durable request path. This is local/offline
 SDK-acceptance evidence only: it is not activation, provider delivery, read, or
-device evidence. The remaining feature lanes and WT-09 are not yet integrated.
+device evidence. The exact local WT-09 suite passes with its authorized live case
+still disabled; complete shared registration, packaging, and aggregate verification
+remain in progress.

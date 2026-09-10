@@ -56,7 +56,8 @@
       "tests": "70/70 lane; 65 foundation; 60 legacy foundation; 31 CLI; local/offline",
       "approvedSharedRequests": ["atomic admission-time resource retention", "authoritative no-consumer cleanup proof", "shared media capacity", "lane-aware verification"],
       "limitations": ["cleanup disabled until consumer proof is wired", "provider callbacks are fixtures", "no native media/device evidence"],
-      "integrationStatus": "selected"
+      "integrationStatus": "integrated",
+      "integrationCommits": ["51c73c3617ecc3298c5bd68272a00795a56185f5"]
     },
     {
       "lane": "wt-05",
@@ -67,7 +68,8 @@
       "tests": "47/47 lane; 65 foundation; 60 legacy foundation; 31 CLI; local/offline",
       "approvedSharedRequests": ["typed native poll management seam", "durable unresolved ingress", "atomic inbox disposition/continuation", "lane-aware verification"],
       "limitations": ["only poll.create enabled without advanced extension", "unvote semantics unresolved", "no real participant event"],
-      "integrationStatus": "selected"
+      "integrationStatus": "integrated",
+      "integrationCommits": ["cc9940561c8606ea694ba314dcc9dbfa0bb98d05"]
     },
     {
       "lane": "wt-06",
@@ -78,7 +80,8 @@
       "tests": "40/40 focused; 44 inherited cards; 65 foundation; 60 legacy foundation; 31 CLI; local/offline",
       "approvedSharedRequests": ["durable versioned card session payload", "authenticated durable callback ingress", "single host CardRuntime", "lane-aware verification"],
       "limitations": ["bounded in-memory provider session cache is not cold recovery", "backend and extension remain unverified"],
-      "integrationStatus": "selected"
+      "integrationStatus": "integrated",
+      "integrationCommits": ["7a56e232b74b8203806140f61303d1b760d686aa"]
     },
     {
       "lane": "wt-07",
@@ -89,7 +92,8 @@
       "tests": "94/94 lane; 65 foundation; 60 legacy foundation; 31 CLI; local/offline",
       "approvedSharedRequests": ["scoped cloud iMessage binding", "capability/permission evidence", "guarded media retention", "lane-aware verification"],
       "limitations": ["dedicated line required for group administration", "no provider/device evidence"],
-      "integrationStatus": "selected"
+      "integrationStatus": "integrated",
+      "integrationCommits": ["532aab4723ed8a94e5108a2dca1f495b4b70b904"]
     },
     {
       "lane": "wt-08",
@@ -112,7 +116,8 @@
       "tests": "F0 candidate 76 total: 71 pass, 4 product failures, 1 authorized-live skip",
       "approvedSharedRequests": ["assembled candidate rerun", "F0-relative ownership", "lane-aware verification"],
       "limitations": ["WT09-001 UNIMPLEMENTED", "WT09-002 STALE_FENCE", "WT09-003 SQLite 0644", "WT09-004 missing durable recordReceipt", "live gate not authorized"],
-      "integrationStatus": "selected"
+      "integrationStatus": "integrated",
+      "integrationCommits": ["cb2c776a19f0c1da99b048ac5ccf11d55d860d25", "a6ab37a1c93959ee0c5343b91aa8d94141d0fd14"]
     }
   ]
 }

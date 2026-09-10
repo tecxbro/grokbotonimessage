@@ -28,3 +28,22 @@ The passing round trip is candidate-local/offline evidence: CLI input,
 authenticated socket, durable persistence/claim, public F0 execution, public text
 handler, and offline Spectrum SDK acceptance. It does not prove installation,
 activation, remote provider acceptance, delivery, read, rendering, or device behavior.
+
+## Assembled WT-09 checkpoint
+
+- Build and text roundtrip after each of WT-04, WT-05, WT-06, and WT-07: PASS.
+- First complete-lane WT-09 run on Node 24.19.0: 72/76 pass, 3 fail, 1 authorized-live skip.
+  Durable receipt recording and private SQLite file modes already passed.
+- Pinned runtime check: `npx --yes -p node@24.13.0 node --version` returned
+  `v24.13.0`; WT-08's exact tested-artifact toolchain was preserved.
+- Focused local-roundtrip, poll composition, installer, and affected WT-02/WT-05
+  regressions under Node 24.13.0: PASS, 49/49, no skips.
+- Exact WT-09 11-file assembled suite under Node 24.13.0: PASS, 75 passed,
+  0 failed, 1 skipped. The skip is the off-by-default authorized live test and is
+  not counted as live evidence.
+
+The three closed candidate failures were the legacy executor in WT-09's text
+test, duplicate/stale-fenced poll continuation composition, and running an exact
+Node 24.13 artifact fixture with a different Node runtime. No assertions were
+weakened: text now requires SDK-return acceptance, the poll path requires exactly
+one validated durable handoff, and the installer still enforces the pinned runtime.

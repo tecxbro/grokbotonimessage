@@ -136,6 +136,7 @@ export function createPollReducer(policy: PollReductionPolicy = { orderedSources
         eventIds: [event.eventId], state: "pending", claim: null, createdAt: event.receivedAt,
       }, null);
       markReduced(event, tx);
+      return { continuationId: handoffId };
     },
   };
 }

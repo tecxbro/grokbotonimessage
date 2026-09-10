@@ -5,13 +5,14 @@ import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { resolveContents, type Message, type Space, type ContentInput } from 'spectrum-ts';
 import { DurableSQLiteStore } from '../../src/adapters/state/sqlite.js';
-import { createTextMessageModule } from '../../src/features/text-messages/module.js';
+import { createFeatureModule } from '../../src/features/text-messages/module.js';
 import { DurableLocalProtocol, listenDurableLocal } from '../../src/runtime/core/local-server.js';
 import { DurableWork } from '../../src/runtime/core/work-handoff.js';
-import { requestIdentity } from '../../src/runtime/core/idempotency.js';
+import { executeOperation } from '../../src/runtime/core/executor.js';
+import { ExecutionClaims } from '../../src/runtime/core/claims.js';
 import { run } from '../../src/cli/main.js';
 import { runtime, action, context, principal, scope } from '../lanes/wt-09/harness.js';
-import { execution, unusedDependencies, offlineCapability } from '../lanes/wt-09/execution-harness.js';
+import { unusedDependencies, offlineCapability } from '../lanes/wt-09/execution-harness.js';
 
 test('CLI -> real local IPC -> authorization -> durable executor -> production feature -> provider adapter', async t => {
   const r = runtime();
@@ -35,14 +36,20 @@ test('CLI -> real local IPC -> authorization -> durable executor -> production f
       } as Message;
     },
   } as unknown as Space;
-  const { executor } = execution(r, {
-    ...unusedDependencies,
-    resources: { ...unusedDependencies.resources, space: async () => offlineSpace },
-  });
-  const feature = createTextMessageModule({
+  const resources = { ...unusedDependencies.resources, space: async () => offlineSpace };
+  const provider = {
+    provider: 'imessage' as const,
+    scope,
+    ready: () => true,
+    start: async () => {},
+    stop: async () => {},
+  };
+  const feature = createFeatureModule({
+    provider,
     binding: () => ({ scope, phone: 'offline-line', nativeSpaceId: 'offline-chat' }),
-    requestId: (a, s) => requestIdentity(a, s.context),
+    resources,
   });
+  const claims = new ExecutionClaims(r.store, r.contexts);
   const protocol = new DurableLocalProtocol({
     contexts: r.contexts,
     submission: r.submission,
@@ -76,16 +83,23 @@ test('CLI -> real local IPC -> authorization -> durable executor -> production f
   assert.equal(reply.result.status, 'queued', 'queue acceptance is not provider acceptance');
   assert.equal(r.store.scan('outbox').length, 1, 'one durable outbox owns the request');
 
-  const binding = {
-    boundary: 'durable-children' as const,
-    handler: feature.handlers.find(handler => handler.operation === 'text.send')!,
+  const execute = () => executeOperation({
+    claims,
+    requestId: reply.result.requestId,
+    handler: feature.handlers['text.send']!,
     capability: () => offlineCapability,
-  };
-  const result = await executor.execute(reply.result.requestId, binding);
-  assert.equal(result?.status, 'executor-completed', JSON.stringify(result));
+    resources,
+    media: unusedDependencies.media,
+    streams: unusedDependencies.streams,
+    leaseMs: 1000,
+    deadlineMs: 1000,
+  });
+  const result = await execute();
+  assert.equal(result?.status, 'provider-accepted', JSON.stringify(result));
   assert.equal(sends, 1);
   assert.equal(result.references.length, 1);
-  assert.equal(await executor.execute(reply.result.requestId, binding), null);
+  assert.deepEqual(result.observations, [{ kind: 'accepted', source: 'sdk-return', at: 10000 }]);
+  assert.equal(await execute(), null);
   assert.equal(sends, 1, 'completed request must not be sent through a duplicate path');
   assert.deepEqual(
     readdirSync(r.dir).filter(name => name.endsWith('.sqlite')),

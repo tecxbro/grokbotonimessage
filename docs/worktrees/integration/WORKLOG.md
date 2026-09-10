@@ -35,3 +35,23 @@ allowing `>=24.13.0 <25`. That compatibility decision remains open and explicit.
 
 Next checkpoint: commit this working-path evidence, then integrate WT-04 through
 WT-07 individually, rerunning the build and text round trip after every lane.
+
+## 2026-09-10 — complete lane assembly and WT-09 defect closure
+
+Integrated WT-04, WT-05, WT-06, WT-07, then both reviewed WT-09 commits. After
+each feature lane, the TypeScript build and exact-once offline text round trip
+passed. The first assembled WT-09 run under Node 24.19.0 passed 72/76, failed
+three, and skipped the authorization-gated live case.
+
+Kept WT-08's exact Node 24.13.0 artifact contract unchanged and reran its
+installer case with that available pinned runtime; it passed. Migrated WT-09's
+legacy text roundtrip to the same public `f0-services-2` seam already proven by
+the working-path checkpoint. Fixed the WT-02/WT-05 composition defect by letting
+a reducer return its already-durable continuation and requiring the router to
+validate and adopt that exact task/scope/event binding. The router re-reads inbox
+state after reduction, preventing both a stale fence and a duplicate handoff.
+
+Focused affected tests pass 49/49. The exact 11-file WT-09 candidate suite under
+Node 24.13.0 passes 75/76 with zero failures and the one deliberately disabled
+live test skipped. No installation, activation, provider delivery/read, or device
+behavior occurred.

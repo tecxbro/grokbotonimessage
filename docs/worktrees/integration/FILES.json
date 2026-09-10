@@ -15,7 +15,11 @@
     {"path":"docs/worktrees/integration/CHANGE-REQUESTS.md","purpose":"Unresolved shared and lane requests"},
     {"path":"docs/worktrees/integration/included-commits.json","purpose":"Immutable reviewed input ledger"},
     {"path":"docs/worktrees/integration/references/README.md","purpose":"Reference provenance index"},
-    {"path":"packages/photon-features/tests/e2e/feature-runtime.test.ts","purpose":"Integration-owned public F0 CLI-to-offline-Spectrum text round trip"}
+    {"path":"packages/photon-features/tests/e2e/feature-runtime.test.ts","purpose":"Integration-owned public F0 CLI-to-offline-Spectrum text round trip"},
+    {"path":"packages/photon-features/tests/e2e/local-roundtrip.test.ts","purpose":"WT-09 aggregate round trip migrated to the public F0 executor"},
+    {"path":"packages/photon-features/src/contracts/ports.ts","purpose":"Reducer result contract for an existing durable continuation"},
+    {"path":"packages/photon-features/src/runtime/inbound/router.ts","purpose":"Cross-lane reducer continuation adoption and inbox fence ownership"},
+    {"path":"packages/photon-features/src/features/polls/reducer.ts","purpose":"Expose the atomically created poll continuation to shared ingress"}
   ],
-  "sharedOwnership": "The feature runtime E2E is an integration-owned migration from the retained legacy executor to the public f0-services-2 execution seam."
+  "sharedOwnership": "Integration owns public F0 roundtrip migration and the WT-02/WT-05 continuation composition contract; lane-internal behavior is otherwise preserved."
 }
