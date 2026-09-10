@@ -250,10 +250,10 @@ test("composition cannot bypass native permission, capability, or explicit conte
   f.binding.availableOperations = [];
   await assert.rejects(compiler.compile(action.arguments.content, f.services), /capability/);
 });
-test("no native group subscription, reducer or automatic reply loop is registered", t => {
+test("normalized group reducer is registered without subscription or automatic reply", t => {
   const f = fixture(); t.after(f.close);
-  assert.equal(f.module.reducers.length, 0);
-  assert.equal(f.registry.reducers.has("group"), false);
+  assert.equal(f.module.reducers.length, 1);
+  assert.equal(f.registry.reducers.has("group"), true);
   assert.equal(f.calls.length, 0);
   assert.equal(f.registry.handlers.size, 17);
 });
