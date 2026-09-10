@@ -34,3 +34,4 @@ Implement exact assigned entry points around the one F0 SQLite/outbox model. Pre
 - Package typecheck, build, generated schema/contract check, and diff whitespace checks passed. The root package has no `typecheck` script; the actual workspace typecheck was used.
 - The assembled E2E set produced 26/29 passes. The three failures are unchanged out-of-lane integration/tooling defects recorded as CR-04; none is relabelled as a WT-01 pass.
 - The required lane verifier remains blocked by `LANE_NOT_ASSEMBLED`; the ownership and documentation checks remain blocked by their shared base/inventory assumptions. Exact current outputs remain in `CHANGE-REQUESTS.md`.
+- Committed the owned implementation, tests, and lane documentation as `08d9ed396e1b18b0bd5edfcc866c7dde0518c006`, then reran package typecheck/build/contract checks, focused 15/15, and all WT-01 46/46 against that commit. This final documentation-only update records the immutable tested identity.

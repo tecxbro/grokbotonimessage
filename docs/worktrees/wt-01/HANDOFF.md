@@ -8,7 +8,7 @@
 - Installed/activated: no. `npm ci` is local test setup, not runtime installation or activation.
 - Live verified: no provider call, delivery/read receipt, line, account, or physical-device test occurred.
 
-Starting F0: `ee2f8576b55973eee312bca5cad0549b6f959a88` (`f0-services-2`, contract digest `d95caace5f188fd13b6d4d26250be1c77aafa1f42447263e5e3e7982e7e1a60f`). The exact tested implementation commit and final documentation HEAD are recorded in the post-commit evidence update.
+Starting F0: `ee2f8576b55973eee312bca5cad0549b6f959a88` (`f0-services-2`, contract digest `d95caace5f188fd13b6d4d26250be1c77aafa1f42447263e5e3e7982e7e1a60f`). Tested implementation commit: `08d9ed396e1b18b0bd5edfcc866c7dde0518c006`. The final HEAD adds only this evidence update to that tested implementation.
 
 The shared aggregate gate is unresolved: `verify-lane` returns `LANE_NOT_ASSEMBLED`; ownership returns `UNOWNED_PATH:.gitignore`; documentation returns `FILE_INVENTORY_DRIFT`; assembled E2E has three out-of-lane failures. `CHANGE-REQUESTS.md` preserves exact causes and required shared corrections. No owned failure is classified as a shared blocker.
 

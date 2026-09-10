@@ -1,6 +1,6 @@
 # WT-01 test evidence
 
-The final pre-commit source state is F0 `ee2f8576b55973eee312bca5cad0549b6f959a88` plus the task-owned diff listed in `FILES.json`. Its implementation commit is recorded in the final evidence update after commit. Commands are reported independently by evidence tier.
+Tested implementation commit: `08d9ed396e1b18b0bd5edfcc866c7dde0518c006`, based on F0 `ee2f8576b55973eee312bca5cad0549b6f959a88`. Commands are reported independently by evidence tier.
 
 ## Pre-implementation checks
 
@@ -33,6 +33,8 @@ The final pre-commit source state is F0 `ee2f8576b55973eee312bca5cad0549b6f959a8
 | Worktree verification | PASS | Reports the assigned registered path, branch `photon-v3/wt-01`, HEAD `ee2f8576b55973eee312bca5cad0549b6f959a88`, dirty true. |
 | Ownership verification | BLOCKED | Exit 1, exact output `UNOWNED_PATH:.gitignore`; CR-02. |
 | Documentation verification | BLOCKED | Exit 1, exact output `FILE_INVENTORY_DRIFT`; CR-03. |
+
+The package typecheck, build, contract check, required focused suite, and complete WT-01 suite were rerun after creating implementation commit `08d9ed396e1b18b0bd5edfcc866c7dde0518c006`; every one passed. The wider foundation, security, CLI, E2E, and aggregate results above were run from the identical code and test tree immediately before that commit.
 
 An earlier focused invocation had 14 pass / 1 fail because the SDK test computed the repository root one directory too shallow and attempted to read `packages/node_modules`. This was an owned test defect, not a shared blocker; it was fixed and the entire focused command passed on rerun.
 
