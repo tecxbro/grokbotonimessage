@@ -14,7 +14,8 @@
     {"path":"docs/worktrees/integration/HANDOFF.md","purpose":"Evidence-tiered final handoff"},
     {"path":"docs/worktrees/integration/CHANGE-REQUESTS.md","purpose":"Unresolved shared and lane requests"},
     {"path":"docs/worktrees/integration/included-commits.json","purpose":"Immutable reviewed input ledger"},
-    {"path":"docs/worktrees/integration/references/README.md","purpose":"Reference provenance index"}
+    {"path":"docs/worktrees/integration/references/README.md","purpose":"Reference provenance index"},
+    {"path":"packages/photon-features/tests/e2e/feature-runtime.test.ts","purpose":"Integration-owned public F0 CLI-to-offline-Spectrum text round trip"}
   ],
-  "sharedOwnership": "Shared files will be added here when their exact integration changes are implemented."
+  "sharedOwnership": "The feature runtime E2E is an integration-owned migration from the retained legacy executor to the public f0-services-2 execution seam."
 }

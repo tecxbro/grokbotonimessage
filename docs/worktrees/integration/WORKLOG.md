@@ -17,6 +17,21 @@ exist between lane deltas. WT-01 has implementation commit `08d9ed3...` plus
 documentation commit `15aa038...`; WT-09 has test/report commit `dacae5e...` plus
 documentation commit `4743aa7...`. All other lanes have one reviewed commit.
 
-Current checkpoint: integration documents created; no lane commit integrated yet.
-Next checkpoint: cherry-pick WT-01, WT-02, WT-03, and WT-08 exact commits, then
-wire and run the isolated local text round trip before adding remaining features.
+Current checkpoint at commit `f343a46f2a57256b57fa372d1b10ac924e472ab6`:
+WT-01, WT-02, WT-03, and WT-08 exact reviewed commits are integrated. The
+integration-owned feature runtime test was migrated from the intentionally
+unimplemented legacy executor to the public `f0-services-2` execution path.
+
+The real local path now crosses CLI JSON input, authenticated Unix socket,
+durable submission and claim, public `executeOperation`, the public text handler,
+and an offline Spectrum `Space.send`. It records exactly one SDK-return acceptance
+observation, returns one message reference, and suppresses duplicate execution.
+
+`npm run photon:build` passes. The focused WT-01/02/03 set passes 80/80 and the
+feature runtime round trip passes 1/1. The combined WT-01/02/03/08 run passes
+90/91; the sole WT-08 regression rejects available Node 24.19.0 because its
+installer fixture requires exact Node 24.13.0 despite the package contract
+allowing `>=24.13.0 <25`. That compatibility decision remains open and explicit.
+
+Next checkpoint: commit this working-path evidence, then integrate WT-04 through
+WT-07 individually, rerunning the build and text round trip after every lane.

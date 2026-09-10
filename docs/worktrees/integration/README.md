@@ -17,6 +17,8 @@ replayed into integration.
 
 ## Status
 
-Input review is complete. The working-path commits are selected but not yet
-integrated at this checkpoint. See `included-commits.json`, `WORKLOG.md`, and
-`TEST-EVIDENCE.md` for exact state and evidence boundaries.
+Input review and the WT-01/02/03/08 working-path integration are complete. The
+public F0 executor now reaches the offline Spectrum text send exactly once through
+the authenticated local socket and durable request path. This is local/offline
+SDK-acceptance evidence only: it is not activation, provider delivery, read, or
+device evidence. The remaining feature lanes and WT-09 are not yet integrated.
