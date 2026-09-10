@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "lane": "integration",
+  "files": [
+    {"path":"docs/worktrees/integration/AGENTS.md","purpose":"Integration-local rules"},
+    {"path":"docs/worktrees/integration/README.md","purpose":"Scope and status"},
+    {"path":"docs/worktrees/integration/ARCHITECTURE.md","purpose":"Assembled architecture and decisions"},
+    {"path":"docs/worktrees/integration/WORKLOG.md","purpose":"Chronological checkpoints"},
+    {"path":"docs/worktrees/integration/SOURCES.md","purpose":"Official, skill, SDK and Git source distinction"},
+    {"path":"docs/worktrees/integration/source-lock.json","purpose":"Required official source identities"},
+    {"path":"docs/worktrees/integration/FILES.json","purpose":"Integration-owned inventory"},
+    {"path":"docs/worktrees/integration/ACCEPTANCE.md","purpose":"Observable aggregate acceptance"},
+    {"path":"docs/worktrees/integration/TEST-EVIDENCE.md","purpose":"Candidate commands and evidence"},
+    {"path":"docs/worktrees/integration/HANDOFF.md","purpose":"Evidence-tiered final handoff"},
+    {"path":"docs/worktrees/integration/CHANGE-REQUESTS.md","purpose":"Unresolved shared and lane requests"},
+    {"path":"docs/worktrees/integration/included-commits.json","purpose":"Immutable reviewed input ledger"},
+    {"path":"docs/worktrees/integration/references/README.md","purpose":"Reference provenance index"}
+  ],
+  "sharedOwnership": "Shared files will be added here when their exact integration changes are implemented."
+}
