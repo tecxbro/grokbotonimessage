@@ -28,7 +28,7 @@ node packages/photon-features/scripts/package.mjs /absolute/assembled-candidate 
 
 This command validates the clean commit/toolchain/approval, runs local `npm ci --ignore-scripts`, clears generated `dist`, rebuilds through the test gates, runs existing/F0/schema/integration tests and checks generated skill drift. This dependency preparation may access the npm registry; it has no account or provider calls. The integration gate must be offline and must not invoke live messaging. Do not set production secrets in the build environment.
 
-The deterministic gzip JSON archive is **not** a tarball or an npm package. Use the supplied installer. Its file entries contain a safe relative path, owner-only mode, size, SHA-256 and base64 bytes. It includes compiled `dist/src` JavaScript/types, schemas, 44 validated examples, skill, manuals, installer/smoke scripts, a private `bin/grok-photon` launcher, shared package metadata, exact repository dependency lock, foundation identity and the freshly installed dependencies. Test fixtures and runtime databases, socket files, credential paths and dotenv files are excluded/refused. npm `.bin` links are omitted; the launcher is supplied separately. The archive is tied to the tested commit and foundation digest. The checksum sidecar verifies exact bytes; a separate provenance JSON records test output hashes, whose timings may vary between runs. Identical payload/metadata inputs produce identical archive bytes.
+The deterministic gzip JSON archive is **not** a tarball or an npm package. Use the supplied installer. Its file entries contain a safe relative path, owner-only mode, size, SHA-256 and base64 bytes. It includes compiled `dist/src` JavaScript/types, schemas, 44 registry examples plus four assigned examples, skill, manuals, generator/install/package/rollback/smoke scripts, a private `bin/grok-photon` launcher, shared package metadata, exact repository dependency lock, F0 identity and the freshly installed dependencies. Test fixtures and runtime databases, socket files, credential paths and dotenv files are excluded/refused. npm `.bin` links are omitted; the launcher is supplied separately. The archive is tied to the tested commit and `docs/worktrees/foundation.json` digest. The checksum sidecar verifies exact bytes; a separate provenance JSON records test output hashes, whose timings may vary between runs. Identical payload/metadata inputs produce identical archive bytes.
 
 No full archive has been built in WT-08. Dependency packaging and native runtime compatibility remain assembled-candidate integration checks. WT-00 must preserve the pinned dependency layout or extend the collector for new nested runtime dependencies; current nested workspace packages contain only developer types/tools.
 
@@ -62,12 +62,14 @@ There is intentionally no automatic activation command in WT-08. WT-00 owns the 
 
 These are host integration requirements, not implemented activation guarantees. F0 alone has no system-wide owner lock or production entrypoint. The installer refuses a present host lock/socket or an enabled configuration. It never deletes those markers.
 
-## Rollback
+## Shutdown before rollback
 
-Stop the verified host through its approved supervisor and disable configuration first. Confirm no owner/socket remains through normal shutdown; never remove another process's socket/lock to force rollback. Keep the database, queued requests, unknown outcomes, inbox/handoffs and recovery codecs intact.
+Stop the verified host through its approved supervisor and disable configuration first. Confirm the supervisor reports a clean shutdown and no owner/socket remains through its normal lifecycle; never remove another process's socket/lock or kill an unverified PID to force rollback. Keep the database, queued requests, unknown outcomes, inbox/handoffs and recovery codecs intact.
 
 ```sh
-node /absolute/tools/install.mjs rollback /absolute/grok-photon <previous-release-sha256> confirm-inactive
+node /absolute/tools/rollback.mjs /absolute/grok-photon <previous-release-sha256> confirm-inactive
 ```
 
 Rollback reconstructs and checks the original artifact checksum from the installed files, validates the pinned Node version and reads actual SQLite `PRAGMA user_version` in read-only mode. It changes only the inactive selected-release pointer. WT-08 tests this on schema 1 with queued and unknown-outcome rows. It does not run migrations, delete work, reset the database or resend anything. Schema versions other than 1 fail with `INCOMPATIBLE_DOWNGRADE` before changing the selection. Later schema or recovery-codec versions need explicit compatibility tests and an approved tooling revision. Never promise an older executable can read a newer schema.
+
+The earlier `install.mjs rollback ...` entry remains compatible for already scripted operators, but new automation should use the dedicated `rollback.mjs` and its exported `rollbackInstallation()` API.
