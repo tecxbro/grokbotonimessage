@@ -15,3 +15,4 @@ export * from "./contracts/receipts.js";
 export * from "./registry/catalog.js";
 export * from "./registry/modules.js";
 export * from "./host/main.js";
+export * from "./integration/index.js";

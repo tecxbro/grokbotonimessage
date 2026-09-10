@@ -55,3 +55,23 @@ Focused affected tests pass 49/49. The exact 11-file WT-09 candidate suite under
 Node 24.13.0 passes 75/76 with zero failures and the one deliberately disabled
 live test skipped. No installation, activation, provider delivery/read, or device
 behavior occurred.
+
+## 2026-09-10 — complete surface and aggregate verification
+
+Added the fail-closed integration composition for the actual WT-02 through WT-07
+factories. It assembles exactly 44 public handlers and 12 compiler families. The
+WT-07 public adapter reuses the scoped provider and journals native effects through
+one stable child. The integration-owned poll compiler fills the reviewed lane's
+intentional compatibility gap using the public Spectrum builder.
+
+Added the package bin, integration export, and source-derived aggregate runner.
+Under exact Node 24.13.0, `photon:test:integration` discovers 77 non-live files and
+passes 755/755 tests with no failures or skips. Aggregate worktree, F0, schema,
+generated-skill, ownership, docs, and package dry-run gates also pass. The package
+dry-run inventories 321 files.
+
+No real archive was produced: WT-08 correctly requires a clean committed candidate
+and a genuine workflow approval bound to its SHA. Synthetic distribution fixtures
+prove inactive install/reinstall/verification/rollback mechanics only. There was
+no installation, activation, provider delivery/read, rendering, interaction, or
+device behavior.

@@ -80,10 +80,7 @@ export interface ContentCompiler {
 }
 export interface EventReducer {
   type: IncomingEvent["type"];
-  reduce(
-    event: IncomingEvent,
-    tx: Transaction,
-  ): void | { continuationId: string } | PromiseLike<unknown>;
+  reduce(event: IncomingEvent, tx: Transaction): void;
 }
 export interface FeatureModule {
   id: string;

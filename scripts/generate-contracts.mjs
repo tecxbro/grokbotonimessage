@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import { z } from 'zod';
 import { actionSchema } from '../packages/photon-features/dist/src/contracts/actions.js';
 import { incomingEventSchema } from '../packages/photon-features/dist/src/contracts/events.js';
@@ -24,8 +25,9 @@ files.sort();
 const hash = createHash('sha256');
 for (const path of files) hash.update(path+'\0').update(readFileSync(resolve(root,path))).update('\0');
 const digest = hash.digest('hex');
-const path=resolve(root,'docs/worktrees/foundation.json');
+const branch=execFileSync('git',['-C',root,'branch','--show-current'],{encoding:'utf8'}).trim();
+const path=resolve(root,branch==='photon-v3/integration'?'docs/worktrees/integration/candidate-contract.json':'docs/worktrees/foundation.json');
 const foundation=JSON.parse(readFileSync(path));
-if(check) {if(foundation.contractDigest!==digest)throw new Error('CONTRACT_DIGEST_DRIFT');}
-else {foundation.contractDigest=digest;foundation.digestFiles=files;writeFileSync(path,JSON.stringify(foundation,null,2)+'\n');}
+if(check) {if(foundation.contractDigest!==digest||foundation.digestFileCount!==undefined&&foundation.digestFileCount!==files.length)throw new Error('CONTRACT_DIGEST_DRIFT');}
+else {foundation.contractDigest=digest;if('digestFileCount' in foundation)foundation.digestFileCount=files.length;else foundation.digestFiles=files;writeFileSync(path,JSON.stringify(foundation,null,2)+'\n');}
 console.log(JSON.stringify({schemas:3,contractDigest:digest,files:files.length}));

@@ -1,8 +1,15 @@
+import { createHash } from "node:crypto";
 import { UnsupportedError, type ContentInput } from "spectrum-ts";
 import {
   parseAction, resultSchema, type Action, type ContentCompiler, type ExecutionServices,
   type FeatureModule, type Operation, type OperationResult, type ResourceRef,
+  type ResourceResolver,
 } from "../../contracts/index.js";
+import type { FeatureModule as PublicFeatureModule } from "../../contracts/feature.js";
+import type { ExecutionServices as PublicExecutionServices } from "../../contracts/services.js";
+import type { UnitOfWork } from "../../contracts/store.js";
+import type { Transaction, TransactionStore } from "../../state/index.js";
+import { canonicalJson } from "../../adapters/transport/provider-context.js";
 import {
   checkBinding, checkContext, NativeError, nativeSpace, requireGroup, requireNative, resolveReference,
 } from "./guards.js";
@@ -183,3 +190,69 @@ export function createFeatureModule(dependencies: NativeDependencies): FeatureMo
 
 /** Compatibility export for pre-existing lane consumers. */
 export const createNativeModule = createFeatureModule;
+
+export interface PublicNativeDependencies extends NativeDependencies {
+  /** Host resolvers backed by the same scoped SDK owner as `binding`. */
+  resources: Pick<ResourceResolver, "space" | "message">;
+}
+
+function publicServiceAdapter(
+  services: PublicExecutionServices,
+  dependencies: PublicNativeDependencies,
+  signal: AbortSignal,
+): ExecutionServices {
+  const transact = services.transaction as unknown as <T>(
+    run: (unit: UnitOfWork) => T,
+  ) => T;
+  const transactions: TransactionStore = {
+    close: () => { throw new Error("FORBIDDEN"); },
+    transaction: run => transact(unit => run({
+      ...unit,
+      list: () => { throw new Error("FORBIDDEN"); },
+      listWork: () => { throw new Error("FORBIDDEN"); },
+    } as unknown as Transaction)),
+  };
+  return {
+    context: services.context,
+    claim: services.claim,
+    clock: services.clock,
+    signal,
+    transactions,
+    resources: {
+      resolve: reference => services.resolveResource(reference),
+      space: async reference => {
+        services.assertActiveClaim();
+        const value = await dependencies.resources.space(reference, services.context);
+        services.assertActiveClaim();
+        return value;
+      },
+      message: async reference => {
+        services.assertActiveClaim();
+        const value = await dependencies.resources.message(reference, services.context);
+        services.assertActiveClaim();
+        return value;
+      },
+    },
+    media: services.media,
+    streams: services.streams,
+  };
+}
+
+/** Integration adapter for the frozen public executor. It reuses the existing
+ * scoped provider dependency and places each native operation behind the public
+ * durable child journal; construction is inert and never starts another client. */
+export function createPublicFeatureModule(
+  dependencies: PublicNativeDependencies,
+): PublicFeatureModule<(typeof nativeOperations)[number]> {
+  const legacy = createNativeModule(dependencies);
+  const handlers = Object.fromEntries(legacy.handlers.map(handler => [
+    handler.operation,
+    (action: Action, services: PublicExecutionServices) => services.executeChild({
+      index: 0,
+      key: `native:${action.operation}`,
+      argumentsDigest: createHash("sha256").update(canonicalJson(action)).digest("hex"),
+      dispatch: signal => handler.execute(action, publicServiceAdapter(services, dependencies, signal)),
+    }),
+  ])) as PublicFeatureModule<(typeof nativeOperations)[number]>["handlers"];
+  return { id: "native-imessage-v1", owner: "wt-07", handlers };
+}

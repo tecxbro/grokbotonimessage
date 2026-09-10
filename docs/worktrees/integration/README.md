@@ -21,6 +21,10 @@ Input review and all reviewed WT-01 through WT-09 inputs are integrated. The
 public F0 executor now reaches the offline Spectrum text send exactly once through
 the authenticated local socket and durable request path. This is local/offline
 SDK-acceptance evidence only: it is not activation, provider delivery, read, or
-device evidence. The exact local WT-09 suite passes with its authorized live case
-still disabled; complete shared registration, packaging, and aggregate verification
-remain in progress.
+device evidence. The actual lane factories assemble all 44 operation handlers and
+12 compiler families. The exact Node 24.13.0 non-live aggregate passes 755/755
+with no failures or skips; the separately gated live test is not counted.
+
+Package dry-run passes, but no release artifact was created or installed because
+the required workflow approval does not exist. Activation and all live/provider/
+device evidence remain outside this local integration result.

@@ -1,16 +1,21 @@
 # Integration handoff
 
-Status: in progress.
+Status: assembled local candidate complete; release and live gates pending.
 
-The registered integration branch starts from F0 and has completed identity,
-source, lane-document, and immutable-commit review. WT-01, WT-02, WT-03, and WT-08
-are integrated. WT-04 through WT-07 and both WT-09 commits are also integrated.
-The authenticated local durable text path passes against an
-offline Spectrum `Space`; this proves local composition and SDK-return acceptance,
-not package installation, activation, provider delivery/read, rendering, or device
-behavior. The exact local WT-09 candidate suite passes 75/76 with zero failures;
-the sole skip is the authorization-gated live test. Aggregate verification,
-complete shared registration/package wiring, and artifact production remain pending.
+The registered branch starts at the immutable F0 and contains every reviewed
+WT-01 through WT-09 input recorded in `included-commits.json`. The actual lane
+factories assemble all 44 public handlers and 12 compiler families. The exact
+Node 24.13.0 non-live aggregate passes 755/755 with no failures or skips; the
+separate WT-09 suite passes 75/76, where the sole skip is the explicitly gated
+live case. Schema, generated-skill drift, ownership, docs, and package dry-run
+checks pass. The dry-run inventories 321 package files.
 
-See `included-commits.json` for selected inputs and `CHANGE-REQUESTS.md` for the
-known shared seams that must remain blocked until implemented and retested.
+The authenticated durable text path reaches an offline Spectrum `Space` exactly
+once and records SDK-return acceptance. That proves local composition, not remote
+provider acceptance, delivery, read, rendering, interaction, or device behavior.
+
+No release archive or installation exists. Archive generation remains correctly
+blocked on a clean committed SHA and genuine workflow approval. Inactive install,
+repeat install, verification, rollback, and state preservation have synthetic
+fixture evidence only. Activation configuration, credentials, account/line state,
+provider lifecycle, and live/device evidence were not authorized or changed.

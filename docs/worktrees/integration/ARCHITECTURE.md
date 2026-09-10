@@ -32,6 +32,18 @@ feature modules. WT-08 supplies the inactive CLI/package lifecycle. WT-09 suppli
 assembled verification. Integration owns registry, compiler composition, host
 wiring, shared migration/contract amendments, and aggregate verification tools.
 
+`assembleFeatureSurface` constructs the real lane factories and refuses an
+incomplete or duplicate surface. It exposes all 44 public operation handlers and
+the compatibility registry's 12 compiler families. The integration-owned poll
+compiler uses Spectrum's public poll builder; other compilers remain lane-owned.
+WT-07's public adapter wraps each native handler in one stable `executeChild`
+while reusing the injected scoped provider rather than creating another client.
+
+The immutable F0 declaration remains `photon-v3-f0` with digest
+`d95caace...`. Post-F0 package/export/registry composition is recorded separately
+in `candidate-contract.json`; integration verification never rewrites the tag or
+the foundation declaration.
+
 Optional provider capabilities remain native, fallback, warn-and-skip, accepted
 no-op, or thrown-error according to the pinned Spectrum 12.8.0 provider contract;
 a resolved promise alone is never delivery or device evidence.

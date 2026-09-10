@@ -6,7 +6,13 @@ Installation stages an immutable release and selects it **inactive**. It does no
 
 Use Node 24.13.0 and npm 10.9.2, ESM, Spectrum 12.8.0 and Zod 4.5.4. Existing global Node is not replaced. Bundled dependencies are captured from a fresh lockfile installation on the approved candidate's build platform. Install only on the same OS/architecture as the candidate; native dependencies need integration probes on that target. Lifecycle scripts remain disabled. Do not enable dependency scripts merely because an optional codec is unavailable.
 
-WT-00 must supply a clean, committed assembled candidate, the package bin mapping `grok-photon: dist/src/cli/main.js`, a `photon:test:integration` aggregate that includes WT-08 and WT-09 plus all lanes, and an approval file from the approved integration workflow. The local approval file is a trusted input, not a cryptographically verified GitHub attestation. Restrict write access to the release operator/workflow. No final artifact is created from the WT-08 development checkout.
+Integration supplies the package bin mapping `grok-photon: dist/src/cli/main.js`
+and a source-derived `photon:test:integration` aggregate that includes all
+non-live lane, integration, foundation, security, and end-to-end tests. Artifact
+production still requires a clean committed candidate and an approval file from
+the approved integration workflow. The local approval file is a trusted input,
+not a cryptographically verified GitHub attestation. Restrict write access to the
+release operator/workflow. No final artifact is created without that approval.
 
 The approval file has this shape (substitute exact real values):
 

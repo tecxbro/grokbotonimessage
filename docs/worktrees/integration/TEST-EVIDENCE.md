@@ -47,3 +47,17 @@ test, duplicate/stale-fenced poll continuation composition, and running an exact
 Node 24.13 artifact fixture with a different Node runtime. No assertions were
 weakened: text now requires SDK-return acceptance, the poll path requires exactly
 one validated durable handoff, and the installer still enforces the pinned runtime.
+
+## Complete surface checkpoint
+
+- Actual WT-02 through WT-07 factories assemble exactly 44 public handlers with
+  no missing or duplicate owner, plus all 12 shared compiler families including
+  integration's public-SDK poll compiler: PASS, 2/2 assembly tests.
+- `npm run photon:test:integration` under Node 24.13.0: PASS, 77 test files,
+  755 tests, 0 failed, 0 skipped. The live directory is excluded explicitly
+  because no live authorization was granted; it is not silently counted as PASS.
+- The public WT-07 adapter reuses its injected scoped provider and sends native
+  effects only through `ExecutionServices.executeChild`; construction remains inert.
+
+This checkpoint does not prove installation or activation, and it does not prove
+provider delivery/read, extension rendering, human interaction, or device behavior.

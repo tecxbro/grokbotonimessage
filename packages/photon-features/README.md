@@ -1,6 +1,6 @@
 # Grok Photon feature package
 
-WT-08 implements the local CLI, persistent operating skill, schema-validated examples and inactive distribution tooling on the F0 foundation. Runtime composition and package/bin registration belong to WT-00/integration. This checkout is not an assembled release.
+WT-08 implements the local CLI, persistent operating skill, schema-validated examples and inactive distribution tooling on the F0 foundation. Integration supplies runtime composition, the package/bin registration and the aggregate test command. This checkout is an assembled local candidate, not an approved release.
 
 Read [SKILL.md](SKILL.md) for the operator contract and all 44 registry-derived action examples. Read [INSTALL.md](INSTALL.md) for staging, activation prerequisites and rollback. The `grok-photon` commands belong to this package; they are separate from the Photon account-management CLI.
 
@@ -8,6 +8,7 @@ From the repository root with Node **24.13.0** and npm **10.9.2** on PATH:
 
 ```sh
 npm run photon:build
+npm run photon:test:integration
 node packages/photon-features/scripts/generate-skill.mjs --check
 node --test packages/photon-features/dist/tests/lanes/wt-08/{unit,sdk-contract,integration,regression}.test.js
 node --test packages/photon-features/dist/tests/lanes/wt-08/cli.test.js
@@ -25,7 +26,8 @@ node packages/photon-features/node_modules/typescript/bin/tsc -p packages/photon
 
 The package-local TypeScript is the F0-pinned 5.9.3. A focused compile proves only WT-08 and its imported foundation seams. Distribution tests use synthetic archives and temporary SQLite state. They do not package or activate the feature runtime.
 
-Until WT-00 registers the package bin, invoke the built CLI directly:
+The assembled package registers `grok-photon` at `dist/src/cli/main.js`. Before an
+approved inactive installation, invoke the built CLI directly:
 
 ```sh
 node packages/photon-features/dist/src/cli/main.js doctor --json

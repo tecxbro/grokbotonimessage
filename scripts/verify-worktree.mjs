@@ -15,13 +15,14 @@ export function verifyWorktree(root = process.cwd(), lane = 'wt-00') {
   if (realpathSync(git(root,'rev-parse','--git-common-dir')) !== realpathSync(resolve(map.primary,'.git'))) throw new Error('WRONG_REPOSITORY');
   const origin = git(root,'remote','get-url','origin').replace(/\.git$/, '');
   if (origin !== map.repository) throw new Error('WRONG_ORIGIN');
+  const expectedBase = git(root,'rev-parse','--verify',`${expected.base}^{commit}`);
   if (lane === 'wt-00' && (foundation.startCommit !== expected.base || foundation.comparisonCommit !== expected.base)) throw new Error('BASE_IDENTITY_DRIFT');
-  git(root,'merge-base','--is-ancestor',foundation.startCommit,'HEAD');
+  git(root,'merge-base','--is-ancestor',expectedBase,'HEAD');
   const first = git(root,'reflog','show','--format=%H',expected.branch).split('\n').at(-1);
-  if (lane === 'wt-00' && first !== foundation.startCommit) throw new Error('ORIGINAL_BASE_MISMATCH');
+  if ((lane === 'wt-00' || lane === 'integration') && first !== expectedBase) throw new Error('ORIGINAL_BASE_MISMATCH');
   if (existsSync(resolve(root,'.photon-local')) && !realpathSync(resolve(root,'.photon-local')).startsWith(expected.path+'/')) throw new Error('OUTPUT_PATH_ESCAPE');
   if (!git(root,'check-ignore','.photon-local/runtime/photon.sqlite')) throw new Error('OUTPUT_NOT_ISOLATED');
-  return {lane, path:expected.path, branch:expected.branch, startCommit:foundation.startCommit, head:git(root,'rev-parse','HEAD'), dirty:!!git(root,'status','--porcelain')};
+  return {lane, path:expected.path, branch:expected.branch, startCommit:expectedBase, head:git(root,'rev-parse','HEAD'), dirty:!!git(root,'status','--porcelain')};
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try { console.log(JSON.stringify(verifyWorktree(process.cwd(),process.argv[2] ?? 'wt-00'))); }

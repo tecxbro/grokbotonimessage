@@ -45,6 +45,26 @@ export function verifyDocs(root=process.cwd(),lane='wt-00') {
     if(!file.purpose || !body.trim())throw new Error(`EMPTY_DOCUMENT:${file.path}`);
     for(const symbol of file.symbols ?? [])if(!body.includes(symbol))throw new Error(`MISSING_SYMBOL:${file.path}:${symbol}`);
   }
+  if (lane === 'integration') {
+    const lock=JSON.parse(read('docs/worktrees/integration/source-lock.json'));
+    if(lock.version!==1||lock.sources.length!==7)throw new Error('INVALID_INTEGRATION_SOURCE_LOCK');
+    for(const source of lock.sources) {
+      if(source.classification!=='official'||!source.url.startsWith('https://photon.codes/docs/')||
+        !source.snapshot.startsWith('docs/photon/reference/')||
+        createHash('sha256').update(read(source.snapshot)).digest('hex')!==source.sha256)
+        throw new Error(`INTEGRATION_SOURCE_DRIFT:${source.url}`);
+    }
+    const ledger=JSON.parse(read('docs/worktrees/integration/included-commits.json'));
+    const foundation=JSON.parse(read('docs/worktrees/foundation.json'));
+    if(ledger.base.tag!==foundation.tag||ledger.base.contractDigest!==foundation.contractDigest||
+      ledger.lanes.length!==9||ledger.lanes.some(entry=>entry.integrationStatus!=='integrated'||!entry.reviewedCommits.length||!entry.integrationCommits.length))
+      throw new Error('INCOMPLETE_INTEGRATION_LEDGER');
+    const evidence=read('docs/worktrees/integration/TEST-EVIDENCE.md');
+    for(const marker of ['75 passed','755','live test','not prove installation'])
+      if(!evidence.includes(marker))throw new Error(`MISSING_INTEGRATION_EVIDENCE:${marker}`);
+    return {lane,structural:'passed',sources:lock.sources.length,lanes:ledger.lanes.length,
+      semanticReview:'Integration evidence remains local/offline; installation, activation and live behavior are separate.'};
+  }
   const official=JSON.parse(read('docs/photon/source-lock.json'));
   checkSourceLock(official,read);
   const requiredUrls=[...officialTargets,'https://photon.codes/docs/llms.txt','https://docs.photon.codes/docs/llms.txt',...['spectrum','cli','webhooks','low-level-sdks','api-reference'].map(p=>`https://photon.codes/docs/llms-${p}.txt`)];

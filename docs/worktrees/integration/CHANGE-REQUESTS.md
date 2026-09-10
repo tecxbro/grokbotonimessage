@@ -1,17 +1,36 @@
 # Integration change requests
 
-## Open assembled seams
+## Locally closed assembled seams
 
-- CR-I-001: adapt WT-03 through WT-07 public feature modules to WT-01's production `f0-services-2` executor and durable `executeChild`; remove the shared `UNIMPLEMENTED` path without bypassing claims or the journal.
-- CR-I-002: select one WT-02 receipt-aware ingress, bind WT-01 durable `recordReceipt`, preserve early observations, and add bounded inbox pagination/recovery.
-- CR-I-003: establish one transactional owner for inbox disposition plus WT-05 poll continuation to eliminate the recorded `STALE_FENCE` write race.
-- CR-I-004: enforce SQLite file mode `0600` and independently retest creation/reopen paths.
-- CR-I-005: wire WT-04 admission-time resource retention and authoritative no-consumer cleanup; cleanup remains disabled until proven.
-- CR-I-006: persist sufficient WT-06 card session state for cold restart and bind authenticated durable callback capture before wake.
-- CR-I-007: inject scoped native management/lookup through the single cloud iMessage owner; do not expose a second private client.
-- CR-I-008: add `grok-photon` package bin and a genuine assembled `photon:test:integration` command before packaging.
-- CR-I-009: make lane/ownership/docs verification F0-relative and integration-aware without weakening no-skip or evidence requirements.
-- CR-I-010: use a short integration-owned socket path for macOS tests while keeping all database and runtime artifacts in ignored integration-local storage.
+- CR-I-001: **closed locally.** Public feature modules execute through
+  `f0-services-2`; provider effects use stable durable children.
+- CR-I-002: **closed locally.** One receipt-aware ingress durably records early
+  observations and uses bounded inbox recovery.
+- CR-I-003: **closed locally.** The shared router adopts the reducer-created,
+  scope-validated durable poll continuation after re-reading inbox state.
+- CR-I-004: **closed locally.** SQLite database, WAL, and SHM creation/reopen
+  modes are independently tested as owner-only.
+- CR-I-007: **closed locally.** Native operations reuse the injected scoped
+  provider and cross the public `executeChild` boundary.
+- CR-I-008: **closed locally.** The package exposes `grok-photon` and the root
+  provides the source-derived `photon:test:integration` aggregate.
+- CR-I-009: **closed locally.** Worktree, ownership, docs, and aggregate checks
+  are F0-relative and integration-aware without accepting hidden skips.
+- CR-I-010: **closed locally.** Tests use a short integration-owned socket path;
+  database/runtime state remains under ignored local storage.
+
+## Follow-up gates
+
+- CR-I-005: admission-time retention and local no-consumer behavior pass, but
+  authoritative cleanup stays disabled until lifecycle ownership is proven in
+  the activated host.
+- CR-I-006: card session/callback persistence passes local restart tests. Real
+  extension rendering, backend callback authentication, interaction, and device
+  behavior require separately authorized integration evidence.
+- CR-I-011: produce a release archive only from the clean committed candidate
+  after receiving a real integration-workflow approval bound to that commit.
+- CR-I-012: run inactive install/reinstall/verification/rollback on that real
+  archive, then separately authorize activation and live provider/device checks.
 
 ## Evidence boundary
 

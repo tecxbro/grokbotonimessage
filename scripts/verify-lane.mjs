@@ -9,9 +9,9 @@ export const foundationTests=['contracts','feature-services','receipts','sdk-com
 export function validateTestResult(result) {
   const output=String(result.stdout ?? '')+'\n'+String(result.stderr ?? '');
   if(result.status!==0 || result.error)throw new Error('COMMAND_FAILED');
-  const tests=Number(output.match(/^# tests (\d+)$/m)?.[1] ?? 0);
-  const skipped=Number(output.match(/^# skipped (\d+)$/m)?.[1] ?? 0);
-  if(!tests || skipped || /^not ok\b/m.test(output) || /^(?:not )?ok .*# (?:SKIP|TODO)\b/im.test(output) || Number(output.match(/^# todo (\d+)$/m)?.[1] ?? 0) || Number(output.match(/^# cancelled (\d+)$/m)?.[1] ?? 0))throw new Error('MISSING_OR_SKIPPED_TESTS');
+  const metric=name=>Number(output.match(new RegExp(`^(?:#|ℹ) ${name} (\\d+)$`,'m'))?.[1] ?? 0);
+  const tests=metric('tests'),skipped=metric('skipped');
+  if(!tests || skipped || /^not ok\b/m.test(output) || /^(?:not )?ok .*# (?:SKIP|TODO)\b/im.test(output) || metric('todo') || metric('cancelled'))throw new Error('MISSING_OR_SKIPPED_TESTS');
   return tests;
 }
 export function requireTests(root,files) {if(!files.length || files.some(p=>!existsSync(resolve(root,p))))throw new Error('MISSING_REQUIRED_TEST');}
