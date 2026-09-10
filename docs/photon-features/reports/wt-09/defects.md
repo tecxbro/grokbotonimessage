@@ -1,6 +1,6 @@
 # WT-09 defects
 
-Product SHA under test: `ee2f8576b55973eee312bca5cad0549b6f959a88` (`photon-v3-f0`). Tests were the uncommitted WT-09 lane tree later captured by the focused commit named in HANDOFF. Evidence is local and sanitized; no live account was used.
+Product SHA under test: `ee2f8576b55973eee312bca5cad0549b6f959a88` (`photon-v3-f0`). Test/source/report commit: `dacae5e6626c7ec05b9c1a8f624ae342d0463004`. Evidence is local and sanitized; no live account was used.
 
 ## WT09-001 - durable text path is unimplemented
 

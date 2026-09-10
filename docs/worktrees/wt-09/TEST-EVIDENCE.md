@@ -2,7 +2,7 @@
 
 ## Current identity
 
-Test development started at F0 `ee2f8576b55973eee312bca5cad0549b6f959a88` with the pre-existing relocation-only dirty paths listed in WORKLOG. Source retrieval completed against 28 Markdown documents. Installed SDK contract is Spectrum 12.8.0.
+Test development started at F0 `ee2f8576b55973eee312bca5cad0549b6f959a88` with the pre-existing relocation-only dirty paths listed in WORKLOG. The focused test/source/report commit is `dacae5e6626c7ec05b9c1a8f624ae342d0463004`. Source retrieval completed against 28 Markdown documents. Installed SDK contract is Spectrum 12.8.0.
 
 ## Commands and results
 
