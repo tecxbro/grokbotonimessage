@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
-import { operationRegistrations } from '../dist/src/registry/index.js';
+import { assembleDocumentedFeatureSurface } from '../dist/src/integration/assembly.js';
 import { parseAction, localRequestSchema } from '../dist/src/contracts/index.js';
 const root = new URL('../', import.meta.url);
 const start = '<!-- BEGIN GENERATED OPERATIONS -->';
@@ -15,6 +15,8 @@ const assignedExamples = Object.freeze({
 
 export async function validateExamples({ check = false } = {}) {
   const rows = [], names = [];
+  const assembled = assembleDocumentedFeatureSurface();
+  const operationRegistrations = assembled.operationRegistrations;
   await mkdir(new URL('examples/wt-08/', root), { recursive: true });
   for (const registration of operationRegistrations) {
     const { operation, owner, implementation } = registration;
@@ -48,7 +50,7 @@ export async function validateExamples({ check = false } = {}) {
 
 export async function generateSkill({ check = false } = {}) {
   const { rows, operations, examplesValidated, assignedExamplesValidated, filesValidated } = await validateExamples({ check });
-  const block = `${start}\n\nGenerated from the shared registry, strict action schemas and validated F0 fixtures. Registration does not prove runtime support. Discover current scoped capabilities before execution.\n\n| Operation | Owner | Registration | Shape | Invocation payload | Schema SHA-256 |\n| --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n\n${end}`;
+  const block = `${start}\n\nGenerated from the assembled public handler registry, strict action schemas and validated F0 fixtures. Handler implementation is structural and remains separate from provider support, account/conversation availability, and live verification. Discover current scoped capabilities before execution.\n\n| Operation | Owner | Handler implementation | Shape | Invocation payload | Schema SHA-256 |\n| --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n\n${end}`;
   const target = new URL('SKILL.md', root), old = await readFile(target, 'utf8');
   if (old.split(start).length !== 2 || old.split(end).length !== 2) throw new Error('MISSING_GENERATION_MARKERS');
   const next = old.slice(0, old.indexOf(start)) + block + old.slice(old.indexOf(end) + end.length);

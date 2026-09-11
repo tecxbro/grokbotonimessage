@@ -66,7 +66,8 @@ intentional compatibility gap using the public Spectrum builder.
 
 Added the package bin, integration export, and source-derived aggregate runner.
 Under exact Node 24.13.0, `photon:test:integration` discovers 77 non-live files and
-passes 755/755 tests with no failures or skips. Aggregate worktree, F0, schema,
+passes 756/756 tests with no failures or skips after the operating-skill acceptance
+test was added. Aggregate worktree, F0, schema,
 generated-skill, ownership, docs, and package dry-run gates also pass. The package
 dry-run inventories 321 files.
 
@@ -82,3 +83,18 @@ deliberately missing approval file instead of exercising the guard. Integration
 reassigned that aggregate test and now creates a temporary isolated Git repository
 with one committed and one untracked file. The production package guard was not
 changed.
+
+## 2026-09-10 — assembled handler status in the operating skill
+
+Stopped copying the immutable F0 catalog's `unimplemented` declaration into the
+assembled manual. The generator now builds the actual complete lane factory
+surface with inert dependencies and consumes the handler-status projection
+returned by `assembleFeatureSurface`. The generated table names this field
+`Handler implementation` and explicitly keeps provider support, scoped
+availability, and live verification separate.
+
+Added an integration acceptance test that parses the generated manual and checks
+all 44 owner/status rows against the actual assembled registry. This is independent
+of the generator's text drift check and fails when the manual and assembly disagree.
+The exact Node 24.13.0 aggregate passes 756/756 non-live tests with zero failures
+or skips; no provider, account, conversation, installation, or live check ran.

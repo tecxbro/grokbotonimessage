@@ -5,10 +5,11 @@ Status: assembled local candidate complete; release and live gates pending.
 The registered branch starts at the immutable F0 and contains every reviewed
 WT-01 through WT-09 input recorded in `included-commits.json`. The actual lane
 factories assemble all 44 public handlers and 12 compiler families. The exact
-Node 24.13.0 non-live aggregate passes 755/755 with no failures or skips; the
+Node 24.13.0 non-live aggregate passes 756/756 with no failures or skips; the
 separate WT-09 suite passes 75/76, where the sole skip is the explicitly gated
 live case. Schema, generated-skill drift, ownership, docs, and package dry-run
-checks pass. The dry-run inventories 321 package files.
+checks pass. The operating skill's 44 handler statuses are independently checked
+against the assembled public registry. The dry-run inventories 321 package files.
 
 The authenticated durable text path reaches an offline Spectrum `Space` exactly
 once and records SDK-return acceptance. That proves local composition, not remote

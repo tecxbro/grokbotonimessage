@@ -40,5 +40,5 @@
     ,{"path":"docs/worktrees/ownership.json","purpose":"Exact integration ownership assignments"}
     ,{"path":"docs/worktrees/worktree-map.json","purpose":"Authoritative relocated worktree registry map"}
   ],
-  "sharedOwnership": "Integration owns public F0 roundtrip migration and the WT-02/WT-05 continuation composition contract; lane-internal behavior is otherwise preserved."
+  "sharedOwnership": "Integration owns public F0 roundtrip migration, the WT-02/WT-05 continuation composition contract, and assembled handler-status projection; lane-internal behavior is otherwise preserved."
 }

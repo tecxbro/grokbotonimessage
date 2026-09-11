@@ -1,8 +1,16 @@
 import { compilePoll } from "../features/polls/sdk.js";
 import type { ContentSpec, FeatureModule as CompatibilityModule } from "../contracts/index.js";
 import type { FeatureModule } from "../contracts/feature.js";
-import { buildRegistry } from "../registry/index.js";
+import type { Scope } from "../contracts/resources.js";
+import { buildRegistry, operationRegistrations } from "../registry/index.js";
 import { registerFeatureModules } from "../registry/modules.js";
+import { createTypingModule, createTypingFeatureModule } from "../runtime/typing/operations.js";
+import { TypingLeases } from "../runtime/typing/leases.js";
+import { createTextMessageModule, createFeatureModule as createTextFeature } from "../features/text-messages/module.js";
+import { createMediaModule, createFeatureModule as createMediaFeature } from "../features/media/module.js";
+import { createPollModule, createFeatureModule as createPollFeature } from "../features/polls/module.js";
+import { createCardsModule, createFeatureModule as createCardFeature } from "../features/cards/module.js";
+import { createNativeModule, createPublicFeatureModule as createNativeFeature } from "../features/native/module.js";
 
 export const requiredCompilerFamilies = Object.freeze([
   "text",
@@ -57,5 +65,89 @@ export function assembleFeatureSurface(input: IntegratedFeatureSurface) {
   );
   if (missingCompilers.length)
     throw new Error(`MISSING_COMPILERS:${missingCompilers.join(",")}`);
-  return { publicRegistry, compatibilityRegistry };
+  const assembledOperationRegistrations = Object.freeze(
+    operationRegistrations.map(({ operation, owner }) => Object.freeze({
+      operation,
+      owner,
+      implementation: publicRegistry.handlers.has(operation)
+        ? ("implemented" as const)
+        : ("unimplemented" as const),
+    })),
+  );
+  return { publicRegistry, compatibilityRegistry, operationRegistrations: assembledOperationRegistrations };
+}
+
+/** Build the same complete factory surface used by the package manual and
+ * structural acceptance tests. Dependencies are inert: this proves handler
+ * assembly only and does not claim provider support, scoped availability, or
+ * live verification. */
+export function assembleDocumentedFeatureSurface() {
+  const scope: Scope = {
+    projectId: "assembly-inspection",
+    provider: "imessage",
+    accountId: "assembly-inspection",
+    lineId: "assembly-inspection",
+    spaceId: "assembly-inspection",
+  };
+  const unavailable = (): never => {
+    throw new Error("ASSEMBLY_INSPECTION_MUST_NOT_EXECUTE");
+  };
+  const clock = { now: () => 0 };
+  const leases = new TypingLeases(clock, async () => unavailable());
+  const textOptions = {
+    binding: () => ({ scope, phone: "+15555550100", nativeSpaceId: "assembly-inspection" }),
+    requestId: () => "assembly-inspection",
+  };
+  const text = createTextMessageModule(textOptions);
+  const media = createMediaModule({ bindings: async () => unavailable() });
+  const polls = createPollModule();
+  const cards = createCardsModule({ templates: [], ...textOptions });
+  const native = createNativeModule({
+    binding: async () => unavailable(),
+    authorizeIntent: async () => unavailable(),
+    authorizeContent: async () => unavailable(),
+    compilers: [...text.compilers, ...media.compilers, ...cards.compilers],
+  });
+  const provider = {
+    provider: "imessage" as const,
+    scope,
+    ready: () => false,
+    start: async () => {},
+    stop: async () => {},
+  };
+  const resources = {
+    space: async () => unavailable(),
+    message: async () => unavailable(),
+  };
+
+  return assembleFeatureSurface({
+    publicModules: [
+      createTypingFeatureModule(leases, () => unavailable()),
+      createTextFeature({ provider, binding: textOptions.binding, resources }),
+      createMediaFeature({ provider: async () => unavailable(), voiceBehavior: "native" }),
+      createPollFeature(),
+      createCardFeature({
+        templates: [],
+        binding: textOptions.binding,
+        space: async () => unavailable(),
+        requestId: () => "assembly-inspection",
+      }),
+      createNativeFeature({
+        binding: async () => unavailable(),
+        authorizeIntent: async () => unavailable(),
+        authorizeContent: async () => unavailable(),
+        compilers: native.compilers,
+        resources,
+      }),
+    ],
+    compatibilityModules: [
+      createTypingModule(leases, () => unavailable()),
+      text,
+      media,
+      polls,
+      cards,
+      native,
+      createPollContentModule(),
+    ],
+  });
 }

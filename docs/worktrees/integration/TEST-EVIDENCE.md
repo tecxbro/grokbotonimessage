@@ -54,10 +54,18 @@ one validated durable handoff, and the installer still enforces the pinned runti
   no missing or duplicate owner, plus all 12 shared compiler families including
   integration's public-SDK poll compiler: PASS, 2/2 assembly tests.
 - `npm run photon:test:integration` under Node 24.13.0: PASS, 77 test files,
-  755 tests, 0 failed, 0 skipped. The live directory is excluded explicitly
+  756 tests, 0 failed, 0 skipped. The live directory is excluded explicitly
   because no live authorization was granted; it is not silently counted as PASS.
 - The public WT-07 adapter reuses its injected scoped provider and sends native
   effects only through `ExecutionServices.executeChild`; construction remains inert.
+- The generated operating skill derives all 44 handler implementation rows from
+  the same inert actual-factory assembly. The independent acceptance test parses
+  `SKILL.md` and compares every operation owner/status to that handler map. A
+  red/green check confirmed that changing `text.send` back to `unimplemented`
+  fails with the expected assembled-vs-manual mismatch.
+- Focused build, 7 assembly/WT-08 contract tests, and generated-skill drift check:
+  PASS under exact Node 24.13.0. The drift check validated 44 operations, 44
+  operation examples, four assigned examples, and 48 files.
 
 This checkpoint does not prove installation or activation, and it does not prove
 provider delivery/read, extension rendering, human interaction, or device behavior.

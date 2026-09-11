@@ -1,90 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { operations } from "../../src/contracts/actions.js";
-import { assembleFeatureSurface, createPollContentModule, requiredCompilerFamilies } from "../../src/integration/assembly.js";
-import { createTypingModule, createTypingFeatureModule } from "../../src/runtime/typing/operations.js";
-import { TypingLeases } from "../../src/runtime/typing/leases.js";
-import { createTextMessageModule, createFeatureModule as createTextFeature } from "../../src/features/text-messages/module.js";
-import { createMediaModule, createFeatureModule as createMediaFeature } from "../../src/features/media/module.js";
-import { createPollModule, createFeatureModule as createPollFeature } from "../../src/features/polls/module.js";
-import { createCardsModule, createFeatureModule as createCardFeature } from "../../src/features/cards/module.js";
-import { createNativeModule, createPublicFeatureModule as createNativeFeature } from "../../src/features/native/module.js";
-import type { Scope } from "../../src/contracts/resources.js";
+import { assembleDocumentedFeatureSurface, assembleFeatureSurface, requiredCompilerFamilies } from "../../src/integration/assembly.js";
+import { createPublicFeatureModule as createNativeFeature } from "../../src/features/native/module.js";
 import type { ExecutionServices } from "../../src/contracts/services.js";
 import type { ActionFor } from "../../src/contracts/actions.js";
 import { fixture as nativeFixture, sample as nativeSample } from "../lanes/wt-07/fixture.js";
 
-const scope: Scope = {
-  projectId: "integration-project",
-  provider: "imessage",
-  accountId: "integration-account",
-  lineId: "integration-line",
-  spaceId: "integration-space",
-};
 const unavailable = (): never => { throw new Error("INERT_INTEGRATION_FIXTURE"); };
-const clock = { now: () => 10_000 };
 
 test("actual lane factories assemble exactly 44 public handlers and every shared compiler", () => {
-  const leases = new TypingLeases(clock, async () => unavailable());
-  const textOptions = {
-    binding: () => ({ scope, phone: "+15555550100", nativeSpaceId: "native-space" }),
-    requestId: () => "integration-request",
-  };
-  const text = createTextMessageModule(textOptions);
-  const media = createMediaModule({ bindings: async () => unavailable() });
-  const polls = createPollModule();
-  const cards = createCardsModule({ templates: [], ...textOptions });
-  const native = createNativeModule({
-    binding: async () => unavailable(),
-    authorizeIntent: async () => unavailable(),
-    authorizeContent: async () => unavailable(),
-    compilers: [...text.compilers, ...media.compilers, ...cards.compilers],
-  });
-  const pollContent = createPollContentModule();
-
-  const provider = {
-    provider: "imessage" as const,
-    scope,
-    ready: () => false,
-    start: async () => {},
-    stop: async () => {},
-  };
-  const publicTextOptions = {
-    provider,
-    binding: textOptions.binding,
-    resources: { space: async () => unavailable(), message: async () => unavailable() },
-  };
-  const publicModules = [
-    createTypingFeatureModule(leases, () => unavailable()),
-    createTextFeature(publicTextOptions),
-    createMediaFeature({ provider: async () => unavailable(), voiceBehavior: "native" }),
-    createPollFeature(),
-    createCardFeature({
-      templates: [],
-      binding: textOptions.binding,
-      space: async () => unavailable(),
-      requestId: () => "integration-request",
-    }),
-    createNativeFeature({
-      binding: async () => unavailable(),
-      authorizeIntent: async () => unavailable(),
-      authorizeContent: async () => unavailable(),
-      compilers: native.compilers,
-      resources: publicTextOptions.resources,
-    }),
-  ];
-  const assembled = assembleFeatureSurface({
-    publicModules,
-    compatibilityModules: [
-      createTypingModule(leases, () => unavailable()),
-      text,
-      media,
-      polls,
-      cards,
-      native,
-      pollContent,
-    ],
-  });
+  const assembled = assembleDocumentedFeatureSurface();
 
   assert.equal(operations.length, 44);
   assert.equal(assembled.publicRegistry.handlers.size, 44);
@@ -94,6 +21,25 @@ test("actual lane factories assemble exactly 44 public handlers and every shared
     [...assembled.compatibilityRegistry.compilers.keys()].sort(),
     [...requiredCompilerFamilies].sort(),
   );
+});
+
+test("generated manual handler statuses agree with the actual assembled registry", () => {
+  const assembled = assembleDocumentedFeatureSurface();
+  const expected = assembled.operationRegistrations;
+  const manual = readFileSync(new URL("../../../SKILL.md", import.meta.url), "utf8");
+  const rows = new Map(
+    [...manual.matchAll(/^\| ([^|]+) \| ([^|]+) \| (implemented|unimplemented) \|/gm)]
+      .map(match => [match[1]!, { owner: match[2]!, implementation: match[3]! }]),
+  );
+
+  assert.equal(rows.size, operations.length);
+  for (const registration of expected)
+    assert.deepEqual(rows.get(registration.operation), {
+      owner: registration.owner,
+      implementation: registration.implementation,
+    });
+  assert.ok(expected.every(registration => registration.implementation === "implemented"));
+  assert.match(manual, /Handler implementation is structural and remains separate from provider support, account\/conversation availability, and live verification\./);
 });
 
 test("assembly fails closed when a public lane or compiler is absent", () => {

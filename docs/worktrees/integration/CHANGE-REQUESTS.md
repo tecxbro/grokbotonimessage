@@ -18,6 +18,10 @@
   are F0-relative and integration-aware without accepting hidden skips.
 - CR-I-010: **closed locally.** Tests use a short integration-owned socket path;
   database/runtime state remains under ignored local storage.
+- CR-I-013: **closed locally.** The generated operating skill derives structural
+  handler implementation from the actual assembled factory registry. Provider
+  support, scoped availability, and live verification remain separate capability
+  dimensions and are not promoted to `supported`.
 
 ## Follow-up gates
 

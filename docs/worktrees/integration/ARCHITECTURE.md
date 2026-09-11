@@ -39,6 +39,14 @@ compiler uses Spectrum's public poll builder; other compilers remain lane-owned.
 WT-07's public adapter wraps each native handler in one stable `executeChild`
 while reusing the injected scoped provider rather than creating another client.
 
+`assembleDocumentedFeatureSurface` uses those same factories with inert
+dependencies for structural inspection. The skill generator projects handler
+implementation from `assembleFeatureSurface.operationRegistrations`; the
+immutable F0 ownership catalog retains its foundation-era declaration and is no
+longer treated as assembled status. Handler presence remains independent from
+provider support, scoped account and conversation availability, and live
+verification, which are discovered through runtime capabilities.
+
 The immutable F0 declaration remains `photon-v3-f0` with digest
 `d95caace...`. Post-F0 package/export/registry composition is recorded separately
 in `candidate-contract.json`; integration verification never rewrites the tag or
