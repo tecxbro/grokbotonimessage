@@ -44,13 +44,22 @@ export function verifyOwnership(root=process.cwd(),lane='wt-00') {
       for (const path of output.split('\0').filter(Boolean)) reviewed.add(path);
     }
     const owned = new Set(manifest.owners.integration);
+    const assigned = new Set(Object.values(manifest.owners).flat());
+    const maintenance = new Set(manifest.integrationMaintenance ?? []);
+    for (const path of maintenance) {
+      if (path.includes('..') || path.startsWith('/') || /[*?]/.test(path))
+        throw new Error(`NON_EXACT_INTEGRATION_MAINTENANCE:${path}`);
+      if (!assigned.has(path) && !manifest.inheritedReadOnly?.includes(path))
+        throw new Error(`UNKNOWN_INTEGRATION_MAINTENANCE:${path}`);
+    }
     const snapshots = manifest.snapshotRoots.integration ?? [];
     for (const path of paths) {
       const snapshot = snapshots.some(prefix => path.startsWith(prefix) && /\.(md|txt|json)$/.test(path));
-      if (!reviewed.has(path) && !owned.has(path) && !snapshot) throw new Error(`UNOWNED_PATH:${path}`);
+      if (!reviewed.has(path) && !owned.has(path) && !maintenance.has(path) && !snapshot) throw new Error(`UNOWNED_PATH:${path}`);
     }
     return {lane,checked:paths.length,reviewedLanePaths:[...reviewed].filter(path=>paths.includes(path)).length,
-      integrationPaths:paths.filter(path=>owned.has(path)||snapshots.some(prefix=>path.startsWith(prefix))).length};
+      integrationPaths:paths.filter(path=>owned.has(path)||snapshots.some(prefix=>path.startsWith(prefix))).length,
+      maintainedPaths:paths.filter(path=>maintenance.has(path)).length};
   }
   return checkOwnership(manifest,paths,lane);
 }

@@ -62,8 +62,18 @@ export function verifyDocs(root=process.cwd(),lane='wt-00') {
     const evidence=read('docs/worktrees/integration/TEST-EVIDENCE.md');
     for(const marker of ['75 passed','756','live test','not prove installation'])
       if(!evidence.includes(marker))throw new Error(`MISSING_INTEGRATION_EVIDENCE:${marker}`);
+    const deployment=read('packages/photon-features/DEPLOYMENT.md');
+    for(const marker of ['single current deployment document','blocked at startup','originating conversation','no approved startup command'])
+      if(!deployment.includes(marker))throw new Error(`MISSING_DEPLOYMENT_BOUNDARY:${marker}`);
+    for(const [path,markers] of Object.entries({
+      'docs/photon-features/rollout.md':['Historical F0 checkpoint','current deployment runbook'],
+      'packages/photon-features/INSTALL.md':['Historical inactive-install checkpoint','DEPLOYMENT.md'],
+      'AGENTS.md':['development-time tests','originating conversation'],
+      'packages/photon-features/SKILL.md':['real incoming work','originating conversation','unsolicited development test'],
+    })) for(const marker of markers) if(!read(path).includes(marker))
+      throw new Error(`MISSING_INSTRUCTION_ROLE:${path}:${marker}`);
     return {lane,structural:'passed',sources:lock.sources.length,lanes:ledger.lanes.length,
-      semanticReview:'Integration evidence remains local/offline; installation, activation and live behavior are separate.'};
+      semanticReview:'Development, deployment, and operation are separated; startup remains blocked pending an approved host supervisor.'};
   }
   const official=JSON.parse(read('docs/photon/source-lock.json'));
   checkSourceLock(official,read);

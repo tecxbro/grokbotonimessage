@@ -98,3 +98,18 @@ all 44 owner/status rows against the actual assembled registry. This is independ
 of the generator's text drift check and fails when the manual and assembly disagree.
 The exact Node 24.13.0 aggregate passes 756/756 non-live tests with zero failures
 or skips; no provider, account, conversation, installation, or live check ran.
+
+## 2026-09-10 — instruction-role separation
+
+Preserved the F0 rollout and WT-08 inactive-install manuals while labeling both
+as historical checkpoints. Added one current deployment runbook and packaged it
+beside the installed operating skill. Repository/worktree agent instructions now
+identify themselves as development-only, and the operating skill distinguishes a
+real incoming request in its originating conversation from an unsolicited
+development test.
+
+Repository inspection found no release-owned host executable or approved
+supervisor start/stop command. The current runbook therefore documents exact
+release staging, configuration/skill-binding requirements, offline smoke, and
+inactive rollback, then stops explicitly before activation. It does not infer
+that documentation wording caused any approval failure.

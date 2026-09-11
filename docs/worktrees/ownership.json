@@ -354,6 +354,7 @@
     ],
     "integration": [
       "package.json",
+      "packages/photon-features/DEPLOYMENT.md",
       "packages/photon-features/INSTALL.md",
       "packages/photon-features/README.md",
       "packages/photon-features/package.json",
@@ -392,6 +393,13 @@
       "docs/worktrees/integration/source-lock.json"
     ]
   },
+  "integrationMaintenance": [
+    "AGENTS.md",
+    "docs/photon-features/rollout.md",
+    "packages/photon-features/SKILL.md",
+    "packages/photon-features/scripts/package.mjs",
+    "packages/photon-features/tests/lanes/wt-08/regression.test.ts"
+  ],
   "snapshotRoots": {
     "wt-00": [
       "docs/photon/reference/",

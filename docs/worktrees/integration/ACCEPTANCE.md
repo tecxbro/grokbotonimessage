@@ -25,12 +25,17 @@
 10. **PASS — actual candidate gates:** Node 24.13.0 aggregate verification runs
     756 non-live tests with zero failures or skips, plus schema, ownership,
     docs, generated-skill, and package dry-run checks.
-11. **DOCUMENTED, RELEASE PENDING:** artifact identity, prerequisites,
-    shutdown, and rollback are documented. Exact approval-bound artifact
-    identity does not exist until the candidate is committed and approved.
+11. **PASS, STARTUP BLOCKED:** development, deployment, and operating
+    instructions have distinct roles, and historical F0/WT-08 files point to one
+    current deployment runbook. Release staging and inactive rollback are exact;
+    activation stops explicitly because no approved host/supervisor command
+    exists. Exact approval-bound artifact identity remains pending.
 12. **PASS — evidence separation:** built and locally integrated are proven;
     installed, activated, provider accepted/delivered/read, rendered, interacted,
     and physical-device verified remain independently unproven.
 13. **PASS — operating skill accuracy:** every generated handler implementation
     row agrees with the actual assembled public registry; provider support,
     account/conversation availability, and live verification remain separate.
+14. **PASS — request/test distinction:** development instructions prohibit
+    unsolicited test sends, while the operating skill handles a real incoming
+    request only in its originating conversation and authorized context.

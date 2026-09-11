@@ -21,7 +21,8 @@
     {"path":"packages/photon-features/src/runtime/inbound/router.ts","purpose":"Cross-lane reducer continuation adoption and inbox fence ownership"},
     {"path":"packages/photon-features/src/features/polls/reducer.ts","purpose":"Expose the atomically created poll continuation to shared ingress"}
     ,{"path":"package.json","purpose":"Root assembled integration and verification command wiring"}
-    ,{"path":"packages/photon-features/INSTALL.md","purpose":"Approval-bound assembled candidate installation and rollback instructions"}
+    ,{"path":"packages/photon-features/DEPLOYMENT.md","purpose":"Sole current deployment runbook, including the explicit startup stop gate"}
+    ,{"path":"packages/photon-features/INSTALL.md","purpose":"Preserved historical inactive-install checkpoint"}
     ,{"path":"packages/photon-features/README.md","purpose":"Assembled package commands and evidence boundary"}
     ,{"path":"packages/photon-features/package.json","purpose":"grok-photon bin and integration export wiring"}
     ,{"path":"packages/photon-features/src/index.ts","purpose":"Public integration composition export"}

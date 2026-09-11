@@ -61,3 +61,22 @@ a resolved promise alone is never delivery or device evidence.
 Packaging and offline installation fixtures do not authorize runtime activation.
 No account, line, permission, hosting, credential, provider, or device mutation is
 part of this lane.
+
+## Instruction roles and deployment gate
+
+Root and worktree `AGENTS.md` files govern development. The versioned `SKILL.md`
+governs real incoming work only after installation and activation.
+`packages/photon-features/DEPLOYMENT.md` is the sole current deployment runbook;
+the F0 rollout and WT-08 install manuals remain labeled historical evidence.
+
+Integration owns this cross-cutting documentation boundary and packages the
+current deployment runbook beside the operating skill. The assembled package has
+a client CLI and host composition APIs but no release-owned host executable or
+approved supervisor command. The runbook therefore stops before activation and
+does not manufacture startup or shutdown commands. Inactive staging, smoke
+verification, and rollback remain documented separately from that blocker.
+
+The ownership manifest records the exact historical/lane-owned instruction and
+packaging paths integration may maintain for this boundary. They remain assigned
+to their original lanes for historical inventory, while integration maintenance
+is explicit, path-exact, and contains no wildcard grant.

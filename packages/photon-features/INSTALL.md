@@ -1,5 +1,12 @@
 # Installation and rollback
 
+> **Historical inactive-install checkpoint.** This file preserves the WT-08/F0
+> distribution design and its then-outstanding host responsibilities. It is not
+> the current deployment runbook and must not be used to infer current worktree
+> ownership or a startup command. Use [DEPLOYMENT.md](DEPLOYMENT.md) for the sole
+> current release, configuration, startup, shutdown, skill-binding, and rollback
+> procedure. The historical technical detail below remains available as evidence.
+
 Installation stages an immutable release and selects it **inactive**. It does not start a service, contact Photon, send messages, provision lines, install global dependencies, change billing or grant platform permissions. Preserve any fuller installed skill/voice policy; the packaged skill stays under its own versioned release directory and is not copied over another bot's policy.
 
 ## Toolchain and candidate boundary
@@ -56,9 +63,13 @@ node /absolute/grok-photon/releases/<sha256>/scripts/smoke-test.mjs /absolute/gr
 
 The CLI is `/absolute/grok-photon/releases/<sha256>/bin/grok-photon`. Add that release's `bin` directory to the task launcher's PATH explicitly. This is local task configuration, not a global npm installation.
 
-## Separate activation prerequisites
+## Historical activation prerequisites at this checkpoint
 
-There is intentionally no automatic activation command in WT-08. WT-00 owns the host entrypoint/supervisor and must implement these integration requirements before activation:
+At this checkpoint there was intentionally no automatic activation command in
+WT-08, and WT-00 was assigned the host entrypoint/supervisor requirements below.
+These statements preserve historical assignment evidence; they are not current
+deployment ownership. Current startup status and blockers are authoritative only
+in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 1. Verify a single host owner under `runtime/host.lock`. Host startup and installation must coordinate on `.install-lock`; a lock file's presence is a refusal, not permission to kill a process or remove a stale lock. Verify process identity before operator recovery. Never launch a competing consumer.
 2. Keep `runtime/configuration.json` disabled until an explicitly authorized supervisor activation. Configure the selected cloud transport, existing project/line, secret storage, database path, authoritative context resolver and existing Grok wake/task-acceptance adapter. Unknown/missing bindings must fail readiness.

@@ -1,5 +1,13 @@
 # F0 rollout boundary
 
+> **Historical F0 checkpoint.** This file preserves the WT-00 assignment state,
+> paths, restrictions, and evidence as they existed when F0 was frozen. It is not
+> a deployment runbook for the assembled standalone product. Use the
+> [current deployment runbook](../../packages/photon-features/DEPLOYMENT.md) for
+> release, configuration, startup, shutdown, skill binding, and rollback.
+> Everything below remains historical evidence and must not be read as current
+> worktree inventory or current deployment responsibility.
+
 ## Built checkpoint
 Run the focused foundation, pinned SDK, checker failure tests, schema drift, full workspace typecheck/build, inherited foundation and original CLI regressions, ownership/docs and manual diff review. Commit only exact owned paths and source snapshots after all pass. Create photon-v3-f0 at that tested commit only if absent; never move it. Report the commit SHA after creation, outside that commit.
 

@@ -69,3 +69,27 @@ one validated durable handoff, and the installer still enforces the pinned runti
 
 This checkpoint does not prove installation or activation, and it does not prove
 provider delivery/read, extension rendering, human interaction, or device behavior.
+
+## Instruction-role separation checkpoint
+
+- Manual repository inspection confirmed the assembled release has an
+  authenticated client CLI and host composition APIs, but no release-owned host
+  executable or approved supervisor start/stop command. The current deployment
+  runbook records an explicit startup stop gate instead of inventing one.
+- `node scripts/verify-ownership.mjs integration`: PASS, 439 changed paths
+  checked, including five exact cross-lane maintenance paths and no wildcard
+  ownership grant.
+- `node scripts/verify-docs.mjs integration`: PASS. The verifier requires the
+  historical checkpoint notices, sole current deployment document, explicit
+  startup blocker, and real-incoming-request/originating-conversation boundary.
+- `node packages/photon-features/scripts/generate-skill.mjs --check`: PASS, 44
+  operations, 44 operation examples, four assigned examples, and 48 files.
+- Exact Node 24.13.0 build plus focused WT-08 regression: PASS, 3/3, no failures
+  or skips. The release-support assertion requires `DEPLOYMENT.md`.
+- Exact Node 24.13.0 `node scripts/verify-all.mjs`: PASS. Existing CLI 31/31,
+  foundation 60/60, schema drift, assembled integration 756/756, generated skill,
+  ownership, docs, and npm package dry-run gates completed without failure.
+
+No final release archive was produced, so inclusion of the current deployment
+runbook in a real `.gpf.gz` remains gated by clean-candidate workflow approval.
+No installation, activation, provider call, message, or device action occurred.

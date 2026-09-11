@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 export const packageSupportFiles = Object.freeze([
-  'package.json', 'SKILL.md', 'INSTALL.md', 'README.md',
+  'package.json', 'SKILL.md', 'DEPLOYMENT.md', 'INSTALL.md', 'README.md',
   'scripts/generate-skill.mjs', 'scripts/install.mjs', 'scripts/package.mjs',
   'scripts/rollback.mjs', 'scripts/smoke-test.mjs',
 ]);

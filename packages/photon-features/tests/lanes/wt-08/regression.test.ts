@@ -44,6 +44,7 @@ test("generated examples stay registry-valid including the four assigned names",
 });
 
 test("release contract requires exact runtime dependencies and all lifecycle tools", () => {
+  assert.ok(packageSupportFiles.includes("DEPLOYMENT.md"));
   for (const name of ["scripts/generate-skill.mjs", "scripts/install.mjs", "scripts/package.mjs", "scripts/rollback.mjs", "scripts/smoke-test.mjs"]) {
     assert.ok(packageSupportFiles.includes(name));
   }

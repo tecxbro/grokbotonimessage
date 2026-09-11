@@ -22,6 +22,11 @@
   handler implementation from the actual assembled factory registry. Provider
   support, scoped availability, and live verification remain separate capability
   dimensions and are not promoted to `supported`.
+- CR-I-014: **closed locally.** Historical F0/WT-08 instructions are labeled as
+  checkpoints; development, deployment, and post-activation operation point to
+  distinct authoritative documents. The operating skill explicitly distinguishes
+  a real incoming request in its originating conversation from an unsolicited
+  development test.
 
 ## Follow-up gates
 
@@ -35,6 +40,11 @@
   after receiving a real integration-workflow approval bound to that commit.
 - CR-I-012: run inactive install/reinstall/verification/rollback on that real
   archive, then separately authorize activation and live provider/device checks.
+- CR-I-015: **deployment blocker.** Implement and independently verify a
+  release-owned host entrypoint and approved supervisor start/stop procedure,
+  then replace the explicit startup stop gate in `DEPLOYMENT.md` with the exact
+  commands, configuration schema, secret binding, lock ownership, and recovery
+  owner. The client `grok-photon` executable is not the missing host service.
 
 ## Evidence boundary
 

@@ -20,3 +20,10 @@ blocked on a clean committed SHA and genuine workflow approval. Inactive install
 repeat install, verification, rollback, and state preservation have synthetic
 fixture evidence only. Activation configuration, credentials, account/line state,
 provider lifecycle, and live/device evidence were not authorized or changed.
+
+Development, deployment, and operating instructions now have separate roles.
+Historical F0/WT-08 manuals point to the sole current deployment runbook, and the
+operating skill distinguishes real incoming work in its originating conversation
+from unsolicited development tests. Deployment remains blocked at startup: the
+candidate does not ship a release-owned host executable or an approved supervisor
+start/stop command. No approval failure is attributed to the prior wording.
