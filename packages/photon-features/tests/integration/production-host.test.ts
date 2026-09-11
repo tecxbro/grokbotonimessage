@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chmod, mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { resolveContents, type ContentInput, type Message, type Space } from "spectrum-ts";
@@ -10,15 +10,15 @@ import { GrokGatewayTaskHandoff } from "../../src/host/grok-wake.js";
 import { run } from "../../src/cli/main.js";
 import type { OwnedSdk } from "../../src/adapters/transport/spectrum-owner.js";
 import type { OperationResult } from "../../src/contracts/index.js";
+import { privateTestRoot } from "../helpers/private-temp.js";
 
 const output = () => {
   let value = "";
   return { stream: { write: (part: string) => { value += part; return true; } }, value: () => value };
 };
 
-test("production composition owns one provider, durable store, authenticated socket and recovery path", async () => {
-  const root = await mkdtemp("/private/tmp/grok-photon-production-");
-  await chmod(root, 0o700);
+test("production composition owns one provider, durable store, authenticated socket and recovery path", async (t) => {
+  const root = await privateTestRoot(t, "gpp-");
   const runtimeDirectory = join(root, "runtime");
   await mkdir(runtimeDirectory, { mode: 0o700 });
   const projectSecretFile = join(runtimeDirectory, "project-secret");
@@ -95,7 +95,6 @@ test("production composition owns one provider, durable store, authenticated soc
   } finally {
     await local?.close();
     await composition.runtime.stop();
-    await rm(root, { recursive: true, force: true });
   }
   assert.equal(stops, 1);
 });
