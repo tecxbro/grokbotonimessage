@@ -22,9 +22,13 @@ public F0 executor now reaches the offline Spectrum text send exactly once throu
 the authenticated local socket and durable request path. This is local/offline
 SDK-acceptance evidence only: it is not activation, provider delivery, read, or
 device evidence. The actual lane factories assemble all 44 operation handlers and
-12 compiler families. The exact Node 24.13.0 non-live aggregate passes 756/756
-with no failures or skips; the separately gated live test is not counted.
+12 compiler families. The exact Node 24.13.0 non-live aggregate passes 759/759
+across 79 files with no failures or skips; the separately gated live test is not
+counted.
 
-Package dry-run passes, but no release artifact was created or installed because
-the required workflow approval does not exist. Activation and all live/provider/
-device evidence remain outside this local integration result.
+The concrete production composition and release-owned host/task launchers are now
+implemented and focused-tested without live effects. The deployment runbook
+contains supported version-2 configuration and exact systemd lifecycle commands.
+No release artifact was created or installed because the required workflow
+approval does not exist. Activation, external Grok task acceptance, and all live/
+provider/device evidence remain outside this local integration result.

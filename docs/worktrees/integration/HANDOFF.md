@@ -1,48 +1,54 @@
 # Integration handoff
 
-Status: assembled local candidate complete; release and live gates pending.
+Status: concrete production path implemented locally; approved release,
+installation, activation, and external task evidence pending.
 
-The registered branch starts at the immutable F0 and contains every reviewed
-WT-01 through WT-09 input recorded in `included-commits.json`. The actual lane
-factories assemble all 44 public handlers and 12 compiler families. The exact
-Node 24.13.0 non-live aggregate passes 756/756 with no failures or skips; the
-separate WT-09 suite passes 75/76, where the sole skip is the explicitly gated
-live case. Schema, generated-skill drift, ownership, docs, and package dry-run
-checks pass. The operating skill's 44 handler statuses are independently checked
-against the assembled public registry. The dry-run inventories 321 package files.
+The registered branch starts at immutable F0 and contains every reviewed WT-01
+through WT-09 input in `included-commits.json`. The existing lane factories
+assemble all 44 public handlers and 12 compiler families. The fresh exact Node
+24.13.0 non-live aggregate passes 759/759 across 79 files with no failures or
+skips; the live suite remains explicitly excluded.
 
-The authenticated durable text path reaches an offline Spectrum `Space` exactly
-once and records SDK-return acceptance. That proves local composition, not remote
-provider acceptance, delivery, read, rendering, interaction, or device behavior.
+## Concrete deployment path
 
-No release archive or installation exists. Archive generation remains correctly
-blocked on a clean committed SHA and genuine workflow approval. Inactive install,
-repeat install, verification, rollback, and state preservation have synthetic
-fixture evidence only. Activation configuration, credentials, account/line state,
-provider lifecycle, and live/device evidence were not authorized or changed.
+The release now ships three distinct executables:
 
-Development, deployment, and operating instructions now have separate roles.
-Historical F0/WT-08 manuals point to the sole current deployment runbook, and the
-operating skill distinguishes real incoming work in its originating conversation
-from unsolicited development tests. Deployment remains blocked at startup: the
-candidate does not ship a release-owned host executable or an approved supervisor
-start/stop command. No approval failure is attributed to the prior wording.
+- `grok-photon-host` validates/enables strict production configuration, verifies
+  the selected immutable release and skill hash, acquires `runtime/host.lock`,
+  owns one SQLite store and one Spectrum client/stream, recovers before accepting
+  work, serves one credentialed 0600 Unix socket, and handles orderly SIGTERM.
+- `grok-photon-task` verifies the selected release, current task ID/generation,
+  and expiry before injecting `GROK_PHOTON_CONTEXT_ID`,
+  `GROK_PHOTON_SOCKET`, and `GROK_PHOTON_CREDENTIAL_FILE` into the existing
+  authenticated client.
+- `grok-photon` remains the local task client; it is not the service process.
 
-## Deployment binding handoff
+`DEPLOYMENT.md` provides the exact version-2 configuration, owner-only secret
+files, release-bound systemd unit, enable/start/readiness/stop/disable commands,
+and inactive rollback sequence. Shutdown closes the task socket and provider-
+writing work before releasing Spectrum and SQLite ownership. A stale lock or
+socket is a refusal, never an invitation to delete or kill an unverified owner.
 
-Status: **UNBOUND — activation blocked.**
+## Grok skill and task binding
 
-Repository inspection found no production mechanism that configures the existing
-Grok orchestrator to load the versioned `SKILL.md`, and no production task
-launcher that injects `GROK_PHOTON_CONTEXT_ID`, `GROK_PHOTON_SOCKET`, and
-`GROK_PHOTON_CREDENTIAL_FILE`. The installer preserves the skill inside the
-release. The client CLI reads those variables. Neither fact proves that a Grok
-messaging task received the skill or bindings.
+The host invokes the configured existing Grok CLI as
+`gbot --gateway send <agent-id> <pointer-only-prompt>`. The fixed prompt contains
+only the durable handoff ID, configured task ID/generation, selected release
+`SKILL.md`, and exact release-pinned `grok-photon-task work.claim` command. It
+contains no iMessage body or credential. Gateway success is wake acceptance, not
+durable task acknowledgment; the task must claim, heartbeat, and acknowledge by
+handoff ID.
 
-The actual external orchestrator identity, skill-load configuration, per-task
-reload/pinning behavior, task-launch component, context source, socket binding,
-credential-file binding, and rollback rebinding step are unknown. No task-level
-binding observation exists. The deployment runbook now lists the exact handoff
-fields and requires controlled non-message evidence from the task-launch boundary
-or launched task before activation. Filesystem presence, package inventory,
-installer output, or an orchestrator startup log alone cannot close this gate.
+Focused local evidence covers the exact command arguments and proves the
+production composition reaches one offline Spectrum `Space.send` exactly once
+through authenticated IPC and one owner. This closes the missing repository
+loader/launcher seam. It does not prove that a particular external Grok gateway
+accepted the command, loaded the skill, or claimed work.
+
+## Remaining external evidence
+
+No approved archive was produced, no release was installed, no real Spectrum or
+Grok credential was configured, and no process was activated. A controlled external
+non-message task observation is still required before claiming task binding for
+a deployment. Provider acceptance/delivery/read, extension rendering, human
+interaction, and physical-device behavior also remain independently unproven.

@@ -114,3 +114,33 @@ This is negative repository evidence, not proof about an uninspected external
 Grok deployment. The actual loader/injector remains unknown, and no skill-load,
 task launch, installation, activation, provider, message, or device action was
 performed.
+
+## Concrete production-path checkpoint
+
+- Exact Node 24.13.0 TypeScript build: PASS.
+- Focused production host/lifecycle plus inherited local-server tests: PASS,
+  5/5. Evidence covers strict configuration, selected release/skill verification,
+  exclusive host ownership, one SDK construction/stream/stop, authenticated IPC,
+  one offline Spectrum send, and pointer-only Grok gateway arguments.
+- WT-08 distribution plus real offline installer fixtures: PASS, 9/9. Required
+  host/task binaries and deployment manual are present; inactive install,
+  rollback, unknown-outcome preservation, and tamper refusal still pass.
+- Offline smoke: PASS with `activated:false` and `liveVerified:false`.
+- `node scripts/verify-ownership.mjs integration`: PASS, 452 changed paths, 48
+  integration paths, and 12 exact maintained cross-lane paths.
+- `node scripts/verify-docs.mjs integration`: PASS with concrete lifecycle and
+  release-pinned Grok binding markers.
+- Generated skill check: PASS, 44 operations, 44 operation examples, four
+  assigned examples, and 48 files.
+- `npm run photon:test:integration` under exact Node 24.13.0/npm 10.9.2: PASS,
+  79 non-live files, 759/759 tests, 0 failed, 0 skipped. The live suite is
+  excluded by the explicit authorization boundary.
+- Exact Node/npm `node scripts/verify-all.mjs`: PASS. Existing CLI 31/31,
+  foundation 60/60, candidate schema digest, assembled 759/759, skill,
+  ownership, docs, and npm package dry-run all passed. The dry-run inventories
+  335 files including `dist/src/host/process.js` and
+  `dist/src/host/task-launcher.js`.
+
+These are source/local/synthetic facts. No approved release archive was built,
+installed, or activated, and no external Grok gateway/task, Spectrum provider,
+delivery/read state, rendering, interaction, or device behavior was exercised.

@@ -130,3 +130,25 @@ per-task loading/injection mechanisms plus redacted proof observed at the task
 launch boundary or within a controlled non-message task. Release file presence,
 package inventory, install output, and orchestrator startup alone are explicitly
 insufficient.
+
+## 2026-09-10 — concrete production host and Grok task path
+
+Implemented a release-owned single-route production composition without changing
+feature handler semantics or adding an orchestration layer. `grok-photon-host`
+now verifies the selected immutable release/skill, validates strict owner-only
+configuration, takes an exclusive conservative lock, constructs one Spectrum
+owner and one SQLite store, recovers before ingress/outbox, serves one
+credentialed Unix socket, and performs ordered SIGTERM cleanup.
+
+Added `grok-photon-task` to verify release, task ID/generation, expiry, and skill
+identity before injecting the existing local client variables. Inbound wake uses
+the configured existing `gbot --gateway send` command with a fixed pointer-only
+prompt naming the release skill and exact durable `work.claim` command. Gateway
+acceptance remains distinct from handoff claim/acknowledgment.
+
+The first focused round trip found that the socket called durable submission
+directly and did not kick the new outbox loop. Routed socket dispatch through the
+host executor and added regression coverage. The final exact Node 24.13.0
+aggregate passes 759/759 non-live tests across 79 files, with zero failures or
+skips. No archive, install, activation, real credential, provider call, external
+Grok task, message, or device action occurred.

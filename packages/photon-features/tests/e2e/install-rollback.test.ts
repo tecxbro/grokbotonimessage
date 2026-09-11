@@ -12,7 +12,10 @@ const installerUrl=new URL('../../../scripts/install.mjs',import.meta.url).href;
 test('real installer with explicit offline archive fixture: clean/repeat install, inactive rollback, pending/unknown preservation',async t=>{
   const r=runtime();t.after(()=>r.close());const {encodeArchive,sha256}=await import(packagingUrl);const {installRelease,rollbackRelease}=await import(installerUrl);
   // Synthetic archive tests installer mechanics only. It is never candidate, package, or activation proof.
-  const files=Object.fromEntries(['dist/src/cli/main.js','dist/src/index.d.ts','schemas/protocol.json','SKILL.md','INSTALL.md','package.json','dependency-lock.json','node_modules/zod/package.json'].map(p=>[p,'offline fixture\n']));
+  const files={...Object.fromEntries(['dist/src/cli/main.js','dist/src/host/process.js','dist/src/host/task-launcher.js','dist/src/index.d.ts','schemas/protocol.json','SKILL.md','DEPLOYMENT.md','INSTALL.md','package.json','dependency-lock.json','node_modules/zod/package.json'].map(p=>[p,'offline fixture\n'])),
+    'bin/grok-photon':{content:'#!/usr/bin/env node\n',mode:0o700},
+    'bin/grok-photon-host':{content:'#!/usr/bin/env node\n',mode:0o700},
+    'bin/grok-photon-task':{content:'#!/usr/bin/env node\n',mode:0o700}};
   const metadata={kind:'assembled-tested-candidate',commit:'0'.repeat(40),f0Digest:'0'.repeat(64),node:'24.13.0',npm:'10.9.2',platform:process.platform,arch:process.arch,
     stateSchemaVersion:1,compatibleStateSchemas:[1],offlineFixture:true,
     tests:['npm test','npm run photon:test','npm run photon:check','npm run photon:test:integration','node scripts/generate-skill.mjs --check'].map(command=>({command,exitCode:0}))};

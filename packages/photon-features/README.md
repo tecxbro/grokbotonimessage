@@ -32,14 +32,26 @@ node packages/photon-features/node_modules/typescript/bin/tsc -p packages/photon
 
 The package-local TypeScript is the F0-pinned 5.9.3. A focused compile proves only WT-08 and its imported foundation seams. Distribution tests use synthetic archives and temporary SQLite state. They do not package or activate the feature runtime.
 
-The assembled package registers `grok-photon` at `dist/src/cli/main.js`. Before an
-approved inactive installation, invoke the built CLI directly:
+The assembled package registers three release-owned executables:
+
+- `grok-photon` is the authenticated local client;
+- `grok-photon-host` validates/enables configuration and owns the process,
+  Spectrum, recovery, outbox, socket, and shutdown lifecycle; and
+- `grok-photon-task` pins the selected release/task generation and supplies the
+  local client bindings to an existing Grok task.
+
+Before an approved inactive installation, invoke the built client directly:
 
 ```sh
 node packages/photon-features/dist/src/cli/main.js doctor --json
 ```
 
-The task launcher must supply `GROK_PHOTON_CONTEXT_ID`, `GROK_PHOTON_SOCKET` and `GROK_PHOTON_CREDENTIAL_FILE`. Missing configuration produces a machine-readable failure. Ordinary smoke tests intentionally clear these variables and make no socket or provider calls.
+The release task launcher supplies `GROK_PHOTON_CONTEXT_ID`,
+`GROK_PHOTON_SOCKET`, and `GROK_PHOTON_CREDENTIAL_FILE` only after verifying the
+selected release, configured task ID, and generation. Missing or stale
+configuration produces a machine-readable failure. Ordinary smoke tests make no
+socket, provider, or Grok call. Exact configuration and systemd commands are in
+[DEPLOYMENT.md](DEPLOYMENT.md).
 
 To regenerate the persistent manual's operation table and examples after an approved registry/schema change:
 

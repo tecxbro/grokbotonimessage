@@ -1,212 +1,296 @@
-# Current deployment runbook
+# Production deployment runbook
 
-This is the single current deployment document for the assembled standalone
-Grok Photon product. It governs release production, inactive installation,
-configuration, startup, shutdown, skill binding, and rollback.
+This is the current launch procedure for one Grok agent, one existing iMessage
+conversation, one Spectrum project/account/line, and one host process. The
+release supplies the host (`grok-photon-host`), the authenticated client
+(`grok-photon`), and the release-pinned task launcher (`grok-photon-task`).
 
-The other instruction files have different roles:
+`INSTALL.md` is historical. `SKILL.md` governs the already-running task. This
+document governs package, install, configuration, activation, lifecycle, Grok
+handoff, and rollback.
 
-| Document | Role |
-| --- | --- |
-| Repository `AGENTS.md` and `docs/worktrees/*` | Development ownership, source requirements, tests, and development-time side-effect restrictions. |
-| This file | Current deployment procedure and deployment blockers. |
-| `SKILL.md` | Operation of an installed, already activated release in response to real incoming work. |
-| `INSTALL.md` | Preserved historical inactive-install checkpoint; not a current deployment runbook. |
-| `docs/photon-features/rollout.md` | Preserved historical F0 checkpoint; not a current deployment runbook. |
+## 1. Build and install an approved immutable release
 
-## Current release state
-
-The assembled checkout provides deterministic release packaging, inactive
-installation, an authenticated client CLI, runtime composition APIs, offline
-smoke checks, and inactive rollback. It does **not** provide a release-owned host
-entrypoint or an approved supervisor unit/command that constructs the real host,
-acquires `runtime/host.lock`, owns the local socket and Spectrum connection, and
-performs orderly shutdown.
-
-Therefore deployment is currently **blocked at startup**. Do not change
-`runtime/configuration.json` to `activation: "enabled"`, start a competing
-Spectrum client, or treat `grok-photon` as a service executable. `grok-photon` is
-the authenticated client of a separately supervised host. The startup section
-below is a stop gate until the missing host/supervisor entrypoint is supplied,
-tested, and named here exactly.
-
-This documentation status is preventive. It does not establish that instruction
-wording caused any platform approval failure.
-
-## 1. Produce an approved release
-
-Use the clean, committed `photon-v3/integration` candidate on the target
-OS/architecture with Node 24.13.0 and npm 10.9.2. A genuine integration workflow
-must supply an approval file bound to the exact tested commit and F0 digest:
+Use a clean committed `photon-v3/integration` candidate on the target OS and
+architecture with Node 24.13.0 and npm 10.9.2. The approval file must identify
+the exact tested commit and F0 digest:
 
 ```json
 {
   "kind": "assembled-candidate-approval",
   "approved": true,
-  "commit": "<40-character tested candidate commit>",
-  "f0Digest": "<64-character foundation digest>",
-  "workflowRun": "https://github.com/tecxbro/grokbotonimessage/actions/runs/<run-id>"
+  "commit": "40-character-tested-commit",
+  "f0Digest": "64-character-foundation-digest",
+  "workflowRun": "https://github.com/tecxbro/grokbotonimessage/actions/runs/approved-run-id"
 }
 ```
 
-From a trusted tools checkout, write the output outside the candidate:
+```sh
+/absolute/node-24.13.0/bin/node packages/photon-features/scripts/package.mjs \
+  /absolute/assembled-candidate /absolute/approval.json /absolute/artifacts/release.gpf.gz
+
+sudo install -d -o grok-photon -g grok-photon -m 0700 /opt/grok-photon
+sudo -u grok-photon /absolute/node-24.13.0/bin/node /absolute/tools/install.mjs install \
+  /absolute/artifacts/release.gpf.gz "$(cat /absolute/artifacts/release.gpf.gz.sha256)" /opt/grok-photon
+```
+
+The installer selects the release inactive. It refuses dirty candidate input,
+an unapproved candidate, unsafe paths, an enabled configuration, an install or
+host lock, an existing socket, a wrong toolchain/target, or incompatible state.
+No provider or Grok call occurs during install.
+
+Set the exact installed identity for the remaining commands:
 
 ```sh
-node packages/photon-features/scripts/package.mjs /absolute/assembled-candidate /absolute/approval.json /absolute/artifacts/release.gpf.gz
+export PHOTON_ROOT=/opt/grok-photon
+export PHOTON_RELEASE="$(sudo -u grok-photon /absolute/node-24.13.0/bin/node -e \
+  'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")).release)' \
+  /opt/grok-photon/selected-release.json)"
+export PHOTON_BIN="$PHOTON_ROOT/releases/$PHOTON_RELEASE/bin"
+sudo -u grok-photon /absolute/node-24.13.0/bin/node \
+  "$PHOTON_ROOT/releases/$PHOTON_RELEASE/scripts/smoke-test.mjs" \
+  "$PHOTON_ROOT/releases/$PHOTON_RELEASE"
 ```
 
-Keep the generated `.sha256` and `.provenance.json` beside the archive. Do not
-manufacture the approval locally, use a dirty candidate, set production secrets
-in the build environment, or enable dependency lifecycle scripts.
+The offline smoke result is not installation activation or provider evidence.
 
-## 2. Stage the release inactive
+## 2. Provision owner-only runtime inputs
 
-The installation root must be an absolute, dedicated administrator-controlled
-path. The target must match the artifact OS, architecture, and exact Node version.
-Run the installer supplied by the trusted release tooling:
+The service account must exclusively own the installation tree. The Spectrum
+project secret and random local credential are file contents, never arguments or
+environment variables. The configured `gbot` must be the existing Grok CLI and
+must already have gateway authentication available to the service account.
 
 ```sh
-node /absolute/tools/install.mjs install /absolute/release.gpf.gz <sha256> /absolute/grok-photon
+sudo -u grok-photon install -d -m 0700 \
+  /opt/grok-photon/runtime/captures /opt/grok-photon/runtime/staging
+sudo -u grok-photon sh -c 'umask 077; openssl rand -hex 32 > /opt/grok-photon/runtime/local-token'
+sudo -u grok-photon install -m 0600 /secure/input/spectrum-project-secret \
+  /opt/grok-photon/runtime/project-secret
+
+sudo install -d -o root -g root -m 0700 /etc/grok-photon
+sudo install -o root -g root -m 0600 /secure/input/grok-gateway.env \
+  /etc/grok-photon/grok-gateway.env
 ```
 
-Then verify the selected release without a host, credentials, socket, provider,
-or network call:
+`/etc/grok-photon/grok-gateway.env` contains the existing gateway's supported
+`GROK_BOT_GATEWAY_URL` and `GROK_BOT_GATEWAY_TOKEN` assignments. Do not put
+Photon credentials there. Confirm the Grok agent already exists and capture its
+stable ID; this deployment does not create an agent.
+
+## 3. Write the supported production configuration
+
+Set these non-secret deployment values from the existing Spectrum and Grok
+control planes:
 
 ```sh
-node /absolute/grok-photon/releases/<sha256>/scripts/smoke-test.mjs /absolute/grok-photon/releases/<sha256>
+export PHOTON_PROJECT_ID=project-id
+export PHOTON_ACCOUNT_ID=account-id
+export PHOTON_LINE_ID=line-id
+export PHOTON_LINE_PHONE=+15555550101
+export PHOTON_CONVERSATION_ID=provider-conversation-id
+export GROK_AGENT_ID=existing-grok-agent-id
+export GBOT_EXECUTABLE=/absolute/path/to/gbot
+export PHOTON_CONTEXT_ID=photon-context-1
+export PHOTON_TASK_ID=photon-task-1
+export PHOTON_TASK_GENERATION=1
+export PHOTON_ISSUED_AT_MS="$(/absolute/node-24.13.0/bin/node -e 'process.stdout.write(String(Date.now()))')"
+export PHOTON_EXPIRES_AT_MS="$(/absolute/node-24.13.0/bin/node -e 'process.stdout.write(String(Date.now()+30*24*60*60*1000))')"
 ```
 
-The installer must report `activation: "disabled"`. It creates or preserves:
-
-- `/absolute/grok-photon/releases/<sha256>/` for immutable release files;
-- `/absolute/grok-photon/runtime/` for configuration, credentials, SQLite, WAL,
-  SHM, locks, and the socket; and
-- `/absolute/grok-photon/selected-release.json` as the inactive selection.
-
-Do not place credentials or mutable state in a release directory. Installation
-must refuse an enabled configuration or an existing host lock/socket.
-
-## 3. Configure and bind the operating skill
-
-Keep `/absolute/grok-photon/runtime/configuration.json` exactly inactive while
-preparing configuration:
-
-```json
-{"version":1,"activation":"disabled"}
-```
-
-The approved host integration must provide all of the following before startup:
-
-1. One existing project, account, iMessage line, Spectrum credential owner, and
-   verified ingress selection.
-2. An owner-only SQLite path, Unix socket path, random 64-hex local credential
-   file, authoritative context resolver, scoped task grants, and existing Grok
-   wake/task-acceptance adapter.
-3. A supervisor-owned host entrypoint that acquires `runtime/host.lock`,
-   coordinates with `.install-lock`, builds the real assembled modules, starts
-   recovery before ingress/outbox work, and removes its socket/lock only through
-   verified orderly shutdown.
-4. A launcher binding that puts
-   `/absolute/grok-photon/releases/<sha256>/bin` on `PATH` and supplies
-   `GROK_PHOTON_CONTEXT_ID`, `GROK_PHOTON_SOCKET`, and
-   `GROK_PHOTON_CREDENTIAL_FILE` to the Grok task. Never pass credential contents
-   as arguments or log them.
-5. The versioned
-   `/absolute/grok-photon/releases/<sha256>/SKILL.md` bound as the Grok operating
-   skill without overwriting any fuller installed voice or safety policy.
-
-No repository command currently performs items 1 through 5. In particular, the
-installer copies `SKILL.md` into the immutable release but does not configure the
-existing Grok orchestrator to read it. The client CLI reads the three
-`GROK_PHOTON_*` variables, but no production launcher in this repository supplies
-them. File presence and CLI support are therefore not skill-load or task-binding
-evidence.
-
-### Required deployment binding handoff
-
-Before activation, the deployment handoff must replace the current `unbound`
-status with all of the following concrete, non-secret facts:
-
-| Required field | Evidence required |
-| --- | --- |
-| Release identity | Selected release SHA-256 and exact installed `SKILL.md` path plus file SHA-256. |
-| Orchestrator identity | Exact existing Grok orchestrator/service identity and configuration location. |
-| Skill-load mechanism | Exact configuration key, command, API, symlink, or prompt-assembly component that loads the versioned skill. State whether it loads once or for every messaging task, and how a task is pinned to the selected release. |
-| Task-launch mechanism | Exact component and configuration that launches each messaging task. |
-| Context binding | Authoritative source and injection step for `GROK_PHOTON_CONTEXT_ID`; record only a non-secret context/task correlation identifier. |
-| Socket binding | Authoritative source and injection step for `GROK_PHOTON_SOCKET`, including owner and permission checks. |
-| Credential binding | Secret-store/file provisioning and injection step for `GROK_PHOTON_CREDENTIAL_FILE`; record path, owner, and mode, never credential contents. |
-| Task-level proof | One controlled, non-message task record showing the expected skill release/hash was loaded and all three variable names were present before CLI invocation. Redact values and do not infer this from installation logs. |
-| Rollback behavior | Exact step that rebinds new tasks to the previous release skill and launcher while preserving in-flight task identity. |
-
-The proof must come from the task-launch boundary or the launched task, not only
-from the installer, filesystem, package manifest, or orchestrator startup log.
-An orchestrator that caches instructions must identify its invalidation/reload
-behavior; otherwise a newly selected release is not proven active for new tasks.
-
-Current handoff status is `unbound`: the actual external loader, task launcher,
-and environment-injection mechanism are unknown and have no task-level evidence.
-Record the exact host command, supervisor identifier, configuration schema,
-secret-store binding, skill-load mechanism, task-launch mechanism, and recovery
-owner here before authorizing activation.
-
-## 4. Startup stop gate
-
-**Stop here. There is currently no approved startup command.**
-
-Startup becomes actionable only after the release-owned host entrypoint and
-supervisor procedure are implemented, independently verified, and substituted
-for this stop gate. At that point the documented procedure must, in order:
-
-1. acquire the single verified owner and coordinate with the install lock;
-2. enable the validated configuration through the approved supervisor;
-3. recover durable inbox, outbox, handoffs, and unknown outcomes before accepting
-   new work;
-4. start the one provider owner, authenticated local socket, ingress, and outbox;
-5. run the following read-only checks through the bound task launcher:
+Generate the exact version-2 configuration. This example deliberately grants
+only `text.send` to the one configured conversation; add operations only after
+the account/line capability and authorization policy have been reviewed.
 
 ```sh
-grok-photon doctor --json
-grok-photon capabilities --json
+jq -n \
+  --arg project "$PHOTON_PROJECT_ID" --arg account "$PHOTON_ACCOUNT_ID" \
+  --arg line "$PHOTON_LINE_ID" --arg phone "$PHOTON_LINE_PHONE" \
+  --arg conversation "$PHOTON_CONVERSATION_ID" --arg agent "$GROK_AGENT_ID" \
+  --arg gbot "$GBOT_EXECUTABLE" --arg context "$PHOTON_CONTEXT_ID" \
+  --arg task "$PHOTON_TASK_ID" --argjson generation "$PHOTON_TASK_GENERATION" \
+  --argjson issued "$PHOTON_ISSUED_AT_MS" --argjson expires "$PHOTON_EXPIRES_AT_MS" \
+  '{
+    version: 2,
+    activation: "disabled",
+    provider: {
+      kind: "spectrum-cloud-imessage",
+      projectId: $project,
+      projectSecretFile: "/opt/grok-photon/runtime/project-secret",
+      accountId: $account,
+      lineId: $line,
+      phone: $phone,
+      conversationId: $conversation,
+      dedicated: true,
+      availableOperations: ["text.send"]
+    },
+    local: {
+      socketPath: "/opt/grok-photon/runtime/runtime.sock",
+      credentialFile: "/opt/grok-photon/runtime/local-token",
+      principalId: "grok-photon",
+      credentialId: "grok-photon-local-v1"
+    },
+    task: {
+      contextId: $context,
+      taskId: $task,
+      generation: $generation,
+      permissions: ["text.send"],
+      issuedAt: $issued,
+      expiresAt: $expires,
+      grokAgentId: $agent
+    },
+    grok: { executable: $gbot, timeoutMs: 15000 },
+    authorization: {
+      administrativeOperations: [],
+      allowedRecipients: [],
+      allowNativeContent: false
+    },
+    cards: [],
+    runtime: {
+      statePath: "/opt/grok-photon/runtime/state.sqlite",
+      captureDirectory: "/opt/grok-photon/runtime/captures",
+      stagingDirectory: "/opt/grok-photon/runtime/staging"
+    }
+  }' | sudo -u grok-photon tee /opt/grok-photon/runtime/configuration.json >/dev/null
+sudo chmod 0600 /opt/grok-photon/runtime/configuration.json
+sudo chown grok-photon:grok-photon /opt/grok-photon/runtime/configuration.json
 ```
 
-Readiness and handler implementation do not prove provider acceptance, delivery,
-read state, rendering, interaction, or physical-device behavior. Those require
-separately authorized evidence.
+The schema rejects unknown fields, paths outside `runtime/`, a noncanonical
+socket/database path, duplicate operations, expired/stale authority, or an
+operation not present in the task grant. Every private directory must be 0700;
+every secret/configuration file must be a regular, owner-only, single-link 0600
+file.
 
-## 5. Operating boundary
-
-After an approved activation, `SKILL.md` governs real incoming work. A real user
-request should be handled in its originating conversation using its authorized
-context and the installed program. The prohibition on unsolicited development
-tests does not prohibit that reply. It does prohibit initiating test messages,
-using another conversation as a probe, or treating a development fixture as user
-authorization.
-
-## 6. Shutdown
-
-Use the exact approved supervisor stop command recorded in this runbook once the
-host integration exists. Disable configuration first, request orderly stop, and
-confirm through the supervisor that recovery state is durable and the verified
-owner/socket are gone. Never kill an unverified PID or delete a lock/socket to
-force shutdown.
-
-Because no approved supervisor command currently exists, shutdown cannot be
-claimed operationally verified. Do not activate a host that lacks its matching
-documented stop procedure.
-
-## 7. Rollback
-
-Rollback is allowed only after verified shutdown and while configuration remains
-disabled. Preserve the database, queued requests, inbox, handoffs, receipts, and
-unknown outcomes:
+Validate without opening Spectrum, the socket, or Grok:
 
 ```sh
-node /absolute/tools/rollback.mjs /absolute/grok-photon <previous-release-sha256> confirm-inactive
+sudo -u grok-photon "$PHOTON_BIN/grok-photon-host" validate \
+  --installation-root /opt/grok-photon
 ```
 
-The command verifies the installed release and compatible SQLite schema, then
-changes only the inactive selected-release pointer. It does not start the prior
-release, migrate or delete state, resend work, or prove that the prior executable
-can read a newer schema. Re-run the offline smoke check for the selected release.
-Activation after rollback remains subject to the startup stop gate above.
+## 4. Install the concrete systemd lifecycle
+
+This is the supported supervisor path for this production composition. Bind the
+unit to the selected immutable release and the exact Node 24.13.0 path:
+
+```sh
+sudo tee /etc/systemd/system/grok-photon.service >/dev/null <<EOF
+[Unit]
+Description=Grok Photon iMessage host
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=grok-photon
+Group=grok-photon
+EnvironmentFile=/etc/grok-photon/grok-gateway.env
+Environment=PATH=/absolute/node-24.13.0/bin:/usr/bin:/bin
+ExecStart=/opt/grok-photon/releases/$PHOTON_RELEASE/bin/grok-photon-host run --installation-root /opt/grok-photon
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=45
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/grok-photon/runtime
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload
+sudo systemctl enable grok-photon.service
+```
+
+## 5. Activate and verify local readiness
+
+Activation is explicit and must occur while no host lock/socket exists:
+
+```sh
+sudo -u grok-photon "$PHOTON_BIN/grok-photon-host" enable \
+  --installation-root /opt/grok-photon
+sudo systemctl start grok-photon.service
+sudo systemctl status --no-pager grok-photon.service
+```
+
+The process acquires `runtime/host.lock` with `O_EXCL`, opens one SQLite store,
+constructs exactly one Spectrum client, recovers durable state, starts its one
+stream receiver and outbox, then publishes the authenticated 0600 Unix socket.
+It refuses an install lock, stale owner lock, socket collision, inactive/expired
+configuration, modified release skill, missing handler, or provider readiness
+failure. Startup never deletes a stale lock; an operator must first verify the
+recorded PID/UID/release and process state.
+
+Run local checks through the release-pinned task launcher, which verifies the
+selected release and task generation before supplying the three client bindings:
+
+```sh
+sudo -u grok-photon "$PHOTON_BIN/grok-photon-task" \
+  --installation-root /opt/grok-photon \
+  --task-id "$PHOTON_TASK_ID" --generation "$PHOTON_TASK_GENERATION" \
+  doctor --json
+sudo -u grok-photon "$PHOTON_BIN/grok-photon-task" \
+  --installation-root /opt/grok-photon \
+  --task-id "$PHOTON_TASK_ID" --generation "$PHOTON_TASK_GENERATION" \
+  capabilities --json
+```
+
+Readiness is only process/local/provider-owner readiness. It is not provider
+acceptance, delivery, read state, rendering, interaction, or device proof.
+
+## 6. Grok wake and task acceptance
+
+Inbound work is durably captured and reduced before wake. The host invokes the
+configured executable exactly as:
+
+```text
+/absolute/path/to/gbot --gateway send existing-grok-agent-id POINTER_ONLY_PROMPT
+```
+
+The fixed pointer-only prompt identifies only the durable handoff ID, task ID, generation,
+selected release `SKILL.md`, and exact `grok-photon-task work.claim` command. It
+contains no iMessage body, Photon secret, local token, or arbitrary shell input.
+The launcher then pins the selected release and injects only
+`GROK_PHOTON_CONTEXT_ID`, `GROK_PHOTON_SOCKET`, and
+`GROK_PHOTON_CREDENTIAL_FILE` into the existing client. Gateway command success
+means wake acceptance only; it does not acknowledge the durable handoff. Grok
+must claim, heartbeat, and acknowledge the handoff by its ID as directed by the
+release skill.
+
+The existing `gbot` gateway authentication and Grok agent ID are deployment
+inputs. `validate` confirms the executable and agent binding shape; a controlled external
+task observation is still required before claiming that a particular
+Grok deployment loaded the skill and accepted a task.
+
+## 7. Shutdown and rollback
+
+Orderly SIGTERM closes the local socket first, stops new inbound/outbox work,
+closes the one provider owner and SQLite store, then removes only the socket and
+host lock whose inode/content the process owns.
+
+```sh
+sudo systemctl stop grok-photon.service
+sudo -u grok-photon "$PHOTON_BIN/grok-photon-host" disable \
+  --installation-root /opt/grok-photon
+sudo systemctl status --no-pager grok-photon.service
+```
+
+Do not delete a lock/socket or kill an unverified PID. If startup fails after
+enable, run `disable` only after systemd confirms the process is stopped and the
+normal cleanup has removed its owner markers.
+
+Rollback is inactive and preserves SQLite, inbox, outbox, handoffs, receipts,
+queued work, and unknown outcomes:
+
+```sh
+/absolute/node-24.13.0/bin/node /absolute/tools/rollback.mjs \
+  /opt/grok-photon previous-release-sha256 confirm-inactive
+```
+
+Recompute `PHOTON_RELEASE`, reinstall the unit so `ExecStart` names the selected
+release, re-run offline smoke and `validate`, then explicitly enable/start. The
+task ID/generation and durable state remain configuration/state authority; the
+new host never blindly retries `unknown-outcome` work.

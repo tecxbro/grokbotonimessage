@@ -27,6 +27,15 @@
   distinct authoritative documents. The operating skill explicitly distinguishes
   a real incoming request in its originating conversation from an unsolicited
   development test.
+- CR-I-015: **closed locally.** The release now owns a tested production host,
+  strict configuration, exclusive lifecycle lock, recovery-first start, orderly
+  stop, and exact systemd procedure. Installation/activation remain separate
+  evidence gates.
+- CR-I-016: **closed at the repository seam.** The host uses the configured
+  existing `gbot --gateway send` contract with a pointer-only prompt; the
+  release-pinned launcher verifies the skill/release/task generation and injects
+  the three local client bindings. External Grok task acceptance remains a
+  deployment evidence gate.
 
 ## Follow-up gates
 
@@ -40,18 +49,11 @@
   after receiving a real integration-workflow approval bound to that commit.
 - CR-I-012: run inactive install/reinstall/verification/rollback on that real
   archive, then separately authorize activation and live provider/device checks.
-- CR-I-015: **deployment blocker.** Implement and independently verify a
-  release-owned host entrypoint and approved supervisor start/stop procedure,
-  then replace the explicit startup stop gate in `DEPLOYMENT.md` with the exact
-  commands, configuration schema, secret binding, lock ownership, and recovery
-  owner. The client `grok-photon` executable is not the missing host service.
-- CR-I-016: **deployment blocker.** Identify and verify the actual existing Grok
-  orchestrator skill loader and per-task launcher. Record how the selected
-  release's `SKILL.md` is loaded for each messaging task and how
-  `GROK_PHOTON_CONTEXT_ID`, `GROK_PHOTON_SOCKET`, and
-  `GROK_PHOTON_CREDENTIAL_FILE` are sourced and injected. Close only with
-  redacted task-level evidence; file presence and installer output are
-  insufficient.
+- CR-I-017: build the real approved archive and exercise the documented inactive
+  install/validate path on its target host before authorizing activation.
+- CR-I-018: collect redacted controlled-task evidence that the configured Grok
+  gateway accepted the pointer, loaded the selected release skill, and claimed
+  the durable handoff. Local command-shape tests are not this external proof.
 
 ## Evidence boundary
 

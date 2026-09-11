@@ -22,14 +22,14 @@
 9. **PARTIAL — distribution:** package dry-run succeeds and synthetic inactive
    install/reinstall/verify/rollback tests preserve state. No real artifact was
    created or installed because no workflow approval was supplied.
-10. **PASS — actual candidate gates:** Node 24.13.0 aggregate verification runs
-    756 non-live tests with zero failures or skips, plus schema, ownership,
-    docs, generated-skill, and package dry-run checks.
-11. **PASS, STARTUP BLOCKED:** development, deployment, and operating
-    instructions have distinct roles, and historical F0/WT-08 files point to one
-    current deployment runbook. Release staging and inactive rollback are exact;
-    activation stops explicitly because no approved host/supervisor command
-    exists. Exact approval-bound artifact identity remains pending.
+10. **PASS — actual candidate gates:** the fresh Node 24.13.0 aggregate passes
+    759/759 non-live tests across 79 files with zero failures or skips. Schema,
+    ownership, docs, generated-skill, smoke, and packaging checks also pass.
+11. **PASS LOCALLY — concrete startup:** development, deployment, and operating
+    instructions have distinct roles. The release now owns strict configuration,
+    validate/enable/run/disable commands, single-owner recovery-first lifecycle,
+    release-pinned task launcher, and an exact systemd start/stop procedure.
+    Approval-bound artifact identity, installation, and activation remain pending.
 12. **PASS — evidence separation:** built and locally integrated are proven;
     installed, activated, provider accepted/delivered/read, rendered, interacted,
     and physical-device verified remain independently unproven.
@@ -39,7 +39,8 @@
 14. **PASS — request/test distinction:** development instructions prohibit
     unsolicited test sends, while the operating skill handles a real incoming
     request only in its originating conversation and authorized context.
-15. **BLOCKED — skill and task binding:** the packaged skill and CLI environment
-    contract exist, but no production orchestrator loader or task-launch injector
-    is identified in this repository. Activation requires the deployment handoff
-    to name the actual external mechanism and provide redacted task-level proof.
+15. **PASS LOCALLY, EXTERNAL PROOF PENDING — skill and task binding:** the host
+    uses the existing `gbot --gateway send` path with a fixed pointer-only prompt;
+    the release launcher verifies skill/release/task generation and injects the
+    three local client bindings. A controlled external Grok task must still prove
+    gateway acceptance, skill load, and durable claim for an activated deployment.

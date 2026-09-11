@@ -63,10 +63,10 @@ export function verifyDocs(root=process.cwd(),lane='wt-00') {
     for(const marker of ['75 passed','756','live test','not prove installation'])
       if(!evidence.includes(marker))throw new Error(`MISSING_INTEGRATION_EVIDENCE:${marker}`);
     const deployment=read('packages/photon-features/DEPLOYMENT.md');
-    for(const marker of ['single current deployment document','blocked at startup','originating conversation','no approved startup command','Required deployment binding handoff','Current handoff status is `unbound`','task-launch boundary'])
+    for(const marker of ['Production deployment runbook','grok-photon-host','grok-photon-task','version-2 configuration','systemd lifecycle','pointer-only','controlled external'])
       if(!deployment.includes(marker))throw new Error(`MISSING_DEPLOYMENT_BOUNDARY:${marker}`);
     const handoff=read('docs/worktrees/integration/HANDOFF.md');
-    for(const marker of ['Deployment binding handoff','UNBOUND','GROK_PHOTON_CONTEXT_ID','GROK_PHOTON_SOCKET','GROK_PHOTON_CREDENTIAL_FILE','controlled non-message evidence'])
+    for(const marker of ['Concrete deployment path','Grok skill and task binding','grok-photon-host','grok-photon-task','GROK_PHOTON_CONTEXT_ID','GROK_PHOTON_SOCKET','GROK_PHOTON_CREDENTIAL_FILE','controlled external'])
       if(!handoff.includes(marker))throw new Error(`MISSING_BINDING_HANDOFF:${marker}`);
     for(const [path,markers] of Object.entries({
       'docs/photon-features/rollout.md':['Historical F0 checkpoint','current deployment runbook'],
@@ -76,7 +76,7 @@ export function verifyDocs(root=process.cwd(),lane='wt-00') {
     })) for(const marker of markers) if(!read(path).includes(marker))
       throw new Error(`MISSING_INSTRUCTION_ROLE:${path}:${marker}`);
     return {lane,structural:'passed',sources:lock.sources.length,lanes:ledger.lanes.length,
-      semanticReview:'Development, deployment, and operation are separated; startup and Grok skill/task binding remain blocked pending approved external mechanisms.'};
+      semanticReview:'Development, deployment, and operation are separated; the production lifecycle and release-pinned Grok task binding are concrete while install, activation, and external proof remain separate.'};
   }
   const official=JSON.parse(read('docs/photon/source-lock.json'));
   checkSourceLock(official,read);

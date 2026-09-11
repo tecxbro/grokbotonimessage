@@ -1,4 +1,4 @@
-import { Spectrum, type Message, type Space } from "spectrum-ts";
+import { Spectrum, type Message, type Platform, type PlatformInstance, type Space } from "spectrum-ts";
 import { imessage } from "spectrum-ts/providers/imessage";
 import type { ClientOwner, Scope } from "../../contracts/index.js";
 import { ProviderContext } from "./provider-context.js";
@@ -8,9 +8,12 @@ export interface TransportDimensions {
   outbound: "imessage";
   wake: "existing-grok-task-handoff";
 }
+type IMessageDefinition = typeof imessage extends Platform<infer Definition> ? Definition : never;
+export type OwnedProvider = PlatformInstance<IMessageDefinition>;
 export interface OwnedSdk {
   messages(): AsyncIterable<[Space, Message]>;
   space(id: string, route: { phone: string }): Promise<Space>;
+  provider?(): OwnedProvider;
   stop(): Promise<void>;
 }
 export type SdkFactory = () => Promise<OwnedSdk>;
@@ -25,6 +28,7 @@ export function cloudSdkFactory(config: {
     return {
       messages: () => app.messages,
       space: (id, route) => provider.space.get(id, route),
+      provider: () => provider,
       stop: () => app.stop(),
     };
   };
@@ -86,6 +90,13 @@ export class SpectrumOwner implements ClientOwner {
       conversationId,
       this.routes.outbound(scope, conversationId),
     );
+  }
+  /** Return the already-owned narrowed provider. This never creates a client. */
+  provider(): OwnedProvider {
+    if (!this.ready()) throw new Error("OWNER_NOT_READY");
+    const provider = this.sdk!.provider;
+    if (!provider) throw new Error("PROVIDER_BINDING_UNAVAILABLE");
+    return provider();
   }
   receiveFailed() {
     this.failed = true;

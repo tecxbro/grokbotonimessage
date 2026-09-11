@@ -15,7 +15,7 @@ export function encodeArchive(files, metadata) {
   const entries = Object.entries(files).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([path, value]) => {
     if (!safePath(path)) throw new Error('UNSAFE_ARCHIVE_PATH');
     const bytes = Buffer.from(value.content ?? value);
-    const mode = value.mode ?? (path === 'dist/src/cli/main.js' ? 0o700 : 0o600);
+    const mode = value.mode ?? (['dist/src/cli/main.js', 'dist/src/host/process.js', 'dist/src/host/task-launcher.js'].includes(path) ? 0o700 : 0o600);
     if (![0o600, 0o700].includes(mode)) throw new Error('UNSAFE_ARCHIVE_MODE');
     return { path, mode, bytes: bytes.length, sha256: sha256(bytes), content: bytes.toString('base64') };
   });
@@ -57,7 +57,10 @@ export async function packageCandidate({ candidate, approval, output }) {
   if (process.versions.node !== legacyFoundation.runtime.node || execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim() !== legacyFoundation.runtime.npm) throw new Error('PINNED_TOOLCHAIN_REQUIRED');
   const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
   const aggregate = JSON.parse(await readFile(join(candidate, 'package.json'), 'utf8'));
-  if (pkg.bin?.['grok-photon'] !== 'dist/src/cli/main.js' || !aggregate.scripts?.['photon:test:integration']) throw new Error('WT00_INTEGRATION_REQUIRED');
+  if (pkg.bin?.['grok-photon'] !== 'dist/src/cli/main.js' ||
+    pkg.bin?.['grok-photon-host'] !== 'dist/src/host/process.js' ||
+    pkg.bin?.['grok-photon-task'] !== 'dist/src/host/task-launcher.js' ||
+    !aggregate.scripts?.['photon:test:integration']) throw new Error('WT00_INTEGRATION_REQUIRED');
   // Fresh dependency tree prevents including arbitrary files from a developer node_modules.
   execFileSync('npm', ['ci', '--ignore-scripts'], { cwd: candidate, stdio: 'pipe' });
   await rm(join(root, 'dist'), { recursive: true, force: true });
@@ -90,6 +93,8 @@ export async function packageCandidate({ candidate, approval, output }) {
   await collect(join(candidate, 'node_modules'), 'node_modules/', true);
   for (const name of packageSupportFiles) files[name] = await readFile(join(root, name));
   files['bin/grok-photon'] = { content: Buffer.from("#!/usr/bin/env node\nimport { run } from '../dist/src/cli/main.js';\nprocess.exitCode = await run(process.argv.slice(2));\n"), mode: 0o700 };
+  files['bin/grok-photon-host'] = { content: Buffer.from("#!/usr/bin/env node\nimport { processMain } from '../dist/src/host/process.js';\nprocess.exitCode = await processMain(process.argv.slice(2));\n"), mode: 0o700 };
+  files['bin/grok-photon-task'] = { content: Buffer.from("#!/usr/bin/env node\nimport { taskLauncherMain } from '../dist/src/host/task-launcher.js';\nprocess.exitCode = await taskLauncherMain(process.argv.slice(2));\n"), mode: 0o700 };
   files['dependency-lock.json'] = await readFile(join(candidate, 'package-lock.json'));
   const lock = JSON.parse(files['dependency-lock.json'].toString('utf8'));
   for (const [name, record] of Object.entries(lock.packages)) {

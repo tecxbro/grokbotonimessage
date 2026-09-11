@@ -6,6 +6,8 @@ import { spawnSync } from 'node:child_process';
 export async function smoke(root) {
   const main = join(resolve(root), 'dist/src/cli/main.js');
   if (!(await lstat(main)).isFile()) throw new Error('EXECUTABLE_MISSING');
+  for (const name of ['dist/src/host/process.js', 'dist/src/host/task-launcher.js'])
+    if (!(await lstat(join(resolve(root), name))).isFile()) throw new Error('EXECUTABLE_MISSING');
   const env = { PATH: process.env.PATH, HOME: process.env.HOME };
   for (const args of [['doctor', '--json'], ['capabilities', '--json'], ['execute', '--json-stdin']]) {
     const result = spawnSync(process.execPath, [main, ...args], { env, input: '{}', encoding: 'utf8', timeout: 5000 });

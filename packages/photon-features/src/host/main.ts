@@ -42,7 +42,9 @@ export function createRuntimeHost(components: RuntimeHostComponents = {}) {
   };
   const cleanup = async () => {
     const errors: unknown[] = [];
-    for (const stop of [() => components.ingress?.stop(), () => components.executor?.stopOutbox(), () => components.provider?.stop(), () => components.store?.close()]) {
+    // Stop provider-writing work before reception tears down the one shared
+    // provider owner. Ingress remains durable while the outbox drains.
+    for (const stop of [() => components.executor?.stopOutbox(), () => components.ingress?.stop(), () => components.provider?.stop(), () => components.store?.close()]) {
       try { await stop(); } catch (e) { errors.push(e); }
     }
     return errors;
