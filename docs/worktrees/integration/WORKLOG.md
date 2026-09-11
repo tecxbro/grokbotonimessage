@@ -98,3 +98,31 @@ all 44 owner/status rows against the actual assembled registry. This is independ
 of the generator's text drift check and fails when the manual and assembly disagree.
 The exact Node 24.13.0 aggregate passes 756/756 non-live tests with zero failures
 or skips; no provider, account, conversation, installation, or live check ran.
+
+## 2026-09-10 — release-local SQLite migration
+
+Confirmed that the custom collector packaged compiled source, schemas, examples,
+dependencies, and support files but omitted the SQL migration used by the
+production SQLite adapter. Repository tests masked the omission because the
+adapter searched every ancestor for a matching source tree.
+
+Integration took explicit ownership of the shared packaging/runtime correction.
+The collector now includes `src/state/migrations` in the checksummed payload and
+the compiled adapter resolves only the exact package-relative migration. Added a
+release-layout regression that builds an archive from the real compiled adapter,
+installs it under a temporary directory outside the checkout, opens and closes a
+real store, reopens it, then proves an unrelated ancestor migration is rejected.
+
+Focused Node 24.13.0 build, typecheck, distribution tests (8/8), and existing
+installer tests (2/2) pass. The complete non-live integration suite passes
+757/757 across 77 test files with no failures or skips.
+
+Applied the exact working diff to a clean ephemeral integration candidate and
+ran the real `packageCandidate` boundary under Node 24.13.0. Its required five
+test commands passed and it emitted a 14,526-file, 30,947,423-byte archive with
+SHA-256 `de24e4d...fea32`. The archive contains the 5,065-byte migration as a
+checksummed entry, installed outside the candidate checkout, and its installed
+adapter opened/closed/reopened a schema-version-1 database with 19 tables. The
+acceptance approval object was explicitly local test scaffolding, not a genuine
+workflow approval. Production approval, publication, activation, provider
+behavior, and device evidence remain separate and pending.

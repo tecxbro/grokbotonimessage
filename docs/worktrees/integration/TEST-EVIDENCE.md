@@ -54,7 +54,7 @@ one validated durable handoff, and the installer still enforces the pinned runti
   no missing or duplicate owner, plus all 12 shared compiler families including
   integration's public-SDK poll compiler: PASS, 2/2 assembly tests.
 - `npm run photon:test:integration` under Node 24.13.0: PASS, 77 test files,
-  756 tests, 0 failed, 0 skipped. The live directory is excluded explicitly
+  757 tests, 0 failed, 0 skipped. The live directory is excluded explicitly
   because no live authorization was granted; it is not silently counted as PASS.
 - The public WT-07 adapter reuses its injected scoped provider and sends native
   effects only through `ExecutionServices.executeChild`; construction remains inert.
@@ -69,3 +69,44 @@ one validated durable handoff, and the installer still enforces the pinned runti
 
 This checkpoint does not prove installation or activation, and it does not prove
 provider delivery/read, extension rendering, human interaction, or device behavior.
+
+## Release-local migration checkpoint
+
+- Exact runtime: Node 24.13.0, npm 10.9.2.
+- `npm run photon:build`: PASS.
+- `npm run typecheck --workspace=@grokbot/photon-features`: PASS.
+- `node --test packages/photon-features/tests/lanes/wt-08/distribution.test.mjs`:
+  PASS, 8/8, no skips. The new case archives the real compiled runtime and Zod
+  dependency, installs outside the checkout, opens/closes/reopens a real
+  `DurableSQLiteStore`, and rejects an unrelated ancestor migration.
+- Red/green check: removing `src/state/migrations` from the payload-directory
+  declaration makes this suite fail 7/8 at the new archive-migration assertion;
+  restoring the fix returns it to 8/8.
+- `node --test packages/photon-features/dist/tests/e2e/install-rollback.test.js`:
+  PASS, 2/2, no skips.
+
+This is local installed-release evidence, not production workflow approval,
+publication, activation, provider acceptance/delivery/read, or device evidence.
+
+### Full collector acceptance
+
+The working diff was applied to a clean ephemeral `photon-v3/integration`
+candidate and committed there as `6965908c42a32b3ec6b0a6c28e0f9e0aaaa709b3`.
+The approval document was local test scaffolding, not a real workflow approval.
+
+- `packageCandidate`: PASS; it ran `npm test`, `npm run photon:test`,
+  `npm run photon:check`, `npm run photon:test:integration`, and
+  `node scripts/generate-skill.mjs --check` with exit code 0.
+- Archive SHA-256:
+  `de24e4d8963bd1db9b8fd3938301b5c3b3dd672fa15dc77e28ed56eabd0fea32`;
+  14,526 files; 30,947,423 bytes.
+- Migration entry: `src/state/migrations/0001-initial.sql`; 5,065 bytes;
+  SHA-256 `411a94bceefd47757ce47c4ab84d0d0961f9766d6623d0700ec063256921ba6a`.
+- Real installer outside the candidate checkout: PASS; activation remained
+  `disabled`.
+- Installed `DurableSQLiteStore` open, close, reopen: PASS; schema version 1,
+  19 tables, including `inbox` and `outbox`; database mode `0600`.
+
+The ephemeral archive and installation were acceptance artifacts only. This
+does not replace the required production workflow approval bound to the eventual
+repository commit.

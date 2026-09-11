@@ -22,9 +22,11 @@ public F0 executor now reaches the offline Spectrum text send exactly once throu
 the authenticated local socket and durable request path. This is local/offline
 SDK-acceptance evidence only: it is not activation, provider delivery, read, or
 device evidence. The actual lane factories assemble all 44 operation handlers and
-12 compiler families. The exact Node 24.13.0 non-live aggregate passes 756/756
+12 compiler families. The exact Node 24.13.0 non-live aggregate passes 757/757
 with no failures or skips; the separately gated live test is not counted.
 
-Package dry-run passes, but no release artifact was created or installed because
-the required workflow approval does not exist. Activation and all live/provider/
-device evidence remain outside this local integration result.
+Package dry-run and full-collector acceptance pass. A temporary archive built
+from a clean ephemeral candidate installed outside its checkout and booted SQLite
+twice using its checksummed migration. That acceptance used local approval
+scaffolding; no production-approved artifact was published or activated. All
+live/provider/device evidence remains outside this local integration result.

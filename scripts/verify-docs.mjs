@@ -60,7 +60,7 @@ export function verifyDocs(root=process.cwd(),lane='wt-00') {
       ledger.lanes.length!==9||ledger.lanes.some(entry=>entry.integrationStatus!=='integrated'||!entry.reviewedCommits.length||!entry.integrationCommits.length))
       throw new Error('INCOMPLETE_INTEGRATION_LEDGER');
     const evidence=read('docs/worktrees/integration/TEST-EVIDENCE.md');
-    for(const marker of ['75 passed','756','live test','not prove installation'])
+    for(const marker of ['75 passed','757','live test','not prove installation'])
       if(!evidence.includes(marker))throw new Error(`MISSING_INTEGRATION_EVIDENCE:${marker}`);
     return {lane,structural:'passed',sources:lock.sources.length,lanes:ledger.lanes.length,
       semanticReview:'Integration evidence remains local/offline; installation, activation and live behavior are separate.'};

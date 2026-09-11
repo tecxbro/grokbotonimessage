@@ -22,6 +22,9 @@
   handler implementation from the actual assembled factory registry. Provider
   support, scoped availability, and live verification remain separate capability
   dimensions and are not promoted to `supported`.
+- CR-I-014: **closed locally.** The custom archive collector includes the F0 SQL
+  migration as a checksummed payload entry, and the production SQLite adapter
+  resolves only the exact installed-package path rather than searching ancestors.
 
 ## Follow-up gates
 

@@ -10,6 +10,12 @@ export const packageSupportFiles = Object.freeze([
   'scripts/generate-skill.mjs', 'scripts/install.mjs', 'scripts/package.mjs',
   'scripts/rollback.mjs', 'scripts/smoke-test.mjs',
 ]);
+export const packagePayloadDirectories = Object.freeze([
+  Object.freeze({ source: 'dist/src', archive: 'dist/src/' }),
+  Object.freeze({ source: 'schemas', archive: 'schemas/' }),
+  Object.freeze({ source: 'examples/wt-08', archive: 'examples/wt-08/' }),
+  Object.freeze({ source: 'src/state/migrations', archive: 'src/state/migrations/' }),
+]);
 const safePath = name => typeof name === 'string' && name.length < 500 && !isAbsolute(name) && !name.includes('\\') && name.split('/').every(p => p && p !== '.' && p !== '..') && !/(^|\/)(\.env(?:\..*)?|\.npmrc|\.git|credentials?|.*\.(sqlite|db|pem|key)|runtime\.sock)(\/|$)/i.test(name);
 export function encodeArchive(files, metadata) {
   const entries = Object.entries(files).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([path, value]) => {
@@ -84,9 +90,7 @@ export async function packageCandidate({ candidate, approval, output }) {
       else throw new Error('NONREGULAR_CANDIDATE_FILE');
     }
   }
-  await collect(join(root, 'dist/src'), 'dist/src/');
-  await collect(join(root, 'schemas'), 'schemas/');
-  await collect(join(root, 'examples/wt-08'), 'examples/wt-08/');
+  for (const { source, archive } of packagePayloadDirectories) await collect(join(root, source), archive);
   await collect(join(candidate, 'node_modules'), 'node_modules/', true);
   for (const name of packageSupportFiles) files[name] = await readFile(join(root, name));
   files['bin/grok-photon'] = { content: Buffer.from("#!/usr/bin/env node\nimport { run } from '../dist/src/cli/main.js';\nprocess.exitCode = await run(process.argv.slice(2));\n"), mode: 0o700 };
