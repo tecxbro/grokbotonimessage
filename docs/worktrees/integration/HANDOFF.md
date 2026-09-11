@@ -7,7 +7,9 @@ The registered branch starts at immutable F0 and contains every reviewed WT-01
 through WT-09 input in `included-commits.json`. The existing lane factories
 assemble all 44 public handlers and 12 compiler families. The fresh exact Node
 24.13.0 non-live aggregate passes 759/759 across 79 files with no failures or
-skips; the live suite remains explicitly excluded.
+skips; the live suite remains explicitly excluded. Schema, generated-skill drift,
+ownership, docs, and package dry-run checks pass. The operating skill's 44 handler
+statuses are independently checked against the assembled public registry.
 
 ## Concrete deployment path
 
@@ -45,9 +47,22 @@ through authenticated IPC and one owner. This closes the missing repository
 loader/launcher seam. It does not prove that a particular external Grok gateway
 accepted the command, loaded the skill, or claimed work.
 
+## Release-local migration evidence
+
+The source-confirmed migration packaging mismatch is closed locally. The real
+collector produced a full 14,526-file archive from a clean ephemeral candidate;
+the SQL file was checksummed into it, installed outside the checkout, and used
+by installed code to open/close/reopen a real `DurableSQLiteStore`. Ancestor
+fallback is rejected. The acceptance approval was local scaffolding only, so
+production archive generation remains pending a clean repository commit and
+genuine workflow approval. Inactive repeat install, rollback, and state
+preservation still have synthetic fixture evidence only. Activation configuration,
+credentials, account/line state, provider lifecycle, and live/device evidence
+were not authorized or changed.
+
 ## Remaining external evidence
 
-No approved archive was produced, no release was installed, no real Spectrum or
+No production-approved archive was produced or installed, no real Spectrum or
 Grok credential was configured, and no process was activated. A controlled external
 non-message task observation is still required before claiming task binding for
 a deployment. Provider acceptance/delivery/read, extension rendering, human

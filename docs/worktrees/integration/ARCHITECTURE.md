@@ -56,6 +56,16 @@ Optional provider capabilities remain native, fallback, warn-and-skip, accepted
 no-op, or thrown-error according to the pinned Spectrum 12.8.0 provider contract;
 a resolved promise alone is never delivery or device evidence.
 
+## Release migration boundary
+
+The custom release payload includes the immutable F0 SQL migration at
+`src/state/migrations/0001-initial.sql`. The compiled SQLite adapter resolves
+only that exact package-relative file from its installed `dist/src` location.
+It never walks parent directories, so a source checkout or unrelated ancestor
+cannot silently supply a migration omitted from the release. The migration is
+an ordinary checksummed archive entry and is verified with the rest of the
+installed release before selection.
+
 ## Activation boundary
 
 Packaging and offline installation fixtures do not authorize runtime activation.

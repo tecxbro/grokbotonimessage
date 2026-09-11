@@ -29,6 +29,9 @@ counted.
 The concrete production composition and release-owned host/task launchers are now
 implemented and focused-tested without live effects. The deployment runbook
 contains supported version-2 configuration and exact systemd lifecycle commands.
-No release artifact was created or installed because the required workflow
-approval does not exist. Activation, external Grok task acceptance, and all live/
-provider/device evidence remain outside this local integration result.
+Package dry-run and full-collector acceptance pass. A temporary archive built
+from a clean ephemeral candidate installed outside its checkout and booted SQLite
+twice using its checksummed migration. That acceptance used local approval
+scaffolding; no production-approved artifact was published or activated. All
+activation, external Grok task acceptance, and live/provider/device evidence
+remain outside this local integration result.

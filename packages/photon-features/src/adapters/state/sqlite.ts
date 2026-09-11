@@ -5,7 +5,7 @@ import {
   lstatSync,
   readFileSync,
 } from "node:fs";
-import { dirname, isAbsolute, join, parse } from "node:path";
+import { dirname, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   SQLiteStore,
@@ -27,13 +27,13 @@ import {
 import type { ExecutionClaim, StateStore } from "../../contracts/store.js";
 
 function migrationPath(): string {
-  let directory = dirname(fileURLToPath(import.meta.url));
-  const root = parse(directory).root;
-  while (directory !== root) {
-    const candidate = join(directory, "src/state/migrations/0001-initial.sql");
-    if (existsSync(candidate)) return candidate;
-    directory = dirname(directory);
-  }
+  const candidate = fileURLToPath(
+    new URL(
+      "../../../../src/state/migrations/0001-initial.sql",
+      import.meta.url,
+    ),
+  );
+  if (existsSync(candidate)) return candidate;
   throw new Error("F0_MIGRATION_NOT_FOUND");
 }
 

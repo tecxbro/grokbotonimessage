@@ -19,14 +19,18 @@
    poll continuation, and durable card callback state. Authoritative retention
    cleanup remains disabled, and extension/backend/device card behavior is not
    proven here.
-9. **PARTIAL — distribution:** package dry-run succeeds and synthetic inactive
-   install/reinstall/verify/rollback tests preserve state. No real artifact was
-   created or installed because no workflow approval was supplied.
-10. **PASS — actual candidate gates:** the fresh Node 24.13.0 aggregate passes
-    759/759 non-live tests across 79 files with zero failures or skips. Schema,
-    ownership, docs, generated-skill, smoke, and packaging checks also pass.
+9. **PASS LOCALLY; RELEASE AUTHORIZATION PENDING — distribution:** the real
+   `packageCandidate` collector built a complete archive from a clean ephemeral
+   candidate, including the checksummed F0 migration. The archive installed
+   outside the checkout and its installed code opened/closed/reopened a real
+   `DurableSQLiteStore`. Synthetic inactive reinstall/rollback tests continue
+   to preserve state. The approval used for local acceptance was test scaffolding;
+   no production-approved artifact was published or activated.
+10. **PASS — actual candidate gates:** Node 24.13.0 aggregate verification runs
+    759 non-live tests across 79 files with zero failures or skips, plus schema,
+    ownership, docs, generated-skill, smoke, and package dry-run checks.
 11. **PASS LOCALLY — concrete startup:** development, deployment, and operating
-    instructions have distinct roles. The release now owns strict configuration,
+    instructions have distinct roles. The release owns strict configuration,
     validate/enable/run/disable commands, single-owner recovery-first lifecycle,
     release-pinned task launcher, and an exact systemd start/stop procedure.
     Approval-bound artifact identity, installation, and activation remain pending.
