@@ -196,7 +196,7 @@ export interface PublicNativeDependencies extends NativeDependencies {
   resources: Pick<ResourceResolver, "space" | "message">;
 }
 
-function publicServiceAdapter(
+export function publicServiceAdapter(
   services: PublicExecutionServices,
   dependencies: PublicNativeDependencies,
   signal: AbortSignal,

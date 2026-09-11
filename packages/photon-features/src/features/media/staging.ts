@@ -364,7 +364,6 @@ export class GuardedMediaStager implements MediaStager {
         const media: StagedMedia = { stagingId: id, sha256: sha256(bytes), mimeType: meta.mimeType, bytes: size };
         this.authorize(context); signal.throwIfAborted();
         this.options.services.transaction(unit => {
-          this.authorize(context);
           unit.put("stagedMedia", { id, scope: context.scope, revision: 0, principalId: context.principalId,
             taskId: context.taskId, generation: context.generation, relativePath: `${name}.bin`, sha256: media.sha256, mimeType: media.mimeType, bytes: media.bytes,
             expiresAt: RETAINED }, null);

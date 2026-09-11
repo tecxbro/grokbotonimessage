@@ -75,7 +75,7 @@ export class ExecutionClaims {
       row.action.contextId,
     );
     this.contexts.owned(tx, id, context);
-    this.contexts.action(tx, context, row.action);
+    this.contexts.action(tx, context, row.action, { requestId: id, claim });
     return { row, context };
   }
   heartbeat(id: string, claim: Claim, leaseMs: number): void {

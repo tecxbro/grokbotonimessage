@@ -13,7 +13,7 @@ import type {
 import type { FeatureModule } from "../contracts/feature.js";
 import type { LocalResponse } from "./protocol.js";
 import type { ExecutionServices as PublicExecutionServices } from "../contracts/services.js";
-import type { MediaStager, RegisteredStreams, ResourceResolver } from "../contracts/ports.js";
+import type { ResourceResolver } from "../contracts/ports.js";
 import { sameScope } from "../contracts/resources.js";
 import { registerFeatureModules } from "../registry/modules.js";
 import { createRuntimeHost, type LocalExecutor } from "./main.js";
@@ -30,7 +30,7 @@ import { DurableLocalProtocol, listenDurableLocal } from "../runtime/core/local-
 import { ExecutionClaims } from "../runtime/core/claims.js";
 import { executeOperation } from "../runtime/core/executor.js";
 import { requestIdentity } from "../runtime/core/idempotency.js";
-import { InboundRouter, type TaskRoute } from "../runtime/inbound/router.js";
+import { InboundRouter } from "../runtime/inbound/router.js";
 import { TextBatcher } from "../runtime/inbound/batching.js";
 import { recoverCaptures } from "../runtime/inbound/recovery.js";
 import { configuredGrokWake, WakeDispatcher } from "../runtime/inbound/wake-dispatcher.js";
@@ -42,11 +42,17 @@ import { createMediaModule, createFeatureModule as createMediaFeature } from "..
 import { createPollModule, createFeatureModule as createPollFeature } from "../features/polls/module.js";
 import { createCardsModule, createFeatureModule as createCardFeature } from "../features/cards/module.js";
 import type { CardTemplate } from "../features/cards/configuration.js";
-import { createNativeModule, createPublicFeatureModule as createNativeFeature } from "../features/native/module.js";
+import { createNativeModule, createPublicFeatureModule as createNativeFeature, publicServiceAdapter } from "../features/native/module.js";
 import { assembleFeatureSurface, createPollContentModule } from "../integration/assembly.js";
 import type { ProductionHostConfiguration } from "./configuration.js";
 import { readPrivateFile } from "./configuration.js";
 import { GrokGatewayTaskHandoff, type GrokCommandRunner } from "./grok-wake.js";
+import { bootstrapOrValidateAuthority, configuredAuthority } from "./authority.js";
+import type { BindExecutionResources } from "../runtime/core/execution-services.js";
+import { ProductionStreamRegistry } from "./stream-registry.js";
+import { ProductionResourcePorts } from "./resource-ports.js";
+import { dirname, join } from "node:path";
+import { productionCapability } from "./capabilities.js";
 
 const adminOperations = new Set<Operation>([
   "space.create", "space.rename", "space.addMembers", "space.removeMembers", "space.leave",
@@ -63,7 +69,16 @@ function rowFor(store: DurableSQLiteStore, reference: ResourceRef, context: Trus
 
 function createResources(store: DurableSQLiteStore, owner: SpectrumOwner): ResourceResolver {
   return {
-    resolve: async (reference, context) => rowFor(store, reference, context).reference,
+    resolve: async (reference, context) => {
+      if (reference.kind === "stream") {
+        const row = store.transaction(tx => tx.get("streams", reference.id));
+        if (!row || !sameScope(row.scope, context.scope) || !isDeepStrictEqual(row.reference, reference) ||
+          row.principalId !== context.principalId || row.taskId !== context.taskId ||
+          reference.generation !== context.generation) throw new Error("RESOURCE_NOT_FOUND");
+        return row.reference;
+      }
+      return rowFor(store, reference, context).reference;
+    },
     space: async (reference, context) => {
       if (reference.kind !== "space") throw new Error("RESOURCE_NOT_FOUND");
       const row = rowFor(store, reference, context);
@@ -83,53 +98,6 @@ function createResources(store: DurableSQLiteStore, owner: SpectrumOwner): Resou
   };
 }
 
-const unavailableMedia: MediaStager = {
-  resolve: async () => { throw new Error("UNAVAILABLE"); },
-};
-const unavailableStreams: RegisteredStreams = {
-  open: async () => { throw new Error("UNAVAILABLE"); },
-};
-
-function seedAuthority(
-  store: DurableSQLiteStore,
-  context: TrustedContext,
-  conversationId: string,
-): void {
-  const task: TaskRoute = {
-    taskId: context.taskId,
-    generation: context.generation,
-    principalId: context.principalId,
-  };
-  const space: Extract<ResourceRef, { kind: "space" }> = {
-    version: 1,
-    kind: "space",
-    id: context.scope.spaceId,
-    scope: context.scope,
-  };
-  store.transaction(tx => {
-    const oldTask = tx.get("tasks", context.taskId);
-    if (oldTask && (!sameScope(oldTask.scope, context.scope) || oldTask.principalId !== context.principalId ||
-      oldTask.generation > context.generation)) throw new Error("STALE_TASK_CONFIGURATION");
-    const nextTask = { id: task.taskId, scope: context.scope, revision: oldTask ? oldTask.revision + 1 : 0,
-      principalId: task.principalId, generation: task.generation, cancelledAt: null };
-    tx.put("tasks", nextTask, oldTask?.revision ?? null);
-
-    const oldContext = tx.get("contexts", context.contextId);
-    if (oldContext && (!sameScope(oldContext.scope, context.scope) || oldContext.context.principalId !== context.principalId ||
-      oldContext.context.taskId !== context.taskId || oldContext.context.generation > context.generation))
-      throw new Error("STALE_CONTEXT_CONFIGURATION");
-    tx.put("contexts", { id: context.contextId, scope: context.scope,
-      revision: oldContext ? oldContext.revision + 1 : 0, context }, oldContext?.revision ?? null);
-
-    const oldSpace = tx.get("references", space.id);
-    if (oldSpace && (oldSpace.providerId !== conversationId || oldSpace.reference.kind !== "space" ||
-      !sameScope(oldSpace.scope, context.scope))) throw new Error("SPACE_BINDING_CHANGED");
-    tx.put("references", { id: space.id, scope: context.scope, revision: oldSpace ? oldSpace.revision + 1 : 0,
-      reference: space, providerId: conversationId, ownedByPrincipalId: context.principalId,
-      taskId: context.taskId, generation: context.generation }, oldSpace?.revision ?? null);
-  });
-}
-
 class ProductionLocalExecutor implements LocalExecutor {
   readonly contractVersion = "f0-services-2" as const;
   private registry?: ReturnType<typeof registerFeatureModules>;
@@ -137,6 +105,7 @@ class ProductionLocalExecutor implements LocalExecutor {
   private failed = false;
   private drive?: Promise<void>;
   private dirty = false;
+  private readonly running = new Map<string, () => void>();
 
   constructor(
     private readonly store: DurableSQLiteStore,
@@ -147,9 +116,8 @@ class ProductionLocalExecutor implements LocalExecutor {
     private readonly captures: FileCaptureStore,
     private readonly providerRoutes: ProviderContext,
     private readonly resources: ResourceResolver,
-    private readonly media: MediaStager,
-    private readonly streams: RegisteredStreams,
-    private readonly capability: (operation: Operation, context: TrustedContext) => Capability,
+    private readonly bindResources: (requestId: string) => BindExecutionResources,
+    private readonly capability: (operation: Operation, context: TrustedContext, action?: Action) => Capability,
     private readonly pump: InboundPump,
     private readonly report: (code: string) => void,
     private readonly concurrency = 4,
@@ -157,6 +125,7 @@ class ProductionLocalExecutor implements LocalExecutor {
 
   async dispatch(request: LocalRequest, principal: AuthenticatedPrincipal): Promise<LocalResponse> {
     const response = await this.protocol.dispatch(request, principal) as LocalResponse;
+    if (request.method === "request.cancel") this.running.get(request.requestId)?.();
     if (request.method === "submit" || request.method === "request.cancel") this.kick();
     return response;
   }
@@ -179,6 +148,7 @@ class ProductionLocalExecutor implements LocalExecutor {
   }
   async stopOutbox(): Promise<void> {
     this.active = false;
+    for (const abort of this.running.values()) abort();
     await this.pump.stop();
     await this.drive;
   }
@@ -210,10 +180,13 @@ class ProductionLocalExecutor implements LocalExecutor {
             claims: this.claims,
             requestId: row.id,
             handler,
-            capability: context => this.capability(row.action.operation, context),
+            capability: (context, action) => this.capability(row.action.operation, context, action),
             resources: this.resources,
-            media: this.media,
-            streams: this.streams,
+            bindResources: this.bindResources(row.id),
+            onRunning: (requestId, abort) => {
+              this.running.set(requestId, abort);
+              return () => { if (this.running.get(requestId) === abort) this.running.delete(requestId); };
+            },
             afterCommit: () => { void this.pump.tick(); },
           });
         });
@@ -241,6 +214,9 @@ export interface ProductionComposition {
   scope: Scope;
   context: TrustedContext;
   principal: AuthenticatedPrincipal;
+  registerTextStream(principal: AuthenticatedPrincipal, source: AsyncIterable<string>, expiresAt: number): Promise<Extract<ResourceRef, { kind: "stream" }>>;
+  importMediaFile(principal: AuthenticatedPrincipal, filename: string,
+    metadata: import("../features/media/metadata.js").SourceMetadata): Promise<import("../features/media/staging.js").StagedMedia>;
   startLocalInterface(): Promise<{ close(): Promise<void> }>;
 }
 
@@ -264,19 +240,8 @@ export async function createProductionComposition(
     lineId: configuration.provider.lineId,
     phone: configuration.provider.phone,
   }]);
-  const scope = providerRoutes.inbound(configuration.provider.phone, configuration.provider.conversationId);
-  const context: TrustedContext = {
-    version: 1,
-    contextId: configuration.task.contextId,
-    principalId: configuration.local.principalId,
-    scope,
-    taskId: configuration.task.taskId,
-    generation: configuration.task.generation,
-    permissions: configuration.task.permissions,
-    issuedAt: configuration.task.issuedAt,
-    expiresAt: configuration.task.expiresAt,
-    revokedAt: null,
-  };
+  const authority = configuredAuthority(configuration);
+  const scope = authority.context.scope;
   const principal: AuthenticatedPrincipal = {
     id: configuration.local.principalId,
     osUid: process.getuid?.() ?? 0,
@@ -285,7 +250,12 @@ export async function createProductionComposition(
   };
   const store = new DurableSQLiteStore(configuration.runtime.statePath, now);
   try {
-    seedAuthority(store, context, configuration.provider.conversationId);
+    const { context } = bootstrapOrValidateAuthority(
+      store,
+      authority.context,
+      authority.conversationId,
+      now(),
+    );
 
   const administrative = new Set(configuration.authorization.administrativeOperations);
   const recipients = new Set(configuration.authorization.allowedRecipients.map(value => value.toLowerCase()));
@@ -304,6 +274,23 @@ export async function createProductionComposition(
     dependencies.sdkFactory ?? cloudSdkFactory({ projectId: configuration.provider.projectId, projectSecret }),
   );
   const resources = createResources(store, owner);
+  const mediaProvider = async (trusted: TrustedContext) => {
+    if (!sameScope(trusted.scope, scope)) throw new Error("SCOPE_MISMATCH");
+    const provider = owner.provider();
+    return { scope, phone: configuration.provider.phone, conversationId: configuration.provider.conversationId,
+      provider, space: (reference: ResourceRef) => resources.space(reference, trusted),
+      message: (reference: ResourceRef) => resources.message(reference, trusted) };
+  };
+  const streamRegistry = new ProductionStreamRegistry(store, contexts, principal);
+  const resourcePorts = new ProductionResourcePorts({
+    stagingDirectory: configuration.runtime.stagingDirectory,
+    approvedRoots: [configuration.runtime.importDirectory ?? join(dirname(configuration.runtime.statePath), "imports")],
+    provider: mediaProvider,
+    streams: streamRegistry,
+    store,
+    contexts,
+    principal,
+  });
   const binding = () => ({ scope, phone: configuration.provider.phone, nativeSpaceId: configuration.provider.conversationId });
   const request = (action: Action, services: { context: TrustedContext }) => requestIdentity(action, services.context);
   const typing = new TypingLeases({ now }, async target => {
@@ -355,19 +342,19 @@ export async function createProductionComposition(
     createTypingModule(typing, legacyTypingBind), legacyText, legacyMedia, legacyPoll, legacyCards,
     legacyNative, createPollContentModule(),
   ];
+  const publicCompilers = compatibilityModules.flatMap(module => module.compilers).map(compiler => ({
+    family: compiler.family,
+    compile: (content: import("../contracts/content.js").ContentSpec, services: PublicExecutionServices) =>
+      compiler.compile(content, publicServiceAdapter(services, nativeDependencies, services.signal)),
+  }));
   const scopedProvider = resolveProviderContext(owner, scope, configuration.provider.conversationId);
   const publicModules = [
     createTypingFeatureModule(typing, publicTypingBind),
-    createTextFeature({ provider: scopedProvider, binding, resources }),
+    createTextFeature({ provider: scopedProvider, binding, resources, compilers: () => publicCompilers }),
     createMediaFeature({
-      provider: async trusted => {
-        if (!sameScope(trusted.scope, scope)) throw new Error("SCOPE_MISMATCH");
-        const provider = owner.provider();
-        return { scope, phone: configuration.provider.phone, conversationId: configuration.provider.conversationId,
-          provider, space: reference => resources.space(reference, trusted),
-          message: reference => resources.message(reference, trusted) };
-      },
+      provider: mediaProvider,
       voiceBehavior: "native",
+      stageAttachment: (reference, services) => resourcePorts.stageAttachment(reference, services),
     }),
     createPollFeature({ resolveSpace: resources.space }),
     createCardFeature({ templates, binding, space: (reference, services) => resources.space(reference, services.context), requestId: request }),
@@ -376,26 +363,26 @@ export async function createProductionComposition(
   const assembled = assembleFeatureSurface({ publicModules, compatibilityModules });
   const configured = new Set(configuration.provider.availableOperations);
   const declared = new Map(compatibilityModules.flatMap(module => module.capabilities).map(capability => [capability.operation as Operation, capability]));
-  const capability = (operation: Operation, trusted: TrustedContext): Capability => {
-    const base = declared.get(operation);
-    const available = sameScope(trusted.scope, scope) && owner.ready() && configured.has(operation);
-    return {
-      operation,
-      providerSupport: base?.providerSupport ?? "native",
-      implementation: base?.implementation === "unimplemented" ? "unimplemented" : "implemented",
-      availability: { account: owner.ready() ? "available" : "unavailable",
-        conversation: available ? "available" : "unavailable", checkedAt: now() },
-      direction: base?.direction ?? { inbound: "not-applicable", outbound: "implemented" },
-      evidence: base?.evidence ?? [],
-      sdkVersion: "12.8.0",
-      sources: base?.sources ?? ["npm:spectrum-ts@12.8.0"],
-      blockers: [
-        ...(base?.blockers ?? []).filter(item => !item.includes("Host registration") && !item.includes("host-owned")),
-        ...(configured.has(operation) ? [] : ["Operation is not enabled by production provider configuration."]),
-        "Runtime readiness is not provider delivery, read, rendering, interaction, or device evidence.",
-      ],
-    };
-  };
+  const registeredHandlers = new Set(assembled.publicRegistry.handlers.keys());
+  const capability = (operation: Operation, trusted: TrustedContext, action?: Action): Capability => productionCapability(
+    operation,
+    trusted,
+    {
+      scope,
+      ownerReady: owner.ready(),
+      configuredOperations: configured,
+      registeredHandlers,
+      administrativeOperations: administrative,
+      allowNativeContent: configuration.authorization.allowNativeContent,
+      configuredCardTemplates: templates.length,
+      resources: true,
+      media: true,
+      streams: true,
+      checkedAt: now(),
+    },
+    declared.get(operation),
+    action,
+  );
 
   const router = new InboundRouter(store, { now }, {
     route: event => sameScope(event.scope, scope) ? {
@@ -426,7 +413,7 @@ export async function createProductionComposition(
     diagnostics: () => diagnostics(),
   });
   const executor = new ProductionLocalExecutor(store, protocol, claims, recovery, router, captures,
-    providerRoutes, resources, unavailableMedia, unavailableStreams, capability, pump,
+    providerRoutes, resources, requestId => services => resourcePorts.bind(requestId, services), capability, pump,
     dependencies.report ?? (() => undefined));
   const ingressSource = new SpectrumEventSource(owner, captures, { now }, diagnostic =>
     (dependencies.report ?? (() => undefined))(diagnostic.code));
@@ -443,6 +430,8 @@ export async function createProductionComposition(
       scope,
       context,
       principal,
+      registerTextStream: (caller, source, expiresAt) => streamRegistry.register(caller, context.contextId, source, expiresAt),
+      importMediaFile: (caller, filename, metadata) => resourcePorts.importFile(caller, context.contextId, filename, metadata),
       startLocalInterface: () => listenDurableLocal(configuration.local.socketPath,
         [{ token: localToken, principal }], executor),
     };

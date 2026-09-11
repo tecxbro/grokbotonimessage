@@ -42,7 +42,14 @@ export interface StreamRecord extends StoredRecord {
   codecId: string;
   codecVersion: number;
   checkpointId: string | null;
-  state: "registered" | "closed" | "expired";
+  state: "registered" | "reserved" | "closed" | "expired";
+  reservation?: {
+    requestId: string;
+    owner: string;
+    fence: number;
+    generation: number;
+    reservedAt: number;
+  };
 }
 export interface InboxRecord extends StoredRecord {
   event: IncomingEvent;

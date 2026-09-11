@@ -75,6 +75,7 @@ export const productionHostConfigurationSchema = z.strictObject({
     statePath: absolutePath,
     captureDirectory: absolutePath,
     stagingDirectory: absolutePath,
+    importDirectory: absolutePath.optional(),
   }),
 }).superRefine((value, context) => {
   if (value.task.expiresAt <= value.task.issuedAt)
@@ -123,7 +124,8 @@ export async function loadProductionHostConfiguration(root: string): Promise<Pro
   await assertPrivateDirectory(runtime);
   const config = productionHostConfigurationSchema.parse(JSON.parse(await readPrivateFile(join(runtime, "configuration.json"), 128 * 1024)));
   for (const path of [config.provider.projectSecretFile, config.local.socketPath, config.local.credentialFile,
-    config.runtime.statePath, config.runtime.captureDirectory, config.runtime.stagingDirectory])
+    config.runtime.statePath, config.runtime.captureDirectory, config.runtime.stagingDirectory,
+    config.runtime.importDirectory ?? join(runtime, "imports")])
     if (!beneath(runtime, resolve(path))) throw new Error("RUNTIME_PATH_OUTSIDE_INSTALLATION");
   if (config.local.socketPath !== join(runtime, "runtime.sock") || config.runtime.statePath !== join(runtime, "state.sqlite"))
     throw new Error("CANONICAL_RUNTIME_PATH_REQUIRED");

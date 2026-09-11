@@ -159,11 +159,9 @@ async function consumeRegisteredStream(
       "UNAVAILABLE",
       "Stream is unavailable or already consumed.",
     );
-    unit.put(
-      "streams",
-      { ...record, revision: record.revision + 1, state: "closed" },
-      record.revision,
-    );
+    // Reserve before opening. The execution facade attaches the exact request
+    // and fence, and both layers leave a terminal record after failure/crash.
+    unit.put("streams", { ...record, revision: record.revision + 1, state: "reserved" }, record.revision);
   });
   const controller = new AbortController();
   const onAbort = () => controller.abort();
@@ -235,6 +233,11 @@ async function consumeRegisteredStream(
       void Promise.resolve()
         .then(() => iterator!.return!())
         .catch(() => {});
+    s.transaction((unit) => {
+      const record = unit.get("streams", ref.id);
+      if (record?.state === "reserved")
+        unit.put("streams", { ...record, revision: record.revision + 1, state: "closed" }, record.revision);
+    });
   }
 }
 /** Buffered fallback, not progressive delivery. Replay consults shared children before opening the stream. */
