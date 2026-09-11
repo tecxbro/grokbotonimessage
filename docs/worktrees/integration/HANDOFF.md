@@ -3,13 +3,37 @@
 Status: concrete production path implemented locally; approved release,
 installation, activation, and external task evidence pending.
 
-The registered branch starts at immutable F0 and contains every reviewed WT-01
+The registered `fix-1` branch retains the immutable reviewed baseline and every
+reviewed WT-01
 through WT-09 input in `included-commits.json`. The existing lane factories
 assemble all 44 public handlers and 12 compiler families. The fresh exact Node
-24.13.0 non-live aggregate passes 762/762 across 79 files with no failures or
+24.13.0/npm 10.9.2 non-live aggregate passes 788/788 across 82 files with no failures or
 skips; the live suite remains explicitly excluded. Schema, generated-skill drift,
 ownership, docs, and package dry-run checks pass. The operating skill's 44 handler
 statuses are independently checked against the assembled public registry.
+
+## fix-1 closure
+
+Startup now atomically bootstraps only a truly fresh binding and otherwise
+validates the saved grant without rewriting it. Cancellation, revocation,
+expiry, permission narrowing, generations, identities, scope, and existing
+resource ownership therefore survive restart. Validation, enable, host startup,
+and the release-pinned task launcher reject denied or conflicting authority
+before SDK construction, provider sends, or Grok wake. Reauthorization remains
+unimplemented and deliberately separate from startup.
+
+The production composition now supplies request/fence-local guarded media,
+single-owner native attachment retrieval, owner-only trusted file import, and a
+trusted in-process registered-stream producer. Stream consumption is scoped,
+reserved once, cancellation-aware, terminal after use, and explicit when its
+live source is missing after restart. Capabilities and execution preflight share
+one action-aware inventory, including composite media and card prerequisites.
+
+The local macOS component run and 82-file aggregate passed on the pinned runtime.
+The committed `Assembled integration (ubuntu-latest)` and `Assembled integration
+(macos-latest)` jobs define automatic coverage with `fail-fast: false`, but this
+task did not run GitHub Actions or change branch protection. Linux and remote
+check enforcement remain external evidence.
 
 ## Conversation ordering boundary
 

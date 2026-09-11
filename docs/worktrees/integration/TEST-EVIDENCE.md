@@ -204,3 +204,72 @@ repository commit.
   and `provider-accepted` across same and different conversations on one line.
   It also proves the separate line-scoped `space.create` dependency.
 - No uncertain request was retried and no unknown outcome was relabeled.
+
+## fix-1 production integration closure
+
+Repository identity was recorded before edits: origin
+`https://github.com/tecxbro/grokbotonimessage.git`, registered worktree
+`/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1`, branch
+`fix-1`, clean HEAD `47ecdbda209fcbc2253bc8f0ebaa5752abd7ecba`, exactly
+the reviewed baseline and then equal to `origin/fix-1`. There were no staged,
+unstaged, or untracked paths. The implementation commits are `8606e3b`,
+`7f3b7d5`, and `c09fc04`; final evidence reconciliation, CI docs/ownership
+gates, and one production-composition capability assertion are the only later
+delta at this checkpoint.
+
+Test platform: macOS Darwin 27.0.0 arm64, Node 24.13.0, npm 10.9.2, and the
+locked `spectrum-ts` 12.8.0. Dependencies were reinstalled with
+`npm ci --ignore-scripts --no-audit --no-fund` (185 packages). The baseline was
+inspected without switching or resetting it: `production.ts` contained
+`seedAuthority`, `unavailableMedia`, and `unavailableStreams`. Running the new
+tests against the old tree was not attempted because changing checkout identity
+was prohibited. After the patch:
+
+- `npm run typecheck --workspace=@grokbot/photon-features`: PASS.
+- `npm test`: PASS, 31/31, 0 failed, 0 skipped.
+- `npm run photon:test`: PASS, 60/60, 0 failed, 0 skipped.
+- `npm run photon:check`: PASS after regenerating the candidate contract from
+  the intentional four-file contract delta; digest
+  `fe5a2d64f353de00f7fa5d7d4d344c71bf24954ca0fca00f5fa7a004bea36540`,
+  47 files. The first pre-regeneration check correctly reported
+  `CONTRACT_DIGEST_DRIFT`; it was not relabeled as a pass.
+- Focused compiled production authority/capability/resource/host/lifecycle
+  command: PASS, 29/29 before the final production capability assertion. Named
+  regressions cover fresh/restart authority, cancellation/revocation/expiry,
+  narrowing/generations/new-context/partial state, zero SDK/Grok work on denial,
+  launcher denial, native fetch-to-send, generated import-to-voice, composite
+  media, stream reservation/replay/restart loss, derived/runtime/deadline
+  cancellation, invalid/failed/oversize sources, mutable revocation, exactly-one
+  owner/send, and reconcile-first unknown outcomes.
+- `npm run photon:test:integration`: PASS, 788 tests across 82 files (all non-live),
+  0 failed, 0 cancelled, 0 skipped. The runner explicitly excludes the live
+  suite because this task authorized no credentials, provider/Grok action, or
+  message. This local result does not prove installation or live behavior.
+- `node packages/photon-features/scripts/generate-skill.mjs --check`: PASS,
+  44 operations, 44 examples, four assigned examples, 48 files, drift check true.
+- `node scripts/verify-docs.mjs integration`: PASS after evidence reconciliation.
+- `node scripts/verify-ownership.mjs integration`: PASS with exact maintained
+  paths; no sibling wildcard was added.
+- `npm pack --workspace=@grokbot/photon-features --dry-run --json
+  --ignore-scripts`: PASS. This inventories the package only and is not an
+  installed-archive test.
+
+The assembled 788-test run separately includes the real offline archive
+installer/rollback and distribution cases: an explicit archive fixture performs
+clean/repeat inactive installation and rollback with queued/unknown preservation;
+installed checksummed code opens/reopens SQLite outside the checkout; traversal,
+tamper, owner-lock, active-config, socket, unsafe downgrade, and dirty-candidate
+boundaries remain enforced. This is synthetic/local installed-archive evidence,
+not a new production-approved `.gpf.gz`, publication, or activation.
+
+The committed matrix defines `Assembled integration (ubuntu-latest)` and
+`Assembled integration (macos-latest)` with `fail-fast: false` and the exact
+runtime/component commands. Only the macOS local run exists here. No GitHub
+workflow execution, Linux result, required-check rule, or branch-protection
+configuration was inspected or changed.
+
+Untested/external: deployment code still must attach approved generated-file and
+live-stream producers to the trusted in-process APIs; no such external producer
+was configured. There was no real release approval, installation, activation,
+Spectrum/Grok credential, provider acceptance/delivery/read, progressive stream,
+extension rendering, interaction, or physical-device observation.

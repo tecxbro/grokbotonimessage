@@ -22,8 +22,8 @@ public F0 executor now reaches the offline Spectrum text send exactly once throu
 the authenticated local socket and durable request path. This is local/offline
 SDK-acceptance evidence only: it is not activation, provider delivery, read, or
 device evidence. The actual lane factories assemble all 44 operation handlers and
-12 compiler families. The exact Node 24.13.0 non-live aggregate passes 762/762
-across 79 files with no failures or skips; the separately gated live test is not
+12 compiler families. The exact Node 24.13.0 non-live aggregate passes 788/788
+across 82 files with no failures or skips; the separately gated live test is not
 counted.
 
 The concrete production composition and release-owned host/task launchers are now

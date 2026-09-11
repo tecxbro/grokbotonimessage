@@ -63,7 +63,8 @@ must already have gateway authentication available to the service account.
 
 ```sh
 sudo -u grok-photon install -d -m 0700 \
-  /opt/grok-photon/runtime/captures /opt/grok-photon/runtime/staging
+  /opt/grok-photon/runtime/captures /opt/grok-photon/runtime/staging \
+  /opt/grok-photon/runtime/imports
 sudo -u grok-photon sh -c 'umask 077; openssl rand -hex 32 > /opt/grok-photon/runtime/local-token'
 sudo -u grok-photon install -m 0600 /secure/input/spectrum-project-secret \
   /opt/grok-photon/runtime/project-secret
@@ -149,7 +150,8 @@ jq -n \
     runtime: {
       statePath: "/opt/grok-photon/runtime/state.sqlite",
       captureDirectory: "/opt/grok-photon/runtime/captures",
-      stagingDirectory: "/opt/grok-photon/runtime/staging"
+      stagingDirectory: "/opt/grok-photon/runtime/staging",
+      importDirectory: "/opt/grok-photon/runtime/imports"
     }
   }' | sudo -u grok-photon tee /opt/grok-photon/runtime/configuration.json >/dev/null
 sudo chmod 0600 /opt/grok-photon/runtime/configuration.json
@@ -168,6 +170,49 @@ Validate without opening Spectrum, the socket, or Grok:
 sudo -u grok-photon "$PHOTON_BIN/grok-photon-host" validate \
   --installation-root /opt/grok-photon
 ```
+
+On the first validation only, a genuinely empty authority store receives the
+task, context, and conversation reference atomically. Every later validation is
+read-only with respect to the grant: durable cancellation, revocation,
+permissions, issue/expiry times, generation, identities, scope, and resource
+ownership must exactly agree with configuration. A partial, denied, expired, or
+conflicting binding fails with a sanitized `AUTHORITY_*` code before Spectrum or
+Grok is opened. Configuration is not a reauthorization mechanism. This release
+has no administrative reauthorization command; use an independently reviewed
+administrative state transition when one exists rather than editing or deleting
+SQLite records.
+
+### Trusted media and stream producers
+
+The production composition exposes two in-process host APIs; neither is part of
+the 44 JSON action schemas:
+
+- `importMediaFile(principal, filename, metadata)` accepts only the authenticated
+  configured principal and a basename inside `runtime.importDirectory`. The
+  directory must be canonical, owner-only `0700`; the file is opened through the
+  approved-root/no-symlink policy, validated, copied to private staging, fsynced,
+  and published as a scoped durable descriptor. Generated input files must be
+  `0600`; trusted host integration code submits only the returned descriptor.
+- `registerTextStream(principal, source, expiresAt)` accepts an authenticated
+  in-process principal and an `AsyncIterable<string>`, binds it to durable
+  principal/scope/task/generation/expiry, and returns an inert stream reference.
+  Submit only that reference. Action JSON cannot provide callbacks, paths,
+  modules, shell text, or arbitrary network sources.
+
+An embedding that needs either feature must install its trusted producer before
+submitting the corresponding action. The standalone CLI deliberately has no
+path/import or executable-stream option. An unconsumed live iterator cannot
+survive process restart: its durable reference then fails explicitly instead of
+being reopened. Consumed streams are terminal and completed child results replay
+without opening them. `text.stream` remains a bounded buffered single-send
+fallback, not native progressive delivery.
+
+Capabilities use the same dependency inventory as execution preflight. A public
+handler, enabled provider operation, ready single owner, current durable grant,
+required media/stream/resource binding, administrative/native-content policy,
+and card template must all be present where applicable. Media inside composed
+content is evaluated per request. Runtime readiness remains separate from
+provider acceptance, delivery/read, rendering, interaction, and device evidence.
 
 ## 4. Install the concrete systemd lifecycle
 
@@ -294,3 +339,15 @@ Recompute `PHOTON_RELEASE`, reinstall the unit so `ExecStart` names the selected
 release, re-run offline smoke and `validate`, then explicitly enable/start. The
 task ID/generation and durable state remain configuration/state authority; the
 new host never blindly retries `unknown-outcome` work.
+
+## 8. Acceptance evidence by platform
+
+The source checkout defines an automatic `ubuntu-latest`/`macos-latest` matrix
+named `Assembled integration (<platform>)`, pinned to Node 24.13.0 and npm 10.9.2
+with `fail-fast: false`. It runs locked installation, typecheck,
+CLI/foundation/schema checks, the non-live assembled suite including real
+installer/rollback fixtures, generated-skill drift, and package dry-run. A
+committed workflow is only the required check definition; repository
+branch-protection enforcement must be verified separately. Local macOS results
+are recorded in `docs/worktrees/integration/TEST-EVIDENCE.md`; Linux results
+require the remote workflow and are not inferred from this file.

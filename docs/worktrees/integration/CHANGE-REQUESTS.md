@@ -43,6 +43,29 @@
   later work in the same conversation. `queued`, `blocked`, and
   `unknown-outcome` protection is unchanged, and `space.create` retains a
   line-scoped creation dependency independent of rate limiting.
+- CR-I-021: **closed locally.** Startup no longer reissues configuration-derived
+  authority. Fresh task/context/space state is atomic; existing cancelled,
+  revoked, expired, narrowed, stale-generation, new-context, partial, and
+  conflicting evidence fails validation/startup without SDK construction or
+  durable rewrites. Reauthorization remains a separate unimplemented
+  administrative transition.
+- CR-I-022: **closed locally.** The production executor lazily binds a real
+  request/fence-local `GuardedMediaStager`, existing-owner native attachment
+  retrieval, owner-only trusted file import, and shared media capacity. Staged
+  descriptors serve fetch/send/voice and composed/native consumers without
+  widening action JSON to paths or URLs.
+- CR-I-023: **closed locally.** Trusted registered sources now use scoped inert
+  references with `registered -> reserved -> closed` state, exact request/fence
+  reservation, combined cancellation, single-use consumption, durable replay,
+  and explicit post-restart source loss. Streaming remains buffered fallback.
+- CR-I-024: **closed locally.** Production capability reporting and execution
+  preflight share the same action-aware dependency inventory and retain useful
+  provider/live-evidence blockers.
+- CR-I-025: **closed in source, platform execution pending.** Production tests
+  use a canonical private `os.tmpdir()`/`mkdtemp()` fixture with a measured final
+  Unix socket path. A fail-fast-disabled Node 24.13.0/npm 10.9.2 Linux/macOS
+  workflow runs the direct assembled component gates without spoofing the
+  integration-worktree identity check.
 
 ## Follow-up gates
 
@@ -61,6 +84,14 @@
 - CR-I-018: collect redacted controlled-task evidence that the configured Grok
   gateway accepted the pointer, loaded the selected release skill, and claimed
   the durable handoff. Local command-shape tests are not this external proof.
+- CR-I-026: require both remote check names, `Assembled integration
+  (ubuntu-latest)` and `Assembled integration (macos-latest)`, in repository
+  branch protection after their first successful authorized workflow run.
+  This task neither ran the remote workflow nor changed repository settings.
+- CR-I-027: deployment embedding code must connect each approved generated-file
+  or live-text producer to the trusted in-process composition API. The standalone
+  CLI intentionally exposes no arbitrary file path, URL, callback, or executable
+  stream input; no external producer was installed by this task.
 
 ## Evidence boundary
 

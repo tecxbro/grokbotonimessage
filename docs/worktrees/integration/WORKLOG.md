@@ -195,3 +195,27 @@ Independent conversations on one line no longer depend on each other, and
 combined non-live suite passes 762/762 tests across 79 files with no failures or
 skips. No provider retry, installation, activation, live send, or device action
 occurred.
+
+## 2026-09-11 — fix-1 production integration closure
+
+Recorded the registered `fix-1` checkout at the exact reviewed baseline with a
+clean index/worktree and no remote divergence. Retrieved D0-D10 plus the Node
+temporary-filesystem/IPC and GitHub matrix references, loaded the requested
+Spectrum/iMessage skills, and checked the locked 12.8.0 public declarations.
+
+Replaced startup grant rewriting with atomic fresh bootstrap or read-only durable
+validation. Wired the validated context through production, activation, task
+launch, routing, preflight, and execution. Added request/fence-local guarded
+media, single-owner native retrieval, an owner-only trusted import producer, and
+a scoped single-use stream registry with honest restart/cancellation semantics.
+Unified production capability reporting and execution preflight around the same
+action-aware dependency inventory.
+
+Moved production fixtures to a canonical private short temporary root and added
+the fail-fast-disabled Ubuntu/macOS matrix pinned to Node 24.13.0/npm 10.9.2.
+The exact local macOS assembled suite passes 788/788 across 82 non-live files
+with no failures or skips, including the real offline installer/rollback and
+distribution cases. Generated contracts/skill, docs, exact ownership, and the
+workspace package dry-run pass. Remote CI, branch-protection enforcement,
+production-approved installation/activation, provider behavior, and device
+evidence were not authorized or observed.

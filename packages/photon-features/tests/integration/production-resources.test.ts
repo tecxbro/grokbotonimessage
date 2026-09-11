@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { attachment, resolveContents, type Content, type ContentInput, type Message, type Space } from "spectrum-ts";
 import { DurableSQLiteStore } from "../../src/adapters/state/sqlite.js";
 import type { OwnedSdk } from "../../src/adapters/transport/spectrum-owner.js";
-import type { Action, OperationResult, ResourceRef } from "../../src/contracts/index.js";
+import type { Action, Capability, OperationResult, ResourceRef } from "../../src/contracts/index.js";
 import type { ProductionHostConfiguration } from "../../src/host/configuration.js";
 import { createProductionComposition } from "../../src/host/production.js";
 import { privateTestRoot } from "../helpers/private-temp.js";
@@ -130,6 +130,12 @@ test("production native fetch stages once and its durable descriptor sends attac
   const composition = await f.compose();
   await composition.runtime.start();
   try {
+    const capabilityResponse = await composition.executor.dispatch({ version: 1, method: "capabilities",
+      contextId: f.configuration.task.contextId }, composition.principal) as { ok: true; result: Capability[] };
+    assert.equal(capabilityResponse.ok, true);
+    for (const operation of ["attachment.fetch", "attachment.send", "voice.send", "content.compose", "text.stream"])
+      assert.equal(capabilityResponse.result.find(item => item.operation === operation)?.availability.conversation,
+        "available", operation);
     const fetched = await resultOf(composition, { version: 1, idempotencyKey: "fetch-1",
       contextId: f.configuration.task.contextId, operation: "attachment.fetch", arguments: { attachment: media } });
     assert.equal(fetched.status, "executor-completed", JSON.stringify(fetched));

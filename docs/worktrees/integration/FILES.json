@@ -2,6 +2,7 @@
   "version": 1,
   "lane": "integration",
   "files": [
+    {"path":".github/workflows/photon-integration.yml","purpose":"Pinned Linux and macOS assembled component gate"},
     {"path":"docs/worktrees/integration/AGENTS.md","purpose":"Integration-local rules"},
     {"path":"docs/worktrees/integration/README.md","purpose":"Scope and status"},
     {"path":"docs/worktrees/integration/ARCHITECTURE.md","purpose":"Assembled architecture and decisions"},
@@ -26,20 +27,29 @@
     ,{"path":"packages/photon-features/README.md","purpose":"Assembled package commands and evidence boundary"}
     ,{"path":"packages/photon-features/package.json","purpose":"grok-photon bin and integration export wiring"}
     ,{"path":"packages/photon-features/src/index.ts","purpose":"Public integration composition export"}
+    ,{"path":"packages/photon-features/src/host/authority.ts","purpose":"Transactional fresh bootstrap and durable authority validation"}
+    ,{"path":"packages/photon-features/src/host/capabilities.ts","purpose":"Shared production dependency inventory for reporting and execution preflight"}
     ,{"path":"packages/photon-features/src/host/configuration.ts","purpose":"Strict owner-only version-2 production configuration and activation writer"}
     ,{"path":"packages/photon-features/src/host/grok-wake.ts","purpose":"Pointer-only existing Grok gateway wake binding"}
     ,{"path":"packages/photon-features/src/host/index.ts","purpose":"Public production host composition exports"}
     ,{"path":"packages/photon-features/src/host/owner-lock.ts","purpose":"Conservative exclusive host ownership lifecycle"}
     ,{"path":"packages/photon-features/src/host/process.ts","purpose":"Release-owned validate enable run disable process entrypoint"}
     ,{"path":"packages/photon-features/src/host/production.ts","purpose":"Single-route production Spectrum SQLite ingress outbox and feature composition"}
+    ,{"path":"packages/photon-features/src/host/resource-ports.ts","purpose":"Request-fence-local guarded media and trusted import bindings"}
     ,{"path":"packages/photon-features/src/host/selected-release.ts","purpose":"Immutable selected release and operating skill verification"}
     ,{"path":"packages/photon-features/src/host/task-launcher.ts","purpose":"Release-pinned Grok task authority and local client binding"}
+    ,{"path":"packages/photon-features/src/host/stream-registry.ts","purpose":"Trusted scoped single-use production stream registry"}
     ,{"path":"packages/photon-features/src/features/native/module.ts","purpose":"Public durable-child adapter for scoped WT-07 native operations"}
     ,{"path":"packages/photon-features/src/integration/assembly.ts","purpose":"Fail-closed 44-operation and compiler surface assembly"}
     ,{"path":"packages/photon-features/src/integration/index.ts","purpose":"Integration composition entry point"}
+    ,{"path":"packages/photon-features/src/runtime/core/execution-services.ts","purpose":"Lazy request-fence resource binding and combined cancellation facade"}
     ,{"path":"packages/photon-features/tests/integration/assembly.test.ts","purpose":"Actual lane factory registration and compiler completeness tests"}
+    ,{"path":"packages/photon-features/tests/helpers/private-temp.ts","purpose":"Canonical private portable temporary fixture with Unix socket length guard"}
+    ,{"path":"packages/photon-features/tests/integration/production-authority.test.ts","purpose":"Production SQLite restart authority regression coverage"}
+    ,{"path":"packages/photon-features/tests/integration/production-capabilities.test.ts","purpose":"Action-aware production dependency capability coverage"}
     ,{"path":"packages/photon-features/tests/integration/production-host.test.ts","purpose":"Concrete one-owner host IPC offline Spectrum and pointer-only Grok path tests"}
     ,{"path":"packages/photon-features/tests/integration/production-lifecycle.test.ts","purpose":"Selected release strict activation and exclusive ownership lifecycle tests"}
+    ,{"path":"packages/photon-features/tests/integration/production-resources.test.ts","purpose":"Real production media stream cancellation restart and SDK-owner integration coverage"}
     ,{"path":"packages/photon-features/tests/lanes/wt-08/distribution.test.mjs","purpose":"Deterministic clean-candidate release-boundary regression fixture"}
     ,{"path":"packages/photon-features/scripts/package.mjs","purpose":"Checksummed release payload collector including the required SQLite migration"}
     ,{"path":"packages/photon-features/src/adapters/state/sqlite.ts","purpose":"Production SQLite adapter with package-relative migration resolution"}

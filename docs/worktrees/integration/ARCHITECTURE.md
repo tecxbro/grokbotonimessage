@@ -114,3 +114,37 @@ release launcher; the launcher verifies release/task authority before injecting
 the three `GROK_PHOTON_*` bindings. This establishes the repository mechanism,
 not external task evidence: a deployed Grok task must still demonstrate gateway
 acceptance, skill load, and claim without exposing credentials or message bodies.
+
+## fix-1 durable authority and resource bindings
+
+Production construction now performs one transactional bootstrap-or-validate
+decision. A completely fresh task/context/space binding is inserted atomically.
+Any existing or partial identity is durable evidence: cancellation, revocation,
+generation, permissions, issuance, expiry, principal, task, scope, and resource
+ownership are validated and never rewritten from configuration. Validation,
+enable, startup, and the release-pinned task launcher fail closed before a
+Spectrum client or Grok wake when that evidence is denied or incompatible. This
+patch intentionally introduces no reauthorization command.
+
+The execution facade lazily creates request/fence-local resource ports. A
+`GuardedMediaStager` receives the public transaction facade, mutable-claim check,
+context, clock, cancellation signal, and authorized resolver; only shared
+capacity and filesystem policy live at host scope. Native downloads reuse the
+one Spectrum owner and pinned iMessage `getAttachment(...).stream()` path. A
+trusted in-process file importer authenticates the configured principal and
+restricts input to a basename in the owner-only imports directory.
+
+Registered text sources are trusted in-process inputs. Registration stores a
+scoped inert reference and retains the live iterator only in the host registry.
+Consumption transitions `registered -> reserved -> closed`, binds reservation
+to the exact request/owner/fence/generation, combines cancellation signals, and
+never invents a provider ID. Completed durable child results replay without
+reopening. A crash loses an unconsumed live iterator by design, so restart
+reports unavailable rather than fabricating recovery. Delivery remains bounded
+buffered fallback, not progressive streaming.
+
+The production capability evaluator feeds both reporting and execution
+preflight from one dependency inventory. Handler registration, provider
+configuration/readiness, authority policy, card templates, media, streams,
+composite media content, and resource bindings remain distinct from provider
+support and live evidence.

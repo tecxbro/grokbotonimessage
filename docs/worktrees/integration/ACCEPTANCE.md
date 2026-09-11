@@ -26,9 +26,10 @@
    `DurableSQLiteStore`. Synthetic inactive reinstall/rollback tests continue
    to preserve state. The approval used for local acceptance was test scaffolding;
    no production-approved artifact was published or activated.
-10. **PASS — actual candidate gates:** Node 24.13.0 aggregate verification runs
-    762 non-live tests across 79 files with zero failures or skips, plus schema,
-    ownership, docs, generated-skill, smoke, and package dry-run checks.
+10. **PASS — actual candidate gates:** Node 24.13.0/npm 10.9.2 component
+    verification runs 788 non-live tests across 82 files with zero failures or
+    skips, plus schema, ownership, docs, generated-skill, real offline
+    installer/rollback/distribution fixtures, and package dry-run checks.
 11. **PASS LOCALLY — concrete startup:** development, deployment, and operating
     instructions have distinct roles. The release owns strict configuration,
     validate/enable/run/disable commands, single-owner recovery-first lifecycle,
@@ -52,3 +53,16 @@
     `unknown-outcome` predecessors still fence later work in the same conversation;
     independent conversations on the same line proceed, while `space.create`
     retains a separate line-scoped creation dependency. Rate limiting is unchanged.
+17. **PASS — restart-safe authority:** fresh authority bootstraps atomically;
+    existing cancelled, revoked, expired, narrowed, generation-mismatched,
+    conflicting, or partial bindings fail closed without rewriting evidence,
+    constructing Spectrum, or waking Grok. No reauthorization command was added.
+18. **PASS OFFLINE — production resources:** native attachment retrieval,
+    trusted generated-file import, outbound attachment/voice, composed media,
+    and registered streams use real request-fenced production bindings. Stream
+    delivery remains bounded buffered fallback, and a lost restart source is
+    reported honestly.
+19. **PASS LOCALLY; REMOTE MATRIX PENDING — portability:** macOS passed the
+    exact component and assembled suite. The committed fail-fast-disabled Linux/
+    macOS workflow defines the required checks, but neither its remote execution
+    nor branch-protection enforcement was authorized or observed here.
