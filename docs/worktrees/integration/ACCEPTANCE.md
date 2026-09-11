@@ -39,3 +39,7 @@
 14. **PASS — request/test distinction:** development instructions prohibit
     unsolicited test sends, while the operating skill handles a real incoming
     request only in its originating conversation and authorized context.
+15. **BLOCKED — skill and task binding:** the packaged skill and CLI environment
+    contract exist, but no production orchestrator loader or task-launch injector
+    is identified in this repository. Activation requires the deployment handoff
+    to name the actual external mechanism and provide redacted task-level proof.

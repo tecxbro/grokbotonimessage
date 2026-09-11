@@ -115,10 +115,40 @@ The approved host integration must provide all of the following before startup:
    `/absolute/grok-photon/releases/<sha256>/SKILL.md` bound as the Grok operating
    skill without overwriting any fuller installed voice or safety policy.
 
-No repository command currently performs items 1 through 5. Record the exact
-host command, supervisor identifier, configuration schema, secret-store binding,
-skill-binding mechanism, and recovery owner in this section before authorizing
-activation.
+No repository command currently performs items 1 through 5. In particular, the
+installer copies `SKILL.md` into the immutable release but does not configure the
+existing Grok orchestrator to read it. The client CLI reads the three
+`GROK_PHOTON_*` variables, but no production launcher in this repository supplies
+them. File presence and CLI support are therefore not skill-load or task-binding
+evidence.
+
+### Required deployment binding handoff
+
+Before activation, the deployment handoff must replace the current `unbound`
+status with all of the following concrete, non-secret facts:
+
+| Required field | Evidence required |
+| --- | --- |
+| Release identity | Selected release SHA-256 and exact installed `SKILL.md` path plus file SHA-256. |
+| Orchestrator identity | Exact existing Grok orchestrator/service identity and configuration location. |
+| Skill-load mechanism | Exact configuration key, command, API, symlink, or prompt-assembly component that loads the versioned skill. State whether it loads once or for every messaging task, and how a task is pinned to the selected release. |
+| Task-launch mechanism | Exact component and configuration that launches each messaging task. |
+| Context binding | Authoritative source and injection step for `GROK_PHOTON_CONTEXT_ID`; record only a non-secret context/task correlation identifier. |
+| Socket binding | Authoritative source and injection step for `GROK_PHOTON_SOCKET`, including owner and permission checks. |
+| Credential binding | Secret-store/file provisioning and injection step for `GROK_PHOTON_CREDENTIAL_FILE`; record path, owner, and mode, never credential contents. |
+| Task-level proof | One controlled, non-message task record showing the expected skill release/hash was loaded and all three variable names were present before CLI invocation. Redact values and do not infer this from installation logs. |
+| Rollback behavior | Exact step that rebinds new tasks to the previous release skill and launcher while preserving in-flight task identity. |
+
+The proof must come from the task-launch boundary or the launched task, not only
+from the installer, filesystem, package manifest, or orchestrator startup log.
+An orchestrator that caches instructions must identify its invalidation/reload
+behavior; otherwise a newly selected release is not proven active for new tasks.
+
+Current handoff status is `unbound`: the actual external loader, task launcher,
+and environment-injection mechanism are unknown and have no task-level evidence.
+Record the exact host command, supervisor identifier, configuration schema,
+secret-store binding, skill-load mechanism, task-launch mechanism, and recovery
+owner here before authorizing activation.
 
 ## 4. Startup stop gate
 

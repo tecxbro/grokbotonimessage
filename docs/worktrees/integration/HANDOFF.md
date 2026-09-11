@@ -27,3 +27,22 @@ operating skill distinguishes real incoming work in its originating conversation
 from unsolicited development tests. Deployment remains blocked at startup: the
 candidate does not ship a release-owned host executable or an approved supervisor
 start/stop command. No approval failure is attributed to the prior wording.
+
+## Deployment binding handoff
+
+Status: **UNBOUND — activation blocked.**
+
+Repository inspection found no production mechanism that configures the existing
+Grok orchestrator to load the versioned `SKILL.md`, and no production task
+launcher that injects `GROK_PHOTON_CONTEXT_ID`, `GROK_PHOTON_SOCKET`, and
+`GROK_PHOTON_CREDENTIAL_FILE`. The installer preserves the skill inside the
+release. The client CLI reads those variables. Neither fact proves that a Grok
+messaging task received the skill or bindings.
+
+The actual external orchestrator identity, skill-load configuration, per-task
+reload/pinning behavior, task-launch component, context source, socket binding,
+credential-file binding, and rollback rebinding step are unknown. No task-level
+binding observation exists. The deployment runbook now lists the exact handoff
+fields and requires controlled non-message evidence from the task-launch boundary
+or launched task before activation. Filesystem presence, package inventory,
+installer output, or an orchestrator startup log alone cannot close this gate.

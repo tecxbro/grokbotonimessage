@@ -113,3 +113,20 @@ supervisor start/stop command. The current runbook therefore documents exact
 release staging, configuration/skill-binding requirements, offline smoke, and
 inactive rollback, then stops explicitly before activation. It does not infer
 that documentation wording caused any approval failure.
+
+## 2026-09-10 — Grok skill and launcher binding audit
+
+Searched production source, scripts, package metadata, service/configuration
+files, and current deployment documentation for the Grok skill loader and task
+environment injector. The installer only preserves `SKILL.md` in the versioned
+release. The client CLI reads `GROK_PHOTON_CONTEXT_ID`, `GROK_PHOTON_SOCKET`, and
+`GROK_PHOTON_CREDENTIAL_FILE`; tests supply them directly. No production
+orchestrator loader, task-launch adapter, service unit, or injection configuration
+exists in this repository.
+
+Updated the deployment runbook and handoff to record the binding as `unbound` and
+activation-blocking. Closure now requires the exact external orchestrator and
+per-task loading/injection mechanisms plus redacted proof observed at the task
+launch boundary or within a controlled non-message task. Release file presence,
+package inventory, install output, and orchestrator startup alone are explicitly
+insufficient.

@@ -63,8 +63,11 @@ export function verifyDocs(root=process.cwd(),lane='wt-00') {
     for(const marker of ['75 passed','756','live test','not prove installation'])
       if(!evidence.includes(marker))throw new Error(`MISSING_INTEGRATION_EVIDENCE:${marker}`);
     const deployment=read('packages/photon-features/DEPLOYMENT.md');
-    for(const marker of ['single current deployment document','blocked at startup','originating conversation','no approved startup command'])
+    for(const marker of ['single current deployment document','blocked at startup','originating conversation','no approved startup command','Required deployment binding handoff','Current handoff status is `unbound`','task-launch boundary'])
       if(!deployment.includes(marker))throw new Error(`MISSING_DEPLOYMENT_BOUNDARY:${marker}`);
+    const handoff=read('docs/worktrees/integration/HANDOFF.md');
+    for(const marker of ['Deployment binding handoff','UNBOUND','GROK_PHOTON_CONTEXT_ID','GROK_PHOTON_SOCKET','GROK_PHOTON_CREDENTIAL_FILE','controlled non-message evidence'])
+      if(!handoff.includes(marker))throw new Error(`MISSING_BINDING_HANDOFF:${marker}`);
     for(const [path,markers] of Object.entries({
       'docs/photon-features/rollout.md':['Historical F0 checkpoint','current deployment runbook'],
       'packages/photon-features/INSTALL.md':['Historical inactive-install checkpoint','DEPLOYMENT.md'],
@@ -73,7 +76,7 @@ export function verifyDocs(root=process.cwd(),lane='wt-00') {
     })) for(const marker of markers) if(!read(path).includes(marker))
       throw new Error(`MISSING_INSTRUCTION_ROLE:${path}:${marker}`);
     return {lane,structural:'passed',sources:lock.sources.length,lanes:ledger.lanes.length,
-      semanticReview:'Development, deployment, and operation are separated; startup remains blocked pending an approved host supervisor.'};
+      semanticReview:'Development, deployment, and operation are separated; startup and Grok skill/task binding remain blocked pending approved external mechanisms.'};
   }
   const official=JSON.parse(read('docs/photon/source-lock.json'));
   checkSourceLock(official,read);

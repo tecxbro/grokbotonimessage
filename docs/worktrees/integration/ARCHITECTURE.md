@@ -80,3 +80,12 @@ The ownership manifest records the exact historical/lane-owned instruction and
 packaging paths integration may maintain for this boundary. They remain assigned
 to their original lanes for historical inventory, while integration maintenance
 is explicit, path-exact, and contains no wildcard grant.
+
+The release boundary ends at immutable file installation. Skill loading and the
+three `GROK_PHOTON_*` bindings belong to the external Grok task-launch boundary.
+The current repository contains no adapter or configuration for that boundary,
+so integration cannot infer it from `SKILL.md` presence or from the CLI's reads of
+environment variables. Deployment acceptance requires the external mechanism to
+identify its orchestrator, per-task skill load/reload, selected-release pin,
+context resolver, socket binding, credential-file binding, and rollback behavior,
+with redacted evidence observed at task launch or inside a controlled task.

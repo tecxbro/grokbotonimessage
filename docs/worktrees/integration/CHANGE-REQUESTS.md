@@ -45,6 +45,13 @@
   then replace the explicit startup stop gate in `DEPLOYMENT.md` with the exact
   commands, configuration schema, secret binding, lock ownership, and recovery
   owner. The client `grok-photon` executable is not the missing host service.
+- CR-I-016: **deployment blocker.** Identify and verify the actual existing Grok
+  orchestrator skill loader and per-task launcher. Record how the selected
+  release's `SKILL.md` is loaded for each messaging task and how
+  `GROK_PHOTON_CONTEXT_ID`, `GROK_PHOTON_SOCKET`, and
+  `GROK_PHOTON_CREDENTIAL_FILE` are sourced and injected. Close only with
+  redacted task-level evidence; file presence and installer output are
+  insufficient.
 
 ## Evidence boundary
 

@@ -93,3 +93,24 @@ provider delivery/read, extension rendering, human interaction, or device behavi
 No final release archive was produced, so inclusion of the current deployment
 runbook in a real `.gpf.gz` remains gated by clean-candidate workflow approval.
 No installation, activation, provider call, message, or device action occurred.
+
+## Grok skill and launcher binding audit
+
+- Production-source search for `SKILL.md` and the three `GROK_PHOTON_*` names
+  found only `packages/photon-features/src/cli/main.ts` reading
+  `GROK_PHOTON_CONTEXT_ID`, `GROK_PHOTON_SOCKET`, and
+  `GROK_PHOTON_CREDENTIAL_FILE`. No production loader or injector was found.
+- A repository search excluding dependencies and compiled output found no
+  `launchd` plist or service-unit file for skill loading or task launch.
+- Installer inspection confirms that it extracts and verifies release files but
+  does not modify an existing Grok policy or configure the orchestrator.
+- `node scripts/verify-docs.mjs integration`: PASS after adding required markers
+  for the `UNBOUND` deployment handoff, all three environment dependencies, and
+  controlled non-message task-level evidence.
+- `node scripts/verify-ownership.mjs integration`: PASS, 439 changed paths
+  checked with five exact cross-lane maintenance paths.
+
+This is negative repository evidence, not proof about an uninspected external
+Grok deployment. The actual loader/injector remains unknown, and no skill-load,
+task launch, installation, activation, provider, message, or device action was
+performed.
