@@ -219,3 +219,11 @@ distribution cases. Generated contracts/skill, docs, exact ownership, and the
 workspace package dry-run pass. Remote CI, branch-protection enforcement,
 production-approved installation/activation, provider behavior, and device
 evidence were not authorized or observed.
+
+## 2026-09-11 — new fix-1 repair preparation
+
+User explicitly designated fix-1 as coordinator, assigned thirteen failures and authorized shared preparation plus A-E worktrees. Rechecked clean a3c36b3a04208a022fa7f994f1580b54223dc2c9; primary and historical worktrees remain untouched. Recorded exact maintenance ownership before code edits. Reproduced three shared failures (missing declaration incorrectly implemented, missing import protocol, absent admission revision) with successful compilation and three assertion failures. A test-fixture permission error was corrected before counting the card reproduction.
+
+Implemented shared admission, import, capability and resource/correlation primitives and narrow production bindings. Kept final receiving-loop and feature implementations delegated. Inspected installed public SDK types and retrieved official Markdown pages; narrowed provider has no management/native vote identity API at 12.8.0. Existing card backend seam is generic and no actual authenticated backend configuration was found. These are documented dependencies, not permissions for a second SDK or invented callback protocol.
+
+Shared preparation verification: 28 focused tests, typecheck, generated contracts, 31 root CLI tests, 60 foundation tests, documentation/ownership and skill drift checks passed. Full aggregate initially hit a concurrent-build import race; the serialized rerun passed 800/800 across 84 files with zero skips. Raw logs and hashes are recorded in TEST-EVIDENCE.md.

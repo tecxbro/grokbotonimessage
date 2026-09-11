@@ -98,3 +98,13 @@
 These requests are not passes. Live authorization, account/line configuration,
 provider delivery/read, app-extension rendering, user interaction, and physical
 device evidence remain outside this integration assignment.
+
+## fix-1 repair shared decisions (2026-09-11)
+
+The user assigned this coordinator the exact preparation scope; no additional coordinator approval is pending. Implemented signatures and caller/owner/acceptance details are in ../fix-1-repair/INTERFACES.md.
+
+External dependency P-1: spectrum-ts 12.8.0's public narrowed iMessage provider does not expose management get/vote/unvote/addOption or authoritative incoming native poll/option IDs. Required upstream contract must expose scoped operations and native vote identity through the existing owner. Current advanced-kit examples are not that integration. No dependency upgrade, private client access or second client was performed.
+
+External dependency C-1: no concrete authenticated card backend wire/version, verifier/key policy, participant authentication, signed nonce transport, deployed extension callback contract or universal update URL mapping is supplied. Existing generic adapter and templates are not evidence these exist. Continue other work; do not claim problem 6 complete using a test verifier.
+
+Final coordinator work: connect A's shared live/replay reference and receipt path; bind B's real resolver/management only where a public contract exists; integrate C's revision/session work and real backend when supplied; integrate D's CLI/manual skill and E's CI; then reconcile generated capability inventory and run full production-journey regressions. Actual Grok and device observations remain separately unverified.

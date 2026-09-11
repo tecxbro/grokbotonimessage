@@ -29,3 +29,9 @@ An exception after possible provider dispatch yields unknown-outcome with retry=
 The committed baseline already includes legacy `contracts/ports.ts`, table-based ExecutionServices, private `runtime/core/execution-boundary.ts` and feature-local child record access. These remain untouched and are NOT the frozen public service contract. New authors use the exact `feature.ts` and `services.ts` entry points; old root/`./contracts` type names are retained to keep existing CLI/lane code compiling. This is an explicit compatibility boundary, not permission for new features to use private records.
 
 Integration/WT-01 must adapt the inherited runtime to f0-services-2, and WT-03 through WT-07 must consume that single seam. `createRuntimeHost` requires that explicit contract version and registration into the injected executor; it cannot silently attach existing implementations. Foundation tests prove the public interface and test-fixture semantics, not production executor durability or fully integrated feature behavior.
+
+## fix-1 maintenance preparation (2026-09-11)
+
+The additive `ExecutionServices.admission` snapshot carries runtime-captured card update metadata. DurableSubmission captures a settled card revision in the same authorized transaction as the first outbox insert. It preserves that value on idempotent replay and recovery; production maps it into CardRuntimeOptions.updateRevision. Legacy requests without metadata stay blocked. Outbox JSON gains an optional field; no existing SQL migration is rewritten.
+
+The authenticated local protocol also accepts `media.import` with contextId and a strict basename/metadata input, delegating to the existing private host importer. It returns a staged descriptor, not an operation/delivery result; no paths enter messaging action payloads. The CLI is worker D's remaining implementation. See [repair interfaces](../worktrees/fix-1-repair/INTERFACES.md) for exact signatures, trust boundaries and worker ownership.

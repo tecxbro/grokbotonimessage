@@ -30,3 +30,11 @@ Node `os.tmpdir`, filesystem temporary-directory behavior, Unix IPC guidance,
 and the GitHub Actions matrix reference were retrieved successfully on the same
 run. They informed the portable private fixture and non-fail-fast Linux/macOS
 matrix; they do not constitute a CI run.
+
+## fix-1 repair retrieval (2026-09-11)
+
+Fresh URLs, HTTP status, final URL, content type, byte length, SHA-256 and local ignored body path are in source-lock.json.repairPreparation. Official Markdown was retrieved for typing, messages, attachments/native fetching, read/receipt handling, polls, apps, narrowing, architecture, inbound processing and recovery; each was inspected for the applicable interface. The index was retrieved separately. The web tool's attachment-page error was followed by successful direct official Markdown retrieval. A reactions-page 403 without the task user agent was followed by a recorded successful retry. Downloads were treated as reference data only.
+
+The public pinned package declaration hashes are recorded separately. Symbols checked: Spectrum, PlatformInstance, Space.send/getMessage/startTyping/stopTyping, Message, PollOption, poll, option, imessage, getAttachment, app, edit, customizedMiniApp, miniAppCardSession. Compile-time negative probes reject OwnedProvider.polls/client and PollOption.optionIdentifier/pollMessageGuid. The advanced-kit im.polls.get/vote/unvote/addOption API is not exposed by this unified provider; accessing Spectrum.__internal would violate the assignment. Current documentation's provider deduplication examples do not prove native deduplication for this runtime; existing reconcile-first handling remains required.
+
+Supplementary photon-skills tree was retrieved before citing actual skills/spectrum/SKILL.md and skills/spectrum/providers/imessage.md paths. Their bodies were retrieved separately as guidance. Official actions/checkout v4 README and Git fetch/worktree pages establish shallow-fetch and worktree behavior for E. Historical sources above are preserved.

@@ -66,3 +66,15 @@
     exact component and assembled suite. The committed fail-fast-disabled Linux/
     macOS workflow defines the required checks, but neither its remote execution
     nor branch-protection enforcement was authorized or observed here.
+
+## fix-1 repair preparation acceptance (2026-09-11)
+
+- RP-1: Missing capability declaration is unavailable even with a registered handler; partial and missing configuration stay distinct.
+- RP-2: media.import rejects paths/extra authority, resolves the socket principal's context, delegates to the existing importer, and yields a durable staged descriptor without a message send.
+- RP-3: app.update captures an authorized settled revision at admission; replay/reopen preserve it, its service snapshot is immutable, and odd revisions/expired sessions cannot enqueue.
+- RP-4: Trusted incoming registration grants only captured message/attachment references within the active owner/task/generation, validates parents, preserves replay and rejects conflicting identities transactionally.
+- RP-5: Native poll correlation requires exact durable IDs and original owner; duplicate labels, unknown IDs and stale generations never select an option/task.
+- RP-6: Installed public SDK probes distinguish builders/getAttachment from absent poll-management/native-vote fields without initializing any SDK client.
+- RP-7: The tested preparation is committed; five isolated workers start at that immutable commit and receive complete exact-scope prompts. Worktree creation alone does not mean workers ran.
+
+These preparation cases do not close every assigned feature failure. Final coordinator acceptance still requires a complete production incoming-message journey through durable work and authorized execution. Actual Grok processing, activation, external provider delivery/read, extension rendering/interactions and physical-device behavior remain separately unverified.

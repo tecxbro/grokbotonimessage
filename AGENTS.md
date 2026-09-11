@@ -41,3 +41,7 @@ an installed, activated operating skill to ignore real incoming user work: such
 work is answered in its originating conversation under the installed skill and
 its current scoped authorization. A fixture, example, or development request is
 not an incoming user conversation and grants no authority to send.
+
+## fix-1 repair maintenance assignment (2026-09-11)
+
+For this user-authorized repair only, the coordinator works in `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1` on `fix-1`. The assignment is `docs/worktrees/fix-1-repair/ASSIGNMENT.md`; exact maintenance owners are in its `FILES.json`. These override historical lane locations/ownership only for the listed repair files. Workers A-E use their own registered repair worktrees and exact delegated paths. Shared contracts, production composition, configuration/protocol, capability evaluation, dependencies and final generated inventory remain coordinator-owned. Workers request additional exact paths; no wildcard ownership or sibling edits. All operating safeguards above remain effective.

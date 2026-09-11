@@ -148,3 +148,9 @@ preflight from one dependency inventory. Handler registration, provider
 configuration/readiness, authority policy, card templates, media, streams,
 composite media content, and resource bindings remain distinct from provider
 support and live evidence.
+
+## fix-1 repair preparation (2026-09-11)
+
+This maintenance assignment makes the registered fix-1 branch the repair coordinator. Historical integration ownership and F0 evidence above remain historical. Exact scope is recorded in ../fix-1-repair/FILES.json and executable/delegated interfaces in ../fix-1-repair/INTERFACES.md.
+
+Shared preparation adds atomic admission metadata for card updates, a context-authenticated media-import protocol delegating to the existing importer, explicit implementation/configuration capability facts, and trusted incoming-reference/native-poll correlation primitives over the existing SQLite store. There is no new provider owner, receiving loop, outbox, model, callback wire protocol or applied-migration rewrite. Only the card-admission and local-import production bindings are connected in preparation. A-E implement their exact lanes; final receiver/poll/callback composition and structural-inventory reconciliation remain coordinator work.

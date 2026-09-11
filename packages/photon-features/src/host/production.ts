@@ -357,7 +357,12 @@ export async function createProductionComposition(
       stageAttachment: (reference, services) => resourcePorts.stageAttachment(reference, services),
     }),
     createPollFeature({ resolveSpace: resources.space }),
-    createCardFeature({ templates, binding, space: (reference, services) => resources.space(reference, services.context), requestId: request }),
+    createCardFeature({ templates, binding, space: (reference, services) => resources.space(reference, services.context), requestId: request,
+      updateRevision: (action, services) => {
+        const captured = services.admission?.cardUpdate;
+        return captured?.cardId === action.arguments.card.id && captured.sessionId === action.arguments.session.id
+          ? captured.expectedRevision : undefined;
+      } }),
     createNativeFeature(nativeDependencies),
   ];
   const assembled = assembleFeatureSurface({ publicModules, compatibilityModules });
@@ -379,6 +384,10 @@ export async function createProductionComposition(
       media: true,
       streams: true,
       checkedAt: now(),
+      operationBlockers: {
+        "app.update": templates.some(template => template.kind === "customized") ? [] :
+          ["No customized template or concrete universal update URL backend is configured."],
+      },
     },
     declared.get(operation),
     action,
@@ -409,6 +418,7 @@ export async function createProductionComposition(
   let diagnostics: () => { ready: boolean; activation: "disabled" | "enabled" } =
     () => ({ ready: false, activation: configuration.activation });
   const protocol = new DurableLocalProtocol({ contexts, submission, work,
+    importMedia: (caller, contextId, input) => resourcePorts.importFile(caller, contextId, input.filename, input.metadata),
     capabilities: trusted => configuration.task.permissions.map(operation => capability(operation, trusted)),
     diagnostics: () => diagnostics(),
   });

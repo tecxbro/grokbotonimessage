@@ -273,3 +273,47 @@ live-stream producers to the trusted in-process APIs; no such external producer
 was configured. There was no real release approval, installation, activation,
 Spectrum/Grok credential, provider acceptance/delivery/read, progressive stream,
 extension rendering, interaction, or physical-device observation.
+
+## fix-1 repair preparation evidence (2026-09-11)
+
+Tested reviewed base: `a3c36b3a04208a022fa7f994f1580b54223dc2c9`, branch `fix-1`, registered coordinator worktree. Initial status was clean and matched origin/fix-1. Fresh tests cover dirty preparation source before its commit; its sorted changed TypeScript/MJS path+NUL+bytes+NUL SHA-256 is `8b69230aae9f45a2b483a673fc5bc93823714ba240b670f7311b363d931f1397`. The preparation commit is recorded after it exists.
+
+Toolchain wrapper for commands below: `npx --yes --package=node@24.13.0 --package=npm@10.9.2 -c '<command>'`; verified Node v24.13.0 and npm 10.9.2. Installed spectrum-ts is 12.8.0. No credentials or live provider were used. Runtime artifacts stayed under ignored `.photon-local/repair-preparation/`.
+
+Commands:
+
+```sh
+npm run photon:build
+node --test packages/photon-features/dist/tests/integration/repair-preparation.test.js
+node --test packages/photon-features/dist/tests/integration/repair-*.test.js packages/photon-features/dist/tests/integration/production-capabilities.test.js packages/photon-features/dist/tests/integration/production-resources.test.js
+npm run typecheck --workspace=@grokbot/photon-features
+node scripts/generate-contracts.mjs
+npm run photon:check
+npm test
+npm run photon:test
+npm run photon:test:integration
+node scripts/verify-docs.mjs integration
+node scripts/verify-ownership.mjs integration
+node packages/photon-features/scripts/generate-skill.mjs --check
+git diff --check
+```
+
+The initial card fixture lacked app.update permission and was corrected before counting the reproduction. The final before.log shows three intended assertion failures: implementation defaulted to implemented; import schema rejected the new command; admitted revision was undefined. Shared fixes changed those three to passes. Extra regressions cover reference authorization/collision rollback, original poll owner/ID correlation, immutable/reopened admission metadata, cancellation, unresolved/expired card admission, missing import port, and an actual private socket delegating to the existing importer.
+
+The first aggregate overlapped a foundation build and failed while importing a partially rewritten dist module (`bufferStream` export unavailable). No production code was changed for that test-invocation race. The serialized full rerun passed 800 tests across 84 files with no failures/skips. The live suite was explicitly excluded, not passed. Installation/rollback cases use isolated fixture archives and are not production installation or activation. SDK sends and Grok runner acceptance in offline tests remain test-double evidence.
+
+| Log | Exit | Result | SHA-256 |
+| --- | --- | --- | --- |
+| `before.log` | 1 | 3 assertions failed on reviewed source after successful build | `d5423c5ac3b6e16496c0557812ea5d5f5126a0c545f4fe67ff9d48b95e13c17a` |
+| `focused.log` | 0 | 28 passed; zero failures/skips | `42bb92519476939e66aec2d6d7ac855ec16c9c667eaa39629d5d57ad92467044` |
+| `typecheck.log` | 0 | typecheck passed | `723e7a84e82d01d0d3fe2a3f3e75e477b7d08e33dbc04ee431d8d7186b8a878e` |
+| `contracts.log` | 0 | build, generated candidate update and photon:check passed; 3 schemas / 49 digest files | `df715cbf918bc7887ca28c634b9828b095d431260c6fb0ad21df4bbe46e3732d` |
+| `root-tests.log` | 0 | 31 passed; zero failures/skips | `c7ef2f1a33d5e86efc1a94851da2c9f19f9e416f6383ea3ccd0e9cfc5c41f021` |
+| `foundation.log` | 0 | 60 passed; zero failures/skips | `967c0bb7f7d4a551c3f84f4caff308a7adbd8e65ae9678ff92c6c8ebc21d29e6` |
+| `aggregate.log` | 1 | 798 passed / 1 file-startup failure; overlapping build wrote dist during import; not a pass | `da5148c833bbee4a50032ad71667aa7ffe286aa93133e6c7bf156020e1aaf6b0` |
+| `aggregate-serial.log` | 0 | 800 passed / 84 files; zero failures/skips; live suite excluded | `bc357cea3e706726b88170d310f135a6bfb6bcbaba8477260f7ad4b37c29e282` |
+| `docs.log` | 0 | historical integration docs structural check passed; not production behavior proof | `7e89aa83cfc9dd3e0e5b87dfa85ad5cfebeaf6f0923ec07fcef237a48f04c22f` |
+| `ownership.log` | 0 | historical integration ownership passed: 482 checked paths | `39ee0996934688647658a418ec577e5443a94ef46116ed230d1f504d047e307d` |
+| `skill.log` | 0 | generated skill drift check; structural inventory still pending final reconciliation | `aad0ac4e7b7a6f7b9b8b708ca83788561f365f1e427feb2bb09a6dfa3d93e1a3` |
+
+Manual diff review and exact repair ownership validation: changed paths all belong to coordinator preparation or its explicitly authored A-E prompt documents; no duplicate/wildcard maintenance assignments. Existing checks passing do not resolve the known thirteen feature failures or the historical structural inventory overstatement. A-E and final coordinator production wiring remain required. External native-poll and card-backend dependencies are recorded in CHANGE-REQUESTS.md.

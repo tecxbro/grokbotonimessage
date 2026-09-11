@@ -68,6 +68,12 @@ export function createExecutionServices(
       return context;
     });
   const context = current();
+  const admission = options.claims.store.transaction(tx => {
+    const { row } = options.claims.writable(tx, options.requestId, options.claim);
+    const value = structuredClone(row.admission ?? {});
+    if (value.cardUpdate) Object.freeze(value.cardUpdate);
+    return Object.freeze(value);
+  });
   Object.freeze(context.scope);
   Object.freeze(context.permissions);
   Object.freeze(context);
@@ -80,6 +86,7 @@ export function createExecutionServices(
       : Promise.reject(new Error("RUNTIME_BINDING_UNAVAILABLE"));
   services = {
     context,
+    admission,
     claim: Object.freeze({ ...options.claim }),
     signal: options.controller.signal,
     clock: options.clock ?? options.claims.contexts.clock,

@@ -100,3 +100,9 @@ Grok credential was configured, and no process was activated. A controlled exter
 non-message task observation is still required before claiming task binding for
 a deployment. Provider acceptance/delivery/read, extension rendering, human
 interaction, and physical-device behavior also remain independently unproven.
+
+## fix-1 repair preparation status (2026-09-11)
+
+A new coordinator maintenance assignment begins at a3c36b3a04208a022fa7f994f1580b54223dc2c9. The shared admission revision, authenticated media import, explicit capability evaluation and durable reference/poll correlation primitives are prepared. This is a preparation handoff, not closure of the thirteen failures. Complete worker prompts, exact files and interfaces live under ../fix-1-repair/. The final prepared SHA and actual worker registrations are recorded after the preparation commit; no future SHA is assumed.
+
+Worker A owns incoming references/typing/receipts/pagination; B owns poll state/operations/correlation; C owns cards/sessions/interactions; D owns import CLI/manual operating instructions; E owns CI baseline resolution. The coordinator retains shared production/configuration/protocol/state and final integration tests/inventory. Workers are not launched automatically. Native poll API and actual card backend limitations are described in CHANGE-REQUESTS.md. No push, deployment, activation, credentials or live messaging occurred.

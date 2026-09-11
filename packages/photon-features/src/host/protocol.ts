@@ -19,7 +19,12 @@ export interface SubmissionPort {
   status(requestId: string, context: TrustedContext): Promise<OperationResult>;
   cancel(requestId: string, context: TrustedContext): Promise<OperationResult>;
 }
+export interface MediaImportPort {
+  (principal: AuthenticatedPrincipal, contextId: string, input: import("../contracts/protocol.js").MediaImportInput):
+    Promise<import("../features/media/staging.js").StagedMedia>;
+}
 export interface ProtocolServices {
+  importMedia?: MediaImportPort;
   contexts: ContextResolver;
   store: TransactionStore;
   clock: Clock;
@@ -32,6 +37,7 @@ export type LocalResponse =
       version: 1;
       ok: true;
       result:
+        | import("../features/media/staging.js").StagedMedia
         | OperationResult
         | Capability[]
         | { ready: boolean; activation: "disabled" | "enabled" }
@@ -67,6 +73,10 @@ export class LocalProtocol {
           throw new Error("FORBIDDEN");
         await s.contexts.authorize(c, action);
         return ok(await s.submission.submit(action, c));
+      }
+      if (req.method === "media.import") {
+        if (!s.importMedia) throw new Error("UNAVAILABLE");
+        return ok(await s.importMedia(principal, contextId, { filename: req.filename, metadata: req.metadata }));
       }
       if (req.method === "status")
         return ok(await s.submission.status(req.requestId, c));

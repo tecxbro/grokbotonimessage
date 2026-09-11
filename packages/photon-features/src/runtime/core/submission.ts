@@ -9,7 +9,7 @@ import type {
   OutboxRecord,
   Transaction,
 } from "../../state/index.js";
-import { admit } from "./admission.js";
+import { admit, captureAdmission } from "./admission.js";
 import { DurableContexts } from "./authorization.js";
 import { argumentDigest, requestIdentity } from "./idempotency.js";
 import { fault } from "./errors.js";
@@ -48,6 +48,7 @@ export class DurableSubmission implements SubmissionPort {
         return old.result;
       }
       this.contexts.action(tx, c, action);
+      const admission = captureAdmission(tx, action, c, this.contexts.clock.now());
       const result: OperationResult = {
         version: 1,
         requestId: id,
@@ -64,6 +65,7 @@ export class DurableSubmission implements SubmissionPort {
           scope: c.scope,
           revision: 0,
           action,
+          admission,
           principalId: c.principalId,
           taskId: c.taskId,
           generation: c.generation,

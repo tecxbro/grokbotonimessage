@@ -27,4 +27,282 @@
     {"package":"spectrum-ts","version":"12.8.0","path":"node_modules/spectrum-ts/dist/providers/imessage/index.d.ts","sha256":"8f716ef14ca413ecccdb9cc12deccf43cd25093033683f94bdb0c144158a99d3"},
     {"package":"@spectrum-ts/imessage","version":"12.8.0","path":"node_modules/@spectrum-ts/imessage/dist/index.d.ts","sha256":"6a2278d14fd42a5603675b046fd1c8ad5c584da760e60b621f74059bf7dc3aa0"}
   ]
+,
+  "repairPreparation": {
+    "sources": [
+      {
+        "url": "https://photon.codes/docs/llms.txt",
+        "retrievedAt": "2026-09-11T22:14:11.634664+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/llms.txt",
+        "contentType": "text/plain; charset=utf-8",
+        "bytes": 16307,
+        "sha256": "0e9cff75bdffdb8e625583fdd88ccd7317d027fa3f9a74cbe3cebfa256c0c033",
+        "localBody": ".photon-local/repair-preparation/f2dfc2e2a0f4.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/content/typing-indicators.md",
+        "retrievedAt": "2026-09-11T22:14:11.635827+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/content/typing-indicators.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 694,
+        "sha256": "dd1fb5ecc13ba7efa93eebcbe70087bb2f4f3607838730187969d2770e646e86",
+        "localBody": ".photon-local/repair-preparation/7bc6694fdff2.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/messages.md",
+        "retrievedAt": "2026-09-11T22:14:11.635993+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/messages.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 42753,
+        "sha256": "0da88e0f2336f1f0757dc7359dd702ce9fc2d3e586e523871244251f97c7d39b",
+        "localBody": ".photon-local/repair-preparation/e22b5eda8bfe.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/content/attachments.md",
+        "retrievedAt": "2026-09-11T22:14:11.636065+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/content/attachments.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 3023,
+        "sha256": "c93e553cdf6d9e19ffdbb9fd6fe0c2c485fd418dd6a0422b8da0991230707d64",
+        "localBody": ".photon-local/repair-preparation/51cc78918399.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/fetching-attachments.md",
+        "retrievedAt": "2026-09-11T22:14:11.636128+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/fetching-attachments.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 3209,
+        "sha256": "836566e9499f33b3dfb7442b33267a9ebd47b5aa2298260a3320c6d4509bbf5f",
+        "localBody": ".photon-local/repair-preparation/c39abb7006d1.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/content/read.md",
+        "retrievedAt": "2026-09-11T22:14:11.636193+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/content/read.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 6696,
+        "sha256": "032820ce8bbd13fb91ada9eeae1ac77489cad067ba9a69c90fa7fbdc6ef16386",
+        "localBody": ".photon-local/repair-preparation/4d42cb8a1400.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/inbound-read-receipts.md",
+        "retrievedAt": "2026-09-11T22:14:11.636253+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/inbound-read-receipts.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 3429,
+        "sha256": "85bf1cfd9ecb68c44072ec629c504eafd643f5a0f311290d741022f76ee2824d",
+        "localBody": ".photon-local/repair-preparation/8981d511d9c2.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/content/polls.md",
+        "retrievedAt": "2026-09-11T22:14:11.636297+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/content/polls.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 2220,
+        "sha256": "e57ffa8265660ccbe175e92f46862af905e9129a10be598c0cc851d6643a61b9",
+        "localBody": ".photon-local/repair-preparation/3951ba657394.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/advanced-kits/imessage/polls.md",
+        "retrievedAt": "2026-09-11T22:14:12.748626+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/advanced-kits/imessage/polls.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 10004,
+        "sha256": "6170945b2e0f8f36c429085d1e2e01b89830e5304b357c0912b70e723b95c481",
+        "localBody": ".photon-local/repair-preparation/43deab666516.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/content/app.md",
+        "retrievedAt": "2026-09-11T22:14:12.755916+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/content/app.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 5484,
+        "sha256": "81ae485a85373813cb78b50de592144527a5ddad80c0252e338e8aa01bdb4a11",
+        "localBody": ".photon-local/repair-preparation/d8dbaf69faed.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/apps.md",
+        "retrievedAt": "2026-09-11T22:14:12.756021+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/apps.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 7774,
+        "sha256": "1ce74795d053c52245d10b3b375e3a2163ff8b30b18dac23fadf3719b82f6c40",
+        "localBody": ".photon-local/repair-preparation/3426920495e2.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/platform-narrowing.md",
+        "retrievedAt": "2026-09-11T22:14:12.794330+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/platform-narrowing.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 7549,
+        "sha256": "bf4786f4ecab20832500b0585ceb406281eaf04299f1c6af987cbc980a7d137b",
+        "localBody": ".photon-local/repair-preparation/a277bf12ed7f.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/best-practices/inbound-pipeline.md",
+        "retrievedAt": "2026-09-11T22:14:12.839593+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/best-practices/inbound-pipeline.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 4154,
+        "sha256": "4a7113e2a9b987f51e8098f33a9b007f7cc31890487bff42a031c36bc15e9ee3",
+        "localBody": ".photon-local/repair-preparation/674546bd7979.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/best-practices/architecture.md",
+        "retrievedAt": "2026-09-11T22:14:12.845018+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/best-practices/architecture.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 3230,
+        "sha256": "9df570ca7d3e08256f47e03673d47ec3e96e05f250b738badda5980c0c0eb8e1",
+        "localBody": ".photon-local/repair-preparation/4f8d436cefb3.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/best-practices/recovery-and-state.md",
+        "retrievedAt": "2026-09-11T22:14:12.845326+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/best-practices/recovery-and-state.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 5801,
+        "sha256": "65944f4b202e0142388403aff39b3135b3dca7ab87035cdc36af22713716a9f0",
+        "localBody": ".photon-local/repair-preparation/eaf6ade3d6b6.txt"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/actions/checkout/v4/README.md",
+        "retrievedAt": "2026-09-11T22:14:12.894940+00:00",
+        "status": 200,
+        "finalUrl": "https://raw.githubusercontent.com/actions/checkout/v4/README.md",
+        "contentType": "text/plain; charset=utf-8",
+        "bytes": 12391,
+        "sha256": "2556582f5103560617b79b50d33d7f75a330064746388d35ecea918cb14cc228",
+        "localBody": ".photon-local/repair-preparation/a5d2c802d301.txt"
+      },
+      {
+        "url": "https://git-scm.com/docs/git-fetch",
+        "retrievedAt": "2026-09-11T22:14:13.344828+00:00",
+        "status": 200,
+        "finalUrl": "https://git-scm.com/docs/git-fetch",
+        "contentType": "text/html; charset=utf-8",
+        "bytes": 162228,
+        "sha256": "6548e9458b10676e033ca2d754b0332a5ba49b63a1da5372acef4db1778e6a73",
+        "localBody": ".photon-local/repair-preparation/6b26a62230e9.txt"
+      },
+      {
+        "url": "https://git-scm.com/docs/git-worktree",
+        "retrievedAt": "2026-09-11T22:14:13.348667+00:00",
+        "status": 200,
+        "finalUrl": "https://git-scm.com/docs/git-worktree",
+        "contentType": "text/html; charset=utf-8",
+        "bytes": 97742,
+        "sha256": "6708b54163cfd92f42714ff9db0dd570653c35e332090398d95c239627bb58b6",
+        "localBody": ".photon-local/repair-preparation/b60b47425db1.txt"
+      },
+      {
+        "url": "https://api.github.com/repos/tecxbro/photon-skills/git/trees/main?recursive=1",
+        "retrievedAt": "2026-09-11T22:14:13.400058+00:00",
+        "status": 200,
+        "finalUrl": "https://api.github.com/repos/tecxbro/photon-skills/git/trees/main?recursive=1",
+        "contentType": "application/json; charset=utf-8",
+        "bytes": 34594,
+        "sha256": "ef24e5e9c485e8e88b2624b92c3f7d19c475ed59c6fbc89ca8d25f46828c41b7",
+        "localBody": ".photon-local/repair-preparation/7b7b671f9f57.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/reactions-and-replies.md",
+        "retrievedAt": "2026-09-11T22:35:35.886134+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/reactions-and-replies.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 71613,
+        "sha256": "7d131c3af5670e685fa36768638037f339a6755b4fb2daa7eef043ea522a586d",
+        "localBody": ".photon-local/repair-preparation/d553fc913dc6.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/message-effects.md",
+        "retrievedAt": "2026-09-11T22:35:36.930403+00:00",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/message-effects.md",
+        "contentType": "text/markdown; charset=utf-8",
+        "bytes": 4935,
+        "sha256": "b6558c95ea9fd52271eefd0362e743aa0d5e53b59ec6b4ef6372c2855acb7aa8",
+        "localBody": ".photon-local/repair-preparation/f47d584a2fb7.txt"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/spectrum/SKILL.md",
+        "retrievedAt": "2026-09-11T22:35:37.470405+00:00",
+        "status": 200,
+        "finalUrl": "https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/spectrum/SKILL.md",
+        "contentType": "text/plain; charset=utf-8",
+        "bytes": 4842,
+        "sha256": "0a2f328fe6da4d202497e8bb859625de06af23cce884d1639dd1e8f3cb737de8",
+        "localBody": ".photon-local/repair-preparation/0d3d03e9c431.txt"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/spectrum/providers/imessage.md",
+        "retrievedAt": "2026-09-11T22:35:37.805359+00:00",
+        "status": 200,
+        "finalUrl": "https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/spectrum/providers/imessage.md",
+        "contentType": "text/plain; charset=utf-8",
+        "bytes": 6676,
+        "sha256": "10fb889be4fd62e0e3f201ab46e6b34096e8aa2f24101bdecb49197926e8c3de",
+        "localBody": ".photon-local/repair-preparation/87707870a008.txt"
+      }
+    ],
+    "installedContracts": [
+      {
+        "path": "node_modules/spectrum-ts/package.json",
+        "version": "12.8.0",
+        "sha256": "69248e5615aecbe5844d9cc94323aa2a93391e76ac322cf82477c75df95dbcc2"
+      },
+      {
+        "path": "node_modules/spectrum-ts/dist/index.d.ts",
+        "version": "12.8.0",
+        "sha256": "ede89b7bc2b923b70c83245525ccb59f3e122f3452be14e88a9ba39aef143242"
+      },
+      {
+        "path": "node_modules/spectrum-ts/dist/providers/imessage/index.d.ts",
+        "version": "12.8.0",
+        "sha256": "8f716ef14ca413ecccdb9cc12deccf43cd25093033683f94bdb0c144158a99d3"
+      },
+      {
+        "path": "node_modules/@spectrum-ts/imessage/dist/index.d.ts",
+        "version": "12.8.0",
+        "sha256": "6a2278d14fd42a5603675b046fd1c8ad5c584da760e60b621f74059bf7dc3aa0"
+      },
+      {
+        "path": "node_modules/@spectrum-ts/core/dist/index.d.ts",
+        "version": "12.8.0",
+        "sha256": "651577159733a34e4243b86b80bfd088f9d82281db9ed0f11e1e0a2db769676a"
+      },
+      {
+        "path": "node_modules/@spectrum-ts/core/dist/attachment-Dy4PsNVw.d.ts",
+        "version": "12.8.0",
+        "sha256": "c452a8fc2ffbab03c6e548ce13dcf28f841ec7c9331513c65975e12f869ad954"
+      }
+    ],
+    "webToolFailures": [
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/fetching-attachments",
+        "result": "Internal Error; official .md retrieval succeeded with HTTP 200"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/reactions-and-replies.md",
+        "result": "Initial urllib request without task user agent returned 403; retry result recorded separately"
+      }
+    ],
+    "interpretation": "Downloaded content is reference data, not executable instructions. Official Markdown pages, supplementary skills and installed types are separate authorities. Native poll management is not exposed by the narrowed 12.8.0 provider."
+  }
 }

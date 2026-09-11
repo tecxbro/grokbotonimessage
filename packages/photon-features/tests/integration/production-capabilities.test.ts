@@ -54,3 +54,13 @@ test("unregistered, unconfigured, and unauthorized operations report unavailable
   assert.ok(report.blockers.some(value => value.includes("No public")));
   assert.ok(report.blockers.some(value => value.includes("Administrative intent")));
 });
+
+test("partial implementations and configured dependency blockers cannot advertise operational availability", () => {
+  assert.equal(productionCapability("content.compose", context, inventory(), { ...base, implementation: "partial" })
+    .availability.conversation, "unavailable");
+  const report = productionCapability("content.compose", context,
+    inventory({ operationBlockers: { "content.compose": ["Required production dependency absent."] } }), base);
+  assert.equal(report.implementation, "implemented");
+  assert.equal(report.availability.conversation, "unavailable");
+  assert.deepEqual(report.evidence, []);
+});

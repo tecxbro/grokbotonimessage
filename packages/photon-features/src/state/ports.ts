@@ -71,6 +71,8 @@ export interface HandoffRecord extends StoredRecord {
 }
 export interface OutboxRecord extends StoredRecord {
   action: Action;
+  /** Additive JSON field; existing stored rows remain readable. */
+  admission?: import("../contracts/services.js").AdmissionMetadata;
   principalId: string;
   taskId: string;
   generation: number;

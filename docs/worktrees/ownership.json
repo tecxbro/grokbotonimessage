@@ -410,7 +410,22 @@
       "docs/worktrees/integration/WORKLOG.md",
       "docs/worktrees/integration/included-commits.json",
       "docs/worktrees/integration/references/README.md",
-      "docs/worktrees/integration/source-lock.json"
+      "docs/worktrees/integration/source-lock.json",
+      "docs/worktrees/fix-1-repair/ASSIGNMENT.md",
+      "docs/worktrees/fix-1-repair/FILES.json",
+      "docs/worktrees/fix-1-repair/INTERFACES.md",
+      "docs/worktrees/fix-1-repair/A.md",
+      "docs/worktrees/fix-1-repair/B.md",
+      "docs/worktrees/fix-1-repair/C.md",
+      "docs/worktrees/fix-1-repair/D.md",
+      "docs/worktrees/fix-1-repair/E.md",
+      "packages/photon-features/src/contracts/protocol.ts",
+      "packages/photon-features/src/state/ports.ts",
+      "packages/photon-features/src/host/protocol.ts",
+      "packages/photon-features/src/host/incoming-resources.ts",
+      "packages/photon-features/src/host/poll-correlations.ts",
+      "packages/photon-features/tests/integration/repair-preparation.test.ts",
+      "packages/photon-features/tests/integration/repair-sdk-contract.test.ts"
     ]
   },
   "integrationMaintenance": [
@@ -432,7 +447,13 @@
     "packages/photon-features/src/state/ports.ts",
     "packages/photon-features/tests/e2e/install-rollback.test.ts",
     "packages/photon-features/tests/foundation/feature-services.test.ts",
-    "packages/photon-features/tests/lanes/wt-08/regression.test.ts"
+    "packages/photon-features/tests/lanes/wt-08/regression.test.ts",
+    "docs/contracts/execution.md",
+    "docs/contracts/receipts.md",
+    "docs/contracts/operations.md",
+    "packages/photon-features/src/contracts/services.ts",
+    "packages/photon-features/src/runtime/core/admission.ts",
+    "packages/photon-features/scripts/generate-skill.mjs"
   ],
   "snapshotRoots": {
     "wt-00": [
@@ -961,5 +982,13 @@
     "test/release-config.test.js",
     "test/store.test.js",
     "test/url-policy.test.js"
-  ]
+  ],
+  "maintenanceAssignments": {
+    "fix-1-repair": {
+      "base": "a3c36b3a04208a022fa7f994f1580b54223dc2c9",
+      "manifest": "docs/worktrees/fix-1-repair/FILES.json",
+      "coordinator": "fix-1",
+      "rule": "Exact maintenance file owners supersede historical lane owners only for this repair. Historical owner arrays and evidence remain intact."
+    }
+  }
 }

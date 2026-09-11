@@ -402,3 +402,42 @@ test("ambiguous production media outcome is durable and never blindly resent", a
     assert.equal(f.sent.length, 1);
   } finally { await composition.runtime.stop(); }
 });
+
+import { connect } from "node:net";
+
+test("production media.import socket delegates to private importer and survives host reopen", async t => {
+  const f = await fixture(t);
+  await writeFile(join(f.runtime, "imports", "generated.png"), f.png, { mode: 0o600 });
+  const composition = await f.compose();
+  await composition.runtime.start();
+  const local = await composition.startLocalInterface();
+  async function request(token: string, payload: unknown): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const socket = connect(f.configuration.local.socketPath);
+      let body = "";
+      socket.setTimeout(3000, () => socket.destroy(new Error("TEST_SOCKET_TIMEOUT")));
+      socket.on("error", reject);
+      socket.on("connect", () => socket.write(JSON.stringify({ token, request: payload }) + "\n"));
+      socket.on("data", data => { body += data.toString(); });
+      socket.on("end", () => { try { resolve(JSON.parse(body)); } catch (error) { reject(error); } });
+    });
+  }
+  const input = { version: 1, method: "media.import", contextId: composition.context.contextId,
+    filename: "generated.png", metadata: { mimeType: "image/png" } };
+  let media: { stagingId: string };
+  try {
+    assert.equal((await request("f".repeat(64), input)).error.code, "UNAUTHENTICATED");
+    assert.equal((await request("d".repeat(64), { ...input, filename: "../generated.png" })).error.code, "INVALID_REQUEST");
+    const response = await request("d".repeat(64), input);
+    assert.equal(response.ok, true, JSON.stringify(response));
+    assert.equal(response.result.mimeType, "image/png");
+    media = response.result;
+    assert.equal(f.sent.length, 0);
+  } finally { await local.close(); await composition.runtime.stop(); }
+  const store = new DurableSQLiteStore(f.configuration.runtime.statePath);
+  try {
+    const row = store.transaction(tx => tx.get("stagedMedia", media!.stagingId));
+    assert.equal(row?.taskId, composition.context.taskId);
+    assert.equal(row?.generation, composition.context.generation);
+  } finally { store.close(); }
+});

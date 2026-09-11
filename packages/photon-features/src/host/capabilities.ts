@@ -23,6 +23,8 @@ export interface ProductionCapabilityInventory {
   media: boolean;
   streams: boolean;
   checkedAt: number;
+  /** Concrete configuration blockers, distinct from handler registration and evidence. */
+  operationBlockers?: Partial<Record<Operation, readonly string[]>>;
 }
 
 function containsMedia(value: unknown): boolean {
@@ -66,9 +68,14 @@ export function productionCapability(
   const mediaBound = !needsMedia || inventory.media;
   const streamBound = operation !== "text.stream" || inventory.streams;
   const dependencies = inventory.resources && mediaBound && streamBound;
-  const implemented = handler && base?.implementation !== "unimplemented";
+  const implementation = handler && base?.operation === operation ? base.implementation : "unimplemented";
+  const implemented = implementation === "implemented";
+  const operationalBlockers = inventory.operationBlockers?.[operation] ?? [];
+  blockers.push(...operationalBlockers);
+  if (!base || base.operation !== operation) blockers.push("An explicit matching implementation declaration is missing.");
+  if (implementation === "partial") blockers.push("The operation implementation is partial.");
   const available = sameConversation && inventory.ownerReady && configured && implemented && dependencies &&
-    authorizedAdministration && authorizedNativeContent && cardConfigured;
+    authorizedAdministration && authorizedNativeContent && cardConfigured && operationalBlockers.length === 0;
 
   if (!handler) blockers.push("No public f0-services-2 handler is registered for this operation.");
   if (!configured) blockers.push("Operation is not enabled by production provider configuration.");
@@ -85,7 +92,7 @@ export function productionCapability(
   return {
     operation,
     providerSupport: base?.providerSupport ?? "unknown",
-    implementation: !handler ? "unimplemented" : base?.implementation ?? "implemented",
+    implementation,
     availability: {
       account: inventory.ownerReady ? "available" : "unavailable",
       conversation: available ? "available" : "unavailable",

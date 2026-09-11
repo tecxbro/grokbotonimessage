@@ -19,6 +19,7 @@ import { DurableWork } from "./work-handoff.js";
 import { admitRequest } from "./admission.js";
 import { publicError, RuntimeFault } from "./errors.js";
 export interface RuntimeProtocolServices {
+  importMedia?: import("../../host/protocol.js").MediaImportPort;
   contexts: DurableContexts;
   submission: SubmissionPort;
   work: DurableWork;
@@ -49,6 +50,10 @@ export class DurableLocalProtocol {
         );
       let result: unknown;
       switch (request.method) {
+        case "media.import":
+          if (!s.importMedia) throw new RuntimeFault("UNAVAILABLE");
+          result = await s.importMedia(principal, c.contextId, { filename: request.filename, metadata: request.metadata });
+          break;
         case "submit":
           result = await s.submission.submit(admitRequest(request.action), c);
           break;
