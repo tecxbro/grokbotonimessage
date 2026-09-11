@@ -11,6 +11,8 @@ import {
 } from "./configuration.js";
 import { createProductionComposition } from "./production.js";
 import { assertSelectedRelease } from "./selected-release.js";
+import { DurableSQLiteStore } from "../adapters/state/sqlite.js";
+import { bootstrapOrValidateAuthority, configuredAuthority } from "./authority.js";
 
 type HostCommand = "validate" | "enable" | "disable" | "run";
 
@@ -41,6 +43,13 @@ export async function validateProductionInstallation(root: string, releaseRoot: 
   const now = Date.now();
   if (configuration.task.issuedAt > now || configuration.task.expiresAt <= now)
     throw new Error("EXPIRED_TASK_BINDING");
+  const authority = configuredAuthority(configuration);
+  const store = new DurableSQLiteStore(configuration.runtime.statePath, () => now);
+  try {
+    bootstrapOrValidateAuthority(store, authority.context, authority.conversationId, now);
+  } finally {
+    store.close();
+  }
   return {
     release: selected.release,
     activation: configuration.activation,
@@ -58,6 +67,17 @@ async function requireInactive(root: string): Promise<void> {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
   }
+}
+
+export async function changeProductionActivation(
+  root: string,
+  releaseRoot: string,
+  activation: "disabled" | "enabled",
+): Promise<"disabled" | "enabled"> {
+  await assertSelectedRelease(root, releaseRoot);
+  await requireInactive(root);
+  if (activation === "enabled") await validateProductionInstallation(root, releaseRoot);
+  return (await writeActivation(root, activation)).activation;
 }
 
 export async function runProductionHost(root: string, releaseRoot: string): Promise<void> {
@@ -119,12 +139,9 @@ export async function processMain(
       process.stdout.write(JSON.stringify({ version: 1, valid: true, ...await validateProductionInstallation(root, releaseRoot) }) + "\n");
       return 0;
     }
-    await assertSelectedRelease(root, releaseRoot);
     if (command === "enable" || command === "disable") {
-      await requireInactive(root);
-      if (command === "enable") await validateProductionInstallation(root, releaseRoot);
-      const configuration = await writeActivation(root, command === "enable" ? "enabled" : "disabled");
-      process.stdout.write(JSON.stringify({ version: 1, activation: configuration.activation }) + "\n");
+      const activation = await changeProductionActivation(root, releaseRoot, command === "enable" ? "enabled" : "disabled");
+      process.stdout.write(JSON.stringify({ version: 1, activation }) + "\n");
       return 0;
     }
     await runProductionHost(root, releaseRoot);

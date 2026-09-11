@@ -4,6 +4,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { main as clientMain } from "../cli/main.js";
 import { loadProductionHostConfiguration } from "./configuration.js";
 import { assertSelectedRelease } from "./selected-release.js";
+import { DurableSQLiteStore } from "../adapters/state/sqlite.js";
+import { configuredAuthority, validateExistingAuthority } from "./authority.js";
 
 export async function taskLauncherMain(
   argv: string[] = process.argv.slice(2),
@@ -24,10 +26,15 @@ export async function taskLauncherMain(
     const now = Date.now();
     if (config.activation !== "enabled" || config.task.taskId !== taskId || config.task.generation !== generation ||
       config.task.issuedAt > now || config.task.expiresAt <= now) throw new Error("STALE_TASK_BINDING");
+    const expected = configuredAuthority(config);
+    const store = new DurableSQLiteStore(config.runtime.statePath, () => now);
+    let durable;
+    try { durable = validateExistingAuthority(store, expected.context, expected.conversationId, now); }
+    finally { store.close(); }
     return clientMain(command, {
       ...env,
       PATH: `${selected.releaseRoot}/bin${env.PATH ? `:${env.PATH}` : ""}`,
-      GROK_PHOTON_CONTEXT_ID: config.task.contextId,
+      GROK_PHOTON_CONTEXT_ID: durable.context.contextId,
       GROK_PHOTON_SOCKET: config.local.socketPath,
       GROK_PHOTON_CREDENTIAL_FILE: config.local.credentialFile,
     }, stdin, stdout, stderr);
