@@ -7,3 +7,7 @@ Immediate delivery: implement shared primitives, test and commit preparation, cr
 A owns failures 1,2,7,9. B owns 3,4. C owns 5,6. D owns 8,11. E owns 10. Coordinator owns final inventory 12 and production journey 13. Exact file ownership and justifications are in FILES.json; signatures and missing provider/backend contracts are in INTERFACES.md. No worker may edit another checkout or shared contracts.
 
 Original user assignment is the authority; this record narrows execution, never expands runtime authority. Preserve one Grok orchestrator/workers, Spectrum owner, inbox/outbox, claims, cancellation, authorization, idempotency, voice formatter and root CLI. Reproduce failures before repairs. Keep independent local, provider and device evidence.
+
+## Prepared worker base
+
+Shared preparation commit: `513ede497a96bd9c30cc597faee868e201ea3456`. All five registered local repair worktrees start at this exact commit and are clean. A-E prompts in the coordinator checkout were finalized after that SHA existed; the subsequent documentation-only commit does not change any worker code base. The finalized complete prompt provided to each worker is authoritative, including the actual SHA in place of the preparation-time marker in its base snapshot. No worker was launched.

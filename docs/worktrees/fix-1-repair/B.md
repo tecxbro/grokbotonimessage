@@ -5,11 +5,11 @@ You are worker B for the existing grokbotonimessage fix-1 repair. Implement only
 Repository: https://github.com/tecxbro/grokbotonimessage
 Worktree: /Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1-b
 Branch: repair/fix-1-b
-Exact prepared base commit: PREPARATION_SHA_RECORDED_AFTER_COMMIT
+Exact prepared base commit: 513ede497a96bd9c30cc597faee868e201ea3456
 Reviewed baseline (not a reset target): a3c36b3a04208a022fa7f994f1580b54223dc2c9
 Coordinator worktree: /Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1, branch fix-1.
 
-Before edits, verify pwd, git rev-parse --show-toplevel, git branch --show-current, git rev-parse HEAD, git status --short --branch, git worktree list --porcelain and git log PREPARATION_SHA_RECORDED_AFTER_COMMIT..HEAD. Do not reset if advanced; inspect intervening commits and preserve unrelated changes. Work only in your assigned checkout. Read AGENTS.md, ARCHITECTURE.md, docs/contracts/execution.md, receipts.md, operations.md, packages/photon-features/SKILL.md and the repair ASSIGNMENT.md/INTERFACES.md/FILES.json in your own checkout. This prompt is the complete coordinator delegation; no unspecified second assignment is required.
+Before edits, verify pwd, git rev-parse --show-toplevel, git branch --show-current, git rev-parse HEAD, git status --short --branch, git worktree list --porcelain and git log 513ede497a96bd9c30cc597faee868e201ea3456..HEAD. Do not reset if advanced; inspect intervening commits and preserve unrelated changes. Work only in your assigned checkout. Read AGENTS.md, ARCHITECTURE.md, docs/contracts/execution.md, receipts.md, operations.md, packages/photon-features/SKILL.md and the repair ASSIGNMENT.md/INTERFACES.md/FILES.json in your own checkout. This prompt is the complete coordinator delegation; no unspecified second assignment is required.
 
 ## Assigned failures
 
