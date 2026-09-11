@@ -22,7 +22,7 @@ public F0 executor now reaches the offline Spectrum text send exactly once throu
 the authenticated local socket and durable request path. This is local/offline
 SDK-acceptance evidence only: it is not activation, provider delivery, read, or
 device evidence. The actual lane factories assemble all 44 operation handlers and
-12 compiler families. The exact Node 24.13.0 non-live aggregate passes 759/759
+12 compiler families. The exact Node 24.13.0 non-live aggregate passes 762/762
 across 79 files with no failures or skips; the separately gated live test is not
 counted.
 
@@ -35,3 +35,15 @@ twice using its checksummed migration. That acceptance used local approval
 scaffolding; no production-approved artifact was published or activated. All
 activation, external Grok task acceptance, and live/provider/device evidence
 remain outside this local integration result.
+
+## Fix 1 branch composition
+
+The `fix-1` aggregate contains all six reviewed finding fixes:
+
+1. `8eea450` — derive operating-skill status from the assembled registry.
+2. `3853f9a` — separate historical, deployment, and operating instructions.
+3. `91d895c` — require evidence for Grok skill and task binding.
+4. `65818ad` — package the SQLite migration in release archives.
+5. `72a4959` — add the concrete production host and task launcher.
+6. `0d531ba` — scope ordinary outbox ordering by conversation while preserving
+   unresolved-outcome protection and a line-scoped `space.create` dependency.

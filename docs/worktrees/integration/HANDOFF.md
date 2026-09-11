@@ -6,10 +6,19 @@ installation, activation, and external task evidence pending.
 The registered branch starts at immutable F0 and contains every reviewed WT-01
 through WT-09 input in `included-commits.json`. The existing lane factories
 assemble all 44 public handlers and 12 compiler families. The fresh exact Node
-24.13.0 non-live aggregate passes 759/759 across 79 files with no failures or
+24.13.0 non-live aggregate passes 762/762 across 79 files with no failures or
 skips; the live suite remains explicitly excluded. Schema, generated-skill drift,
 ownership, docs, and package dry-run checks pass. The operating skill's 44 handler
 statuses are independently checked against the assembled public registry.
+
+## Conversation ordering boundary
+
+Ordinary outbox predecessors are matched by project, account, line, and space.
+An unresolved `queued`, `blocked`, or `unknown-outcome` result therefore blocks
+later work in its own conversation without stalling an independent conversation
+on the same line. `space.create` operations retain a separate line-scoped creation
+dependency because no conversation exists yet. This change neither weakens
+unknown-outcome handling nor retries an ambiguous provider effect.
 
 ## Concrete deployment path
 

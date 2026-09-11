@@ -184,3 +184,23 @@ The approval document was local test scaffolding, not a real workflow approval.
 The ephemeral archive and installation were acceptance artifacts only. This
 does not replace the required production workflow approval bound to the eventual
 repository commit.
+
+## Fix 1 combined checkpoint
+
+- Exact runtime: Node 24.13.0, npm 10.9.2.
+- `npm run photon:test:integration`: PASS, 79 non-live files, 762/762 tests,
+  0 failed, 0 skipped. The live suite remains excluded by its explicit
+  authorization boundary.
+- Root CLI tests: PASS, 31/31. Foundation tests: PASS, 60/60.
+- Contract drift: PASS against candidate digest
+  `555bff78061ce6187272eee5a19c0de5785ca3e045fac8db0278da4008e1c7a3`.
+- Generated-skill drift: PASS, 44 operations, 44 examples, four assigned
+  examples, and 48 files.
+- Integration ownership: PASS, 453 changed paths checked, 406 reviewed-lane
+  paths, 50 integration paths, and 12 exact maintenance paths.
+- Integration docs: PASS. Package dry-run: PASS, 335 files including every
+  required host/task/CLI/assembly entry and `src/state/migrations/0001-initial.sql`.
+- The WT-01 predecessor matrix covers `queued`, `blocked`, `unknown-outcome`,
+  and `provider-accepted` across same and different conversations on one line.
+  It also proves the separate line-scoped `space.create` dependency.
+- No uncertain request was retried and no unknown outcome was relabeled.

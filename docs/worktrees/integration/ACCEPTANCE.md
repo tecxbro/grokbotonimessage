@@ -27,7 +27,7 @@
    to preserve state. The approval used for local acceptance was test scaffolding;
    no production-approved artifact was published or activated.
 10. **PASS — actual candidate gates:** Node 24.13.0 aggregate verification runs
-    759 non-live tests across 79 files with zero failures or skips, plus schema,
+    762 non-live tests across 79 files with zero failures or skips, plus schema,
     ownership, docs, generated-skill, smoke, and package dry-run checks.
 11. **PASS LOCALLY — concrete startup:** development, deployment, and operating
     instructions have distinct roles. The release owns strict configuration,
@@ -48,3 +48,7 @@
     the release launcher verifies skill/release/task generation and injects the
     three local client bindings. A controlled external Grok task must still prove
     gateway acceptance, skill load, and durable claim for an activated deployment.
+16. **PASS — conversation-scoped ordering:** unresolved `queued`, `blocked`, and
+    `unknown-outcome` predecessors still fence later work in the same conversation;
+    independent conversations on the same line proceed, while `space.create`
+    retains a separate line-scoped creation dependency. Rate limiting is unchanged.

@@ -39,6 +39,10 @@
 - CR-I-019: **closed locally.** The custom archive collector includes the F0 SQL
   migration as a checksummed payload entry, and the production SQLite adapter
   resolves only the exact installed-package path rather than searching ancestors.
+- CR-I-020: **closed locally.** Ordinary unresolved outbox work now fences only
+  later work in the same conversation. `queued`, `blocked`, and
+  `unknown-outcome` protection is unchanged, and `space.create` retains a
+  line-scoped creation dependency independent of rate limiting.
 
 ## Follow-up gates
 

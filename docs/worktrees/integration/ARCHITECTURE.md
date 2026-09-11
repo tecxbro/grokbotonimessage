@@ -49,12 +49,22 @@ verification, which are discovered through runtime capabilities.
 
 The immutable F0 declaration remains `photon-v3-f0` with digest
 `d95caace...`. Post-F0 package/export/registry composition is recorded separately
-in `candidate-contract.json`; integration verification never rewrites the tag or
-the foundation declaration.
+in `candidate-contract.json`; integration and its `fix-1` aggregate verify that
+candidate record without rewriting the tag or foundation declaration.
 
 Optional provider capabilities remain native, fallback, warn-and-skip, accepted
 no-op, or thrown-error according to the pinned Spectrum 12.8.0 provider contract;
 a resolved promise alone is never delivery or device evidence.
+
+## Durable ordering boundary
+
+Ordinary outbox work serializes within the exact project/account/line/space
+conversation. Earlier `queued`, `blocked`, and `unknown-outcome` work continues
+to fence later work in that conversation, but it does not create a dependency
+for a different conversation using the same line. `space.create` has no existing
+conversation resource, so creation operations share a distinct line-scoped
+dependency. Provider rate limiting remains a separate concern and is not encoded
+by the predecessor relationship.
 
 ## Release migration boundary
 

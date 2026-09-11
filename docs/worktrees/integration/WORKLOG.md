@@ -179,3 +179,19 @@ adapter opened/closed/reopened a schema-version-1 database with 19 tables. The
 acceptance approval object was explicitly local test scaffolding, not a genuine
 workflow approval. Production approval, publication, activation, provider
 behavior, and device evidence remain separate and pending.
+
+## 2026-09-10 — all-finding aggregation and conversation ordering
+
+Created `fix-1` from the integrated production-host checkpoint, retaining the
+committed fixes for Findings 1, 2, 3, and 5. Added the release-local migration
+fix for Finding 4 and the WT-01 predecessor fix for Finding 6. Documentation
+conflicts were resolved additively so the newer host/task evidence and the
+release-migration acceptance remain distinct.
+
+Ordinary predecessor matching now includes `spaceId`; unresolved `queued`,
+`blocked`, and `unknown-outcome` states still fence the same conversation.
+Independent conversations on one line no longer depend on each other, and
+`space.create` retains a line-scoped creation dependency. The exact Node 24.13.0
+combined non-live suite passes 762/762 tests across 79 files with no failures or
+skips. No provider retry, installation, activation, live send, or device action
+occurred.
