@@ -5,25 +5,31 @@ import { createPollReducer, type PollReductionPolicy } from "./reducer.js";
 export interface PollModuleConfiguration {
   voteIngress: "available" | "unavailable" | "unknown";
   reduction: PollReductionPolicy;
+  /** Available only when the shared Spectrum owner supplies the approved native management seam. */
+  management?: "available" | "unavailable" | "unknown";
 }
 export function pollWorkflowAvailability(config: PollModuleConfiguration) {
-  return { creationImplemented: true, interactiveWorkflowAdvertisable: false as const,
-    blockers: ["Native identity/state lookup is not exposed by the F0 shared services.",
+  const managementImplemented = config.management === "available";
+  const interactiveWorkflowAdvertisable = managementImplemented && config.voteIngress === "available";
+  return { creationImplemented: true, managementImplemented, interactiveWorkflowAdvertisable,
+    blockers: [...(managementImplemented ? [] : ["Approved shared-owner poll management is unavailable or unverified."]),
       ...(config.voteIngress === "available" ? [] : ["Active vote ingress is unavailable or unverified."])] };
 }
 export function createPollModule(config: PollModuleConfiguration = {
   voteIngress: "unknown", reduction: { orderedSources: [] },
 }): FeatureModule {
+  const managementImplemented = config.management === "available";
   const capabilities: Capability[] = pollOperations.map(operation => ({
-    operation, providerSupport: "native", implementation: operation === "poll.create" ? "implemented" : "unimplemented",
+    operation, providerSupport: "native", implementation: operation === "poll.create" || managementImplemented
+      ? "implemented" : "unimplemented",
     availability: { account: "unknown", conversation: "unknown", checkedAt: null },
     direction: { inbound: operation === "poll.create" ?
       (config.voteIngress === "available" ? "implemented" : "unknown") : "not-applicable",
-      outbound: operation === "poll.create" ? "implemented" : "unimplemented" },
+      outbound: operation === "poll.create" || managementImplemented ? "implemented" : "unimplemented" },
     sdkVersion: "12.8.0", evidence: [],
     sources: ["https://photon.codes/docs/spectrum-ts/content/polls", "https://photon.codes/docs/advanced-kits/imessage/polls"],
-    blockers: operation === "poll.create" ? pollWorkflowAvailability(config).blockers :
-      ["Application integration missing: F0 approves no shared advanced poll extension; not an SDK/provider absence."],
+    blockers: operation === "poll.create" ? pollWorkflowAvailability(config).blockers : managementImplemented ? [] :
+      ["Application integration missing: no approved public shared-owner poll-management adapter is configured."],
   }));
   return {
     id: "polls", lane: "wt-05", mode: "production",
@@ -47,7 +53,8 @@ import type { PollProviderBinding } from "./sdk.js";
 
 /** F0 module factory; inert construction and no second SDK owner.
  * Registration is handler availability only. Consult pollFeatureAvailability before advertising
- * an interactive workflow; native management stays explicitly blocked on the frozen F0 seam.
+ * an interactive workflow; native management stays blocked until the shared owner supplies the
+ * approved PollManagement binding.
  */
 export function createFeatureModule(binding?: PollProviderBinding): F0FeatureModule {
   return { id: "polls", owner: "wt-05", handlers: {
@@ -60,12 +67,16 @@ export function createFeatureModule(binding?: PollProviderBinding): F0FeatureMod
 }
 
 /** Separate outbound implementation from provider availability and actual incoming user votes. */
-export function pollFeatureAvailability(voteIngress: PollModuleConfiguration["voteIngress"] = "unknown") {
+export function pollFeatureAvailability(voteIngress: PollModuleConfiguration["voteIngress"] = "unknown",
+  management: NonNullable<PollModuleConfiguration["management"]> = "unknown") {
+  const ready = management === "available";
   return {
-    operations: { "poll.create": "implemented", "poll.get": "blocked", "poll.vote": "blocked",
-      "poll.unvote": "blocked", "poll.addOption": "blocked" } as const,
+    operations: { "poll.create": "implemented", "poll.get": ready ? "implemented" : "blocked",
+      "poll.vote": ready ? "implemented" : "blocked", "poll.unvote": ready ? "implemented" : "blocked",
+      "poll.addOption": ready ? "implemented" : "blocked" } as const,
     outboundProviderAvailability: "unverified" as const,
-    voteIngress, interactiveWorkflowAdvertisable: false as const,
-    blockers: ["wt-05-advanced-polls", ...(voteIngress === "available" ? [] : ["wt-05-vote-ingress"])],
+    voteIngress, interactiveWorkflowAdvertisable: ready && voteIngress === "available",
+    blockers: [...(ready ? [] : ["wt-05-advanced-polls"]),
+      ...(voteIngress === "available" ? [] : ["wt-05-vote-ingress"])],
   };
 }

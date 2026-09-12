@@ -97,3 +97,67 @@ Create your named repair test file before invoking its command. Run other affect
 Coordinator owns production provider binding, receipt/ingress composition and route wiring. A consumes your resolver; you do not edit normalize.ts. Provider API upgrades require a separate exact shared dependency decision.
 
 Append a handoff to your own repair document with before/after reproduction, exact commands/exit codes/counts, source and pinned SDK evidence, changed paths, precise proposed coordinator wiring, remaining external dependencies, and any unverified behavior. Commit only your reviewed owned changes locally and return exact SHA(s), base and clean/dirty state for immutable integration. Do not push. Do not declare all 13 failures resolved: coordinator owns final inventory reconciliation (12), complete production-path tests (13), and separate actual Grok/provider/device evidence.
+
+## Worker B handoff — 2026-09-11
+
+### Checkout and baseline
+
+- Registered worktree: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1-b`
+- Branch: `repair/fix-1-b`
+- Prepared base and starting HEAD: `513ede497a96bd9c30cc597faee868e201ea3456`
+- Remote: `origin https://github.com/tecxbro/grokbotonimessage.git`
+- Starting worktree state: clean. The organizing folder was not treated as a checkout.
+- Installed worktree-local dependencies with the prescribed Node 24.13.0/npm 10.9.2 wrapper and `npm ci --ignore-scripts --no-audit --no-fund`; exit 0.
+- Before repair, the focused command exited 0 with 48/48 tests, but explicitly proved all four management operations blocked and the public Spectrum snapshot unable to provide authoritative native poll/option identity.
+
+### Implementation
+
+- Added the agreed scoped `PollProviderBinding.binding(context)` and optional shared-owner `management(context)` seam. It accepts no provider client, participant, local option key, or caller-supplied identity.
+- Added strict `NativePollState` validation for native poll/chat identity, unique native option IDs, full option labels, and actually observed participant votes. Unknown options and duplicate vote tuples are rejected.
+- Implemented feature handlers for `poll.get`, `poll.vote`, `poll.unvote`, and `poll.addOption` against that seam. `poll.vote` forwards the stored native option ID; `poll.unvote` forwards only the poll GUID; `poll.addOption` retains the native identity returned in the full provider state. Reads are authorized and reconciled directly. Consequential writes use the existing child executor with stable action digest/child identity, post-await claim checks, and durable `unknown-outcome`/`reconcile-first` behavior without blind resend.
+- Corrected poll creation scope validation to compare the SDK space phone with the authoritative binding phone, never logical `lineId`, and to compare the SDK space ID with the authoritative native conversation.
+- Added authoritative state reconciliation through existing polls/references persistence. The poll/message/native option relationship and original owner task/generation survive restart; full provider results update title, option identities, and observed vote counts.
+- Kept the shared `resolveNativePollVote`/`routePollEvent` identity resolver unchanged and exercised it with two polls in one conversation, duplicate labels, different native options, and original task routes. Reducer deduplication now uses authoritative source/sequence plus poll, option, actor, and owner rather than receipt timestamps or mutable/synthetic event IDs. Conflicting aliases remain unresolved.
+- Capability declarations become implemented only when `management: "available"` is explicitly configured. Interactive readiness additionally requires `voteIngress: "available"`. Defaults remain blocked.
+
+### Pinned SDK and source evidence
+
+- Official source-lock entries for Spectrum polls/messages and Advanced iMessage polls/events/error handling returned HTTP 200. The requested platform-narrowing source also returned HTTP 200 in the integration source lock.
+- Installed versions inspected: `spectrum-ts` 12.8.0 and `@photon-ai/advanced-imessage` 2.1.0.
+- Public Spectrum 12.8.0 exposes poll builders and incoming `PollOption` title/selected, but its narrowed owned provider has neither `polls` nor `client`; its snapshot path does not retain `pollMessageGuid`, `optionIdentifier`, or native event `sequence`.
+- Advanced iMessage 2.1.0 publicly models `Poll.pollMessageGuid`, option `optionIdentifier`, poll event `sequence`, and the documented get/vote/unvote/addOption signatures. That package is a separate client surface and is not owned by the production Spectrum binding. No second client or `Spectrum.__internal` access was added.
+- The advanced write surface documents optional `clientMessageId`, but the coordinator-approved shared-owner seam does not expose an authorized instance or idempotency-options contract. This lane therefore uses the existing child-execution identity and does not claim provider idempotency.
+
+### Coordinator production wiring requirements
+
+1. Preserve the single existing Spectrum/credential owner. Extend that owner's approved public adapter to supply `PollProviderBinding.binding(context)` and `management(context): Promise<PollManagement>` using the exact feature contract. If Spectrum 12.8.0 cannot provide that from its public owned surface, an explicit dependency/provider API decision is required; do not use `__internal` or construct `@photon-ai/advanced-imessage` independently.
+2. Pass the binding to `createPollFeature`/`createFeatureModule`, then configure `createPollModule` with `management: "available"` only after the real shared-owner adapter exists and its account/conversation availability is checked.
+3. At authenticated ingress, capture `pollMessageGuid`, `optionIdentifier`, poll change, actor/isFromMe semantics, and authoritative native `sequence` before the Spectrum public snapshot discards them. Supply those trusted fields to A's one live/replay normalization path. Do not derive them from option labels, positions, latest polls, receipt time, or Spectrum's undocumented synthetic message ID.
+4. Use the same durable store with `createPollCorrelations(store, nativeIdentity)` for live processing and replay. Leave early events pending; after management/create reconciliation commits native mappings, invoke the existing capture recovery path so each can resolve once.
+5. Route resolved poll events with `routePollEvent(event, tx)` to the persisted originating task/generation. Do not select the currently configured task for the conversation. Keep stale owner generations unresolved/rejected.
+6. Declare `voteIngress: "available"` only after the native identity and sequence path is wired and tested through the one existing receiver/router. Until both management and ingress are real, interactive poll capability remains blocked.
+
+### Changed paths
+
+- `docs/worktrees/fix-1-repair/B.md`
+- `packages/photon-features/src/features/polls/module.ts`
+- `packages/photon-features/src/features/polls/operations.ts`
+- `packages/photon-features/src/features/polls/reconciliation.ts`
+- `packages/photon-features/src/features/polls/reducer.ts`
+- `packages/photon-features/src/features/polls/sdk.ts`
+- `packages/photon-features/tests/integration/repair-polls.test.ts`
+- `packages/photon-features/tests/lanes/wt-05/integration.test.ts`
+- `packages/photon-features/tests/lanes/wt-05/reducer.test.ts`
+- `packages/photon-features/tests/lanes/wt-05/unit.test.ts`
+
+### Verification
+
+- `npm run typecheck --workspace=@grokbot/photon-features && npm run photon:build` plus the focused WT-05, repair-polls, and repair-sdk-contract command: exit 0, 53/53 tests passed.
+- `npm run photon:check`: exit 0; 3 schemas, 49 generated files checked, contract digest `11affb7fbe3adcfb4dbc55615ebd4df50a8b2706590ce30c0b1e23cbff9be6f1`.
+- `npm test`: exit 0, 31/31 root tests passed.
+- Additional affected regression `npm run photon:test`: exit 0, 60/60 WT-00 tests passed.
+- `git diff --check`: exit 0.
+
+### Remaining/unverified boundary
+
+The resolver, persistence/reconciliation, scoped management handlers, reducer deduplication, and capability gating are locally implemented and tested with typed doubles and real public Spectrum snapshots/builders. Production management and interactive incoming votes are not activated: the pinned shared Spectrum owner lacks the required public native management/event surface, and coordinator-owned production ingress/router wiring has not yet supplied native IDs/sequence or original-owner routing. No provider call, live message, installation, activation, delivery/read, or device behavior was attempted or proven.
