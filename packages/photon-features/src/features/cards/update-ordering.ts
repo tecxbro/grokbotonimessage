@@ -34,11 +34,12 @@ export function fence(tx: Transaction, requestId: string, action: Action, s: Exe
 }
 
 /** Public domain CAS: even revisions are settled; odd revisions denote unresolved
- * dispatch. An admission revision never comes from a late read of current state. */
+ * dispatch. An admission revision never comes from a late read of current state.
+ * Callers check authority immediately before entering the already-fenced UnitOfWork;
+ * opening another claim transaction from inside that callback is forbidden. */
 export function assertCurrentCardRevision(unit: import('../../contracts/store.js').UnitOfWork,
   data: import('./session-codec.js').CardSession, expected: number,
   services: import('../../contracts/services.js').ExecutionServices) {
-  services.assertActiveClaim();
   requireCard(Number.isSafeInteger(expected) && expected >= 0 && expected <= Number.MAX_SAFE_INTEGER - 2 && expected % 2 === 0,
     'IDEMPOTENCY_CONFLICT', 'A settled admission-time revision is required.');
   const card = unit.get('cards', data.card.id), session = unit.get('sessions', data.session.id);

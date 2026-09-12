@@ -288,6 +288,7 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
       requireCard(isDeepStrictEqual(data.card, action.arguments.card) && isDeepStrictEqual(data.session, action.arguments.session),
         'SCOPE_MISMATCH', 'Requested card/session differs from the original.');
       publicSpace(original.space, runtime, s);
+      publicActive(s, action, signal);
       s.transaction(unit => assertCurrentCardRevision(unit, data, expected!, s));
       const template = runtimeTemplate(runtime, data.templateId);
       requireCard(template.kind === data.kind, 'UNAVAILABLE', 'Card template kind changed.', 'card_template_changed');
@@ -301,8 +302,8 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
       publicActive(s, action, signal);
       publicSpace(original.space, runtime, s);
       refs = [data.message, data.card, data.session];
+      publicActive(s, action, signal);
       s.transaction(unit => {
-        publicActive(s, action, signal);
         const card = assertCurrentCardRevision(unit, data, expected!, s);
         unit.put('cards', { ...card, revision: card.revision + 1 }, card.revision);
       });
@@ -314,8 +315,8 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
       const metadata = sessionMetadata(original);
       requireCard(metadata && metadata.chatGuid === original.space.id && metadata.sessionId === data.metadata?.sessionId,
         'UNAVAILABLE', 'Provider-managed session refresh differs.', 'requires_original_session');
+      publicActive(s, action, signal);
       s.transaction(unit => {
-        publicActive(s, action, signal);
         const card = unit.get('cards', data.card.id);
         requireCard(card && card.revision === expected! + 1 && isDeepStrictEqual(card.reference, data.card),
           'STALE_FENCE', 'Card update reservation changed.');
@@ -334,14 +335,14 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
     publicActive(s, action, signal);
     publicSpace(space, runtime, s);
     const assertSpaceMapping = () => s.transaction(unit => {
-      publicActive(s, action, signal);
-      publicSpace(space, runtime, s);
       const row = unit.get('references', args.space.id);
       requireCard(row && row.providerId === space.id && isDeepStrictEqual(row.reference, args.space) &&
         isDeepStrictEqual(row.scope, s.context.scope) && row.taskId === s.context.taskId &&
         row.ownedByPrincipalId === s.context.principalId && row.generation === s.context.generation,
         'SCOPE_MISMATCH', 'Authoritative space mapping differs.');
     });
+    publicActive(s, action, signal);
+    publicSpace(space, runtime, s);
     assertSpaceMapping();
     const content = await mapCardOperation(template, args.url, 'layout' in args ? args.layout : undefined, s);
     publicActive(s, action, signal);
@@ -367,8 +368,8 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
         participantIds: [...config.participantIds], actionIds: [...config.actionIds], expiresAt: s.clock.now() + config.ttlMs } : null };
     encodeCardSession(data);
     refs = [messageRef, card, session];
+    publicActive(s, action, signal);
     s.transaction(unit => {
-      publicActive(s, action, signal);
       for (const reference of refs) unit.put('references', { id: reference.id, scope, revision: 0, reference,
         providerId: message.id, ownedByPrincipalId: data.principalId, taskId: data.taskId, generation: data.generation }, null);
       unit.put('cards', { id: card.id, scope, revision: 0, reference: card, templateId: template.id }, null);

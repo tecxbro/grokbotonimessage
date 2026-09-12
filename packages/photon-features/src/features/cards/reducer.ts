@@ -86,7 +86,6 @@ export async function applyCardInteraction(input: AuthenticatedInteraction, snap
   requireCard(captured, 'UNAVAILABLE', 'Authenticated event capture is unavailable.', 'app_backend_capture_required');
   const continuationId = key('continuation', binding.backendContractId + ':' + input.eventId);
   return services.transaction(unit => {
-    services.assertActiveClaim();
     requireCard(binding.expiresAt > services.clock.now(), 'FORBIDDEN', 'Callback expired during durable capture.');
     const card = unit.get('cards', data.card.id), session = unit.get('sessions', data.session.id);
     if (!card || !session) return { status: 'unresolved' as const };
