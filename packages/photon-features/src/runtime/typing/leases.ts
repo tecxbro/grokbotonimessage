@@ -197,9 +197,19 @@ export class TypingLeases {
         const active = this.desired(state);
         if (active === state.observed) continue;
         const dispatchedLease = state.lease;
+        if (active) {
+          try {
+            dispatchedLease?.validate?.();
+          } catch {
+            // No provider call has been made. Do not misreport an authority
+            // rejection as an uncertain RPC or send an unnecessary stop.
+            this.report("TYPING_LEASE_INVALID");
+            if (state.lease === dispatchedLease) this.clearLease(state);
+            continue;
+          }
+        }
         try {
           if (active) {
-            state.lease?.validate?.();
             await state.space.startTyping();
           } else await state.space.stopTyping();
           state.observed = active; // SDK completion only, never a visibility claim.

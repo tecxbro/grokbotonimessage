@@ -17,6 +17,10 @@ export interface TypingExecutionBinding {
   resultRevision: number;
   expiresAt: number;
   assertCurrent(): void;
+  /** Optional host-issued authority for a deferred typing start. It must recheck
+   * the admitted request and current task/context, even after scheduling has
+   * completed. Omitting it retains the stricter execution-claim fallback. */
+  assertLeaseCurrent?(): void;
 }
 export type BindTypingExecution = (
   action: Action,
@@ -156,6 +160,16 @@ export async function executeTypingOperation(
     if (services.signal.aborted) throw new Error("CANCELLED");
     if (binding.expiresAt <= services.clock.now()) throw new Error("TYPING_WORK_EXPIRED");
   };
+  // Scheduling requires the active execution claim. The transient lease may
+  // dispatch later, after the executor has intentionally released that claim.
+  // Only the host can issue that narrower, expiring authority; never replace
+  // it with a no-op or a snapshot of the original permissions.
+  const validateLease = () => {
+    if (services.signal.aborted) throw new Error("CANCELLED");
+    if (binding.expiresAt <= services.clock.now()) throw new Error("TYPING_WORK_EXPIRED");
+    if (binding.assertLeaseCurrent) binding.assertLeaseCurrent();
+    else validate();
+  };
   validate();
   assertScope(action.arguments.space, services.context.scope);
   await services.resolveResource(action.arguments.space);
@@ -170,7 +184,7 @@ export async function executeTypingOperation(
         const ttl = Math.min(action.arguments.ttlMs, binding.expiresAt - services.clock.now(),
           services.claim.leaseUntil - services.clock.now(), services.context.expiresAt - services.clock.now());
         unavailable = ttl < 100 || !leases.begin(services.context.scope, services.context.generation,
-          ttl, {signal: services.signal, validate});
+          ttl, {signal: services.signal, validate: validateLease});
       } else leases.end({scope: services.context.scope, generation: services.context.generation});
       return {
         version: 1, requestId: binding.requestId, revision: binding.resultRevision,

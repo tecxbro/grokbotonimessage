@@ -1,4 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
+import { bindProductionTyping } from "./typing-binding.js";
 import type {
   Action,
   AuthenticatedPrincipal,
@@ -136,6 +137,7 @@ class ProductionLocalExecutor implements LocalExecutor {
       registerReferences: CaptureProcessing["registerReferences"];
     },
     private readonly pump: InboundPump,
+    private readonly typing: TypingLeases,
     private readonly report: (code: string) => void,
     private readonly concurrency = 4,
   ) {}
@@ -165,9 +167,12 @@ class ProductionLocalExecutor implements LocalExecutor {
   }
   async stopOutbox(): Promise<void> {
     this.active = false;
+    // Invalidate deferred starts before closing state or stopping Spectrum.
+    this.typing.shutdown();
     for (const abort of this.running.values()) abort();
     await this.pump.stop();
     await this.drive;
+    await this.typing.drain();
   }
   capture(event: IncomingEvent): Promise<void> { return this.router.accept(event); }
 
@@ -322,7 +327,7 @@ export async function createProductionComposition(
   const typing = new TypingLeases({ now }, async target => {
     if (!sameScope(target, scope)) throw new Error("SCOPE_MISMATCH");
     return owner.space(scope, configuration.provider.conversationId);
-  });
+  }, undefined, dependencies.report);
   const legacyTypingBind: BindTypingExecution = (action, services) => ({
     requestId: requestIdentity(action, services.context),
     resultRevision: 0,
@@ -330,12 +335,9 @@ export async function createProductionComposition(
     assertCurrent: () => undefined,
   });
   const publicTypingBind = (action: Extract<Action, { operation: "typing.begin" | "typing.end" }>,
-    services: PublicExecutionServices) => ({
-    requestId: requestIdentity(action, services.context),
-    resultRevision: 0,
-    expiresAt: Math.min(services.context.expiresAt, services.claim.leaseUntil),
-    assertCurrent: () => services.assertActiveClaim(),
-  });
+    services: PublicExecutionServices) => bindProductionTyping(
+      claims, requestIdentity(action, services.context), action, services,
+    );
   const legacyText = createTextMessageModule({ binding, requestId: request });
   const legacyMedia = createMediaModule({
     bindings: async () => ({ scope, phone: configuration.provider.phone,
@@ -550,7 +552,7 @@ export async function createProductionComposition(
   const captureProcessing = { owner, receipts, registerReferences };
   const executor = new ProductionLocalExecutor(store, protocol, claims, recovery, router, captures,
     providerRoutes, resources, requestId => services => resourcePorts.bind(requestId, services), capability,
-    correlations, captureProcessing, pump,
+    correlations, captureProcessing, pump, typing,
     dependencies.report ?? (() => undefined));
   const ingressSource = new SpectrumEventSource(owner, captures, { now }, diagnostic =>
     (dependencies.report ?? (() => undefined))(diagnostic.code), correlations, { receipts, registerReferences });
