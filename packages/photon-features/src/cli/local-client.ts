@@ -3,7 +3,16 @@ import { constants } from "node:fs";
 import { open, lstat } from "node:fs/promises";
 import { dirname, isAbsolute } from "node:path";
 import { z } from "zod";
-import { MAX_REQUEST_BYTES, capabilitySchema, resultSchema, incomingEventSchema, scopeSchema, idSchema, type LocalRequest } from "../contracts/index.js";
+import {
+  MAX_REQUEST_BYTES,
+  capabilitySchema,
+  resultSchema,
+  incomingEventSchema,
+  mediaImportResultSchema,
+  scopeSchema,
+  idSchema,
+  type LocalRequest,
+} from "../contracts/index.js";
 import { CliError, type CliResponse } from "./output.js";
 const count = z.number().int().nonnegative();
 // LocalResponse's work records are TypeScript-only in F0. This validates that wire seam;
@@ -14,7 +23,7 @@ const handoff = z.strictObject({ id: idSchema, scope: scopeSchema, revision: cou
 const failure = z.strictObject({ version: z.literal(1), ok: z.literal(false), error: z.strictObject({ code: z.string().regex(/^[A-Z_]+$/).max(80), requestId: idSchema.optional() }) });
 export function validateResponse(input: unknown, request: LocalRequest): CliResponse {
   if (input && typeof input === "object" && "ok" in input && input.ok === false) return failure.parse(input);
-  const schema = request.method === "capabilities" ? z.array(capabilitySchema) : request.method === "diagnostics" ?
+  const schema = request.method === "media.import" ? mediaImportResultSchema : request.method === "capabilities" ? z.array(capabilitySchema) : request.method === "diagnostics" ?
     z.strictObject({ ready: z.boolean(), activation: z.enum(["enabled", "disabled"]) }) : request.method === "work.list" ?
     z.strictObject({ work: z.array(handoff) }) : request.method.startsWith("work.") ?
     z.strictObject({ handoff, events: z.array(incomingEventSchema) }) : resultSchema;
