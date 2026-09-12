@@ -23,6 +23,7 @@ Use these exact commands:
 ```sh
 grok-photon capabilities --json
 grok-photon doctor --json
+grok-photon media.import --json-stdin < media.json
 grok-photon execute --json-stdin < action.json
 grok-photon status --request-id request-1 --json
 grok-photon cancel --request-id request-1 --json
@@ -36,6 +37,19 @@ The numbers and IDs above are illustrative; use the returned handoff claim fence
 
 `execute` reads one complete strict JSON action until stdin EOF. Its only top-level fields are `version: 1`, `idempotencyKey`, `contextId`, `operation`, `arguments`. Use the exact shared schema and generated example for the chosen operation below. Replace fixture identities with authorized task resources. The action context must match the launcher context. No extra fields, executable code or raw provider dictionaries are accepted. Input is bounded to 262144 UTF-8 bytes; the complete authenticated frame must also fit that limit. All commands return one JSON line on stdout; diagnostics are on stderr. Successful responses are `{version:1,ok:true,result:...}`; failures are `{version:1,ok:false,error:{code,...}}`.
 
+`media.import` reads one complete strict JSON object until stdin EOF. Use exactly
+`{"filename":"result.png","metadata":{"mimeType":"image/png","name":"result.png"}}`;
+`metadata.name` and `metadata.duration` are optional. `filename` is a basename in
+the configured private import directory, never a path or URL. The authenticated
+host and launcher context choose the principal, import root and scope; no
+principal, credential, context, recipient, source, path, URL or byte-size
+override is accepted. Success returns exactly
+`{version:1,ok:true,result:{stagingId,sha256,mimeType,bytes}}`. Use that `result`
+unchanged as the `arguments.media` value in the generated `attachment.send` or
+`voice.send` action schema. Import stages immutable bytes only: it does not send
+a message or prove delivery. Because import has no request idempotency key,
+reconcile an uncertain import instead of blindly repeating it.
+
 Exit codes: 0 means a successful protocol response with no reported adverse outcome, including queued work; 2 means invalid arguments, JSON or configuration; 3 means host unavailable/not ready; 4 means credential/context authorization failure; 5 means operation blocked/failed/cancelled/unknown or other runtime error; 6 means uncertain transport or invalid host response. Never equate exit 0 with a delivered message. A nonzero doctor exit can still include a valid read-only diagnostic result.
 
 ## Discovery, resources and targets
@@ -47,6 +61,47 @@ Resolve people and conversations through existing task context and persisted res
 Keep a stable idempotency key for the same intended action and identical arguments. Persist it with the host-returned request ID. Never change the key just to bypass an error. Reusing a key with changed arguments is an idempotency conflict. Scope/task/generation are also part of runtime identity; a new generation must be resolved by the orchestrator.
 
 Four concise, schema-validated starting points are [create a poll](examples/wt-08/create-poll.json), [reply](examples/wt-08/reply.json), [send a voice note](examples/wt-08/send-voice.json), and [update an app card](examples/wt-08/update-card.json). They are generated from the same canonical fixtures/parser as the complete operation inventory below. Fixture IDs are examples, never target authority.
+
+## Choosing the operation
+
+Inspect the current scoped capabilities before choosing. Implementation,
+provider support, account availability, conversation availability and evidence
+are separate facts. If the required operation is genuinely unavailable, report
+the blocker naturally; do not invent an SDK fallback or make Grok a second
+messaging runtime.
+
+- Ordinary answer: use `text.send`. When the answer refers to one specific
+  incoming message and targeted replies are available, use `message.reply`.
+- Reaction: use `message.react` only when a targeted acknowledgment is useful
+  and sufficient. Do not automatically react to every message, receipt or
+  outgoing echo, and do not add a redundant acknowledgment bubble.
+- Effect: use `effect.send` for an explicit request or a clearly appropriate
+  expressive moment, such as a requested celebration. Do not decorate routine
+  answers randomly or send a duplicate plain copy.
+- Poll: use `poll.create` to collect a structured choice. Treat later votes as
+  correlated poll resources routed to the originating task, not as unrelated
+  text messages.
+- Card update: when the task changes an authorized existing card, use
+  `app.update` with that card and session. Do not silently replace it with a new
+  bubble.
+- Generated media: write the completed artifact only into the configured import
+  directory, run `media.import`, then put its returned staged descriptor into
+  `attachment.send` or `voice.send`. Import never authorizes another file.
+- Typing: begin typing for an active conversational reply phase and let the host
+  manage its lease. End it on completion, cancellation, failure or loss of
+  ownership. Do not leave typing active while waiting for the user.
+- Progress: report meaningful, confirmed task-state changes when useful during
+  longer work. Do not emit timer-driven filler or claim completion early.
+- Outcomes: keep `queued`, `executor-completed`, `provider-accepted`,
+  `observed-delivered` and `observed-read` distinct. An unknown outcome is a
+  reconciliation task, never authority to resend.
+
+Concrete behavior: answer a normal question with text or a targeted reply;
+acknowledge a sufficient “got it” with only a reaction; use one requested
+celebration effect; send sparse confirmed progress during long work; end typing
+and stop new effects on cancellation; import generated media before sending it;
+explain an unavailable-capability blocker; and reconcile an uncertain send
+under its stable identity without creating a replacement action.
 
 ## Work after a wake
 

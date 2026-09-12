@@ -1,4 +1,9 @@
-import { localRequestSchema, parseAction, type LocalRequest } from "../contracts/index.js";
+import {
+  localRequestSchema,
+  mediaImportInputSchema,
+  parseAction,
+  type LocalRequest,
+} from "../contracts/index.js";
 import { CliError, type CliResponse } from "./output.js";
 export function commandRequest(argv: string[], contextId: string | undefined, input?: unknown): LocalRequest {
   const [command, ...rest] = argv;
@@ -17,15 +22,21 @@ export function commandRequest(argv: string[], contextId: string | undefined, in
     "work.heartbeat": ["work.heartbeat", ["--handoff-id", "--fence", "--lease-ms", "--json"]],
     "work.ack": ["work.ack", ["--handoff-id", "--fence", "--json"]],
     execute: ["submit", ["--json-stdin"]],
+    "media.import": ["media.import", ["--json-stdin"]],
   };
   const def = definitions[command ?? ""];
-  if (!def || [...flags.keys()].some(k => !def[1].includes(k)) || !flags.has(command === "execute" ? "--json-stdin" : "--json")) throw new CliError("INVALID_ARGUMENTS", 2);
+  const readsStdin = command === "execute" || command === "media.import";
+  if (!def || [...flags.keys()].some(k => !def[1].includes(k)) || !flags.has(readsStdin ? "--json-stdin" : "--json")) throw new CliError("INVALID_ARGUMENTS", 2);
   if (!contextId) throw new CliError("INVALID_CONFIGURATION", 2);
   try {
     if (command === "execute") {
       const action = parseAction(input);
       if (!contextId || action.contextId !== contextId) throw new CliError("CONTEXT_MISMATCH", 4);
       return localRequestSchema.parse({ version: 1, method: "submit", action });
+    }
+    if (command === "media.import") {
+      const media = mediaImportInputSchema.parse(input);
+      return localRequestSchema.parse({ version: 1, method: "media.import", contextId, ...media });
     }
     const request: Record<string, unknown> = { version: 1, method: def[0], contextId };
     const names = { "--request-id": "requestId", "--handoff-id": "handoffId", "--fence": "fence", "--lease-ms": "leaseMs", "--limit": "limit" };
