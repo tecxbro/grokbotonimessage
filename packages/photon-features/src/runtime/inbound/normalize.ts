@@ -15,6 +15,7 @@ import {
   scopeKey,
   type ProviderContext,
 } from "../../adapters/transport/provider-context.js";
+import { conversationalPollAnswer } from "../../features/polls/conversational-answer.js";
 
 export const slimMessage = z.looseObject({
   id: z.string().min(1),
@@ -39,9 +40,11 @@ export interface Correlations {
     scope: Scope,
   ):
     | {
+        status?: "verified";
         poll: Extract<ResourceRef, { kind: "poll" }>;
         option: Extract<ResourceRef, { kind: "poll-option" }>;
       }
+    | { status: "unresolved" }
     | undefined;
 }
 export interface IncomingReferenceBinding {
@@ -319,23 +322,33 @@ export function normalizeCaptured(
         };
         break;
       case "poll_option": {
-        const refs = correlations.poll?.(m, scope);
-        if (!refs) return unresolved("unknown-target");
+        if (!actor || base.direction !== "inbound")
+          return unresolved("unsupported-payload");
+        const answer = conversationalPollAnswer(c);
+        if (!answer) return unresolved("unsupported-payload");
+        const correlation = correlations.poll?.(m, scope);
+        if (correlation?.status === "unresolved")
+          return unresolved("unknown-target");
         if (
-          !actor ||
-          !sameScope(refs.poll.scope, scope) ||
-          !sameScope(refs.option.scope, scope) ||
-          refs.option.pollId !== refs.poll.id ||
-          typeof c.selected !== "boolean"
+          correlation &&
+          (!sameScope(correlation.poll.scope, scope) ||
+            !sameScope(correlation.option.scope, scope) ||
+            correlation.option.pollId !== correlation.poll.id)
         )
           return unresolved("unsupported-payload");
         event = {
           ...base,
-          type: "poll",
-          ...refs,
-          targets: [refs.poll, refs.option],
-          actorId: actor,
-          change: c.selected ? "vote" : "unvote",
+          direction: "inbound",
+          type: "poll-answer",
+          senderId: actor,
+          ...answer,
+          captureId: quarantineId,
+          correlation: correlation
+            ? { poll: correlation.poll, option: correlation.option }
+            : null,
+          targets: correlation
+            ? [correlation.poll, correlation.option]
+            : [],
         };
         break;
       }

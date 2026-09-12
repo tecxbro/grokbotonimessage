@@ -205,6 +205,7 @@
       "packages/photon-features/tests/lanes/wt-04/regression.test.ts"
     ],
     "wt-05": [
+      "packages/photon-features/src/features/polls/conversational-answer.ts",
       "packages/photon-features/src/features/polls/identity.ts",
       "packages/photon-features/src/features/polls/module.ts",
       "packages/photon-features/src/features/polls/operations.ts",
@@ -385,6 +386,7 @@
       "packages/photon-features/tests/integration/production-host.test.ts",
       "packages/photon-features/tests/integration/production-lifecycle.test.ts",
       "packages/photon-features/tests/integration/production-resources.test.ts",
+      "packages/photon-features/tests/integration/poll-answer-journey.test.ts",
       "packages/photon-features/tests/lanes/wt-08/distribution.test.mjs",
       "packages/photon-features/scripts/package.mjs",
       "packages/photon-features/src/adapters/state/sqlite.ts",

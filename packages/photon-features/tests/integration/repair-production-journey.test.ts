@@ -339,6 +339,8 @@ test("automated production path retrieves durable work and acts only through cap
     assert.deepEqual({ constructions, listeners }, { constructions: 1, listeners: 1 });
     assert.equal(outbound.filter(content => content.type === "attachment").length, 1);
     assert.equal(outbound.filter(content => content.type === "reply").length, 1);
+    assert.equal(outbound.filter(content => content.type === "poll").length, 0,
+      "ordinary inbound text must not create a poll");
     assert.equal(outbound.find(content => content.type === "text")?.type === "text" &&
       outbound.find(content => content.type === "text")?.text, "hello, ready?");
 
@@ -379,12 +381,23 @@ test("automated production path retrieves durable work and acts only through cap
       sender: { id: "+15555550999" },
     } as unknown as Message;
     queue.push([space, pollVote]);
-    await waitUntil(() => {
-      const observer = new DurableSQLiteStore(configuration.runtime.statePath, () => now);
-      try { return observer.scan("unresolved").some(row => row.reason === "unknown-target"); }
-      finally { observer.close(); }
-    }, "explicit unresolved poll vote");
-    assert.equal(wakeCalls, 1, "a vote without native poll identity must not create a continuation");
+    await waitUntil(() => wakeCalls === 2, "poll-answer wake");
+    const pollWork = await cli(["work.list", "--limit", "20", "--json"]);
+    assert.equal(pollWork.code, 0, pollWork.stderr);
+    assert.equal(pollWork.parsed.result.work.length, 1);
+    const pollHandoffId = pollWork.parsed.result.work[0].id as string;
+    const pollClaim = await cli(["work.claim", "--handoff-id", pollHandoffId,
+      "--lease-ms", "30000", "--json"]);
+    assert.equal(pollClaim.code, 0, pollClaim.stderr);
+    const pollEvent = pollClaim.parsed.result.events[0] as IncomingEvent;
+    assert.equal(pollEvent.type, "poll-answer");
+    if (pollEvent.type !== "poll-answer") throw new Error("missing poll answer");
+    assert.equal(pollEvent.answerText, "[Poll response]\nQuestion: Pick?\nSelected: Same");
+    assert.equal(pollEvent.correlation, null);
+    const pollFence = pollClaim.parsed.result.handoff.claim.fence as number;
+    const pollAck = await cli(["work.ack", "--handoff-id", pollHandoffId,
+      "--fence", String(pollFence), "--json"]);
+    assert.equal(pollAck.code, 0, pollAck.stderr);
   } finally {
     await local?.close();
     await composition.runtime.stop();
@@ -410,5 +423,5 @@ test("automated production path retrieves durable work and acts only through cap
     await reopened.runtime.stop();
   }
   assert.equal(stops, 2);
-  assert.equal(wakeCalls, 1, "acknowledged work must not wake again after restart");
+  assert.equal(wakeCalls, 2, "acknowledged work must not wake again after restart");
 });

@@ -107,3 +107,26 @@ processing argument. The journey test failed with `runner timeout`; restoring th
 binding returned it to one pass. The full source-derived runner then passed 826/826
 with zero failures, cancellations, or skips; the authorization-gated live suite was
 excluded explicitly.
+
+## Optional conversational poll-answer maintenance (2026-09-12)
+
+This section supersedes only the earlier conclusion that a poll interaction must
+remain unresolved without native poll identity. Native state reduction and
+original-poll attribution still require authoritative IDs and ordering; delivering
+the public interaction as explicitly uncorrelated conversation work does not.
+
+- PA-1: **PASS OFFLINE** — ordinary text stays ordinary text; there is no text-to-poll detector or automatic poll creation.
+- PA-2: **PASS OFFLINE** — an explicit idempotent `poll.create` sends the selected question and options exactly once through the production owner.
+- PA-3: **PASS OFFLINE** — default production composition, with both `pollManagement` and `nativePollIdentity` absent, captures a realistic public `poll_option` as durable `poll-answer` work.
+- PA-4: **PASS OFFLINE** — supplied public poll title is preserved; an absent title remains `question: null` and is described as unidentified.
+- PA-5: **PASS OFFLINE** — select, deselect, reselect, multiple selection, duplicate labels, and two question titles remain separate observations without guessed option/poll attribution.
+- PA-6: **PASS OFFLINE** — duplicate delivery and capture replay create one logical handoff; acknowledged work neither reopens nor resends after restart.
+- PA-7: **PASS OFFLINE** — foreign line/conversation, malformed payload, missing sender, and inactive task authority produce no unauthorized work and do not terminate the one receiver.
+- PA-8: **PASS OFFLINE** — the scripted Grok boundary receives a pointer-only wake, uses authenticated `work.list`/`work.claim`, reads `answerText`, sends through ordinary `text.send`, and acknowledges with the returned fence.
+- PA-9: **PASS OFFLINE** — one Spectrum owner and one message listener serve outbound creation and inbound answer capture.
+- PA-10: **NOT RUN LIVE** — installation, activation, real Grok understanding, provider delivery, iMessage rendering/tap, and physical-device behavior require separate authorization and evidence.
+
+Native `poll.get`, `poll.vote`, `poll.unvote`, and `poll.addOption` management
+remain separately unavailable without the approved shared-owner management
+binding. This maintenance does not claim final/latest vote state when the public
+stream lacks authoritative ordering.

@@ -593,6 +593,31 @@
       "path": "packages/photon-features/tests/lanes/wt-00/repair-ci-history.test.ts",
       "owner": "E",
       "justification": "Failure 10: immutable historical baseline retrieval and checkout-independent CI validation"
+    },
+    {
+      "path": "packages/photon-features/src/contracts/events.ts",
+      "owner": "coordinator",
+      "justification": "Poll-answer maintenance: internal conversational event contract"
+    },
+    {
+      "path": "packages/photon-features/schemas/event.schema.json",
+      "owner": "coordinator",
+      "justification": "Poll-answer maintenance: generated event contract"
+    },
+    {
+      "path": "packages/photon-features/src/features/polls/conversational-answer.ts",
+      "owner": "coordinator",
+      "justification": "Poll-answer maintenance: bounded public PollOption projection"
+    },
+    {
+      "path": "packages/photon-features/tests/e2e/inbound-events.test.ts",
+      "owner": "coordinator",
+      "justification": "Poll-answer maintenance: assembled inbound event regression"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/poll-answer-journey.test.ts",
+      "owner": "coordinator",
+      "justification": "Poll-answer maintenance: default production work-path acceptance"
     }
   ],
   "preparationCommit": "513ede497a96bd9c30cc597faee868e201ea3456"

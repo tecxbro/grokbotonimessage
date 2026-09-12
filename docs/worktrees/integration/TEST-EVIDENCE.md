@@ -363,3 +363,49 @@ continuation cannot be production-proven at Spectrum 12.8.0 without authoritativ
 native poll/option IDs and provider ordering. Actual Grok/device verification is
 NOT RUN because there is no authorized activated configuration, provider/Grok
 credential, intended user message, or device access in this task.
+
+## Optional conversational poll-answer maintenance (2026-09-12)
+
+The registered `fix-1` worktree began clean at reviewed commit
+`8d2a158e161873d3123241c7507d4d8f9d3bc69f`; a fresh fetch showed
+`HEAD == origin/fix-1` and divergence `0 0`. Verification used Node 24.13.0
+and npm 10.9.2. To exclude unrelated typing-lifetime edits that appeared in the
+shared worktree during this task, the poll-only staged tree was materialized on
+a temporary local `fix-1` clone. No credentials, network provider calls, live
+Grok task, installation, activation, or device interaction were used.
+
+The focused production test supplies real production composition, private
+temporary SQLite/capture state, one mocked Spectrum owner/stream, a scripted
+Grok wake boundary, and the authenticated compiled CLI/work protocol. Both
+`pollManagement` and `nativePollIdentity` are absent. It verifies one explicit
+idempotent poll send; public `poll_option` capture; durable work claim and answer
+read before ordinary `text.send`; acknowledgement; duplicate/restart safety;
+selection, deselection, re-selection and multiple-selection deltas; duplicate
+labels/questions without guessed correlation; malformed/foreign/unauthorized
+rejection; and one owner/listener.
+
+Commands and actual results:
+
+| Command | Result |
+| --- | --- |
+| `npm run photon:build` plus the eight focused/affected test files | 46/46 passed; zero failures, skips, cancellations, or todos |
+| `npm run typecheck --workspace=@grokbot/photon-features` | passed |
+| `npm test` | 31/31 passed; zero failures or skips |
+| `npm run photon:check` | passed; 3 schemas, 49 digest files, candidate digest `c66c203a1df3e11d39f7c84a7f70de7f5b88a3ef04bfb0377a88c23f1bc8a737` |
+| `npm run photon:test:integration` | 91 selected non-live files; 829/829 passed; zero failures, skips, cancellations, or todos |
+| `node packages/photon-features/scripts/generate-skill.mjs --check` | passed; 44 operations/examples, 4 assigned examples, 48 validated files, drift check true |
+| `node scripts/verify-docs.mjs integration` | passed; 15 sources and 9 lanes |
+| `node scripts/verify-ownership.mjs integration` | passed; 499 checked paths, including 105 exact repair-assigned paths |
+| `git diff --check` | passed |
+
+The full integration runner explicitly excludes the authorization-gated live
+suite. These results prove the assembled local path with provider/Grok doubles,
+not installation, activation, provider acceptance/delivery/read, iMessage poll
+rendering, a human tap, live Grok understanding, or physical-device behavior.
+
+Spectrum 12.8.0's public `PollOption` retains option/title, selection state,
+poll content when supplied, sender, message identity, direction, and timestamp,
+but not authoritative native poll/option IDs or provider ordering in the stored
+snapshot. Therefore conversational delivery is proven without management, while
+native management, exact attribution when those IDs are absent, and final/latest
+vote-state claims remain unavailable.

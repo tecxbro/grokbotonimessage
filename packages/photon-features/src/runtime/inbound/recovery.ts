@@ -18,6 +18,7 @@ export async function recoverCaptures(
     owner: SpectrumOwner;
     receipts: CaptureProcessing["receipts"];
     registerReferences: CaptureProcessing["registerReferences"];
+    authorize?: CaptureProcessing["authorize"];
   },
 ): Promise<string[]> {
   const unresolved: string[] = [];
@@ -45,6 +46,7 @@ export async function recoverCaptures(
           processing: {
             receipts: processing.receipts,
             registerReferences: processing.registerReferences,
+            ...(processing.authorize ? { authorize: processing.authorize } : {}),
             correlations,
           },
         });

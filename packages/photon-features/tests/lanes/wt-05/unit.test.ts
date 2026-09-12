@@ -39,11 +39,13 @@ function fixture() {
 test("F0 factory registers five typed handlers without starting any provider", () => {
   assert.deepEqual(Object.keys(createFeatureModule().handlers), [...pollOperations]);
   for(const ingress of ["unknown","unavailable","available"] as const) {
-    assert.equal(pollFeatureAvailability(ingress).interactiveWorkflowAdvertisable,false);
+    assert.equal(pollFeatureAvailability(ingress).interactiveWorkflowAdvertisable,ingress === "available");
     assert.equal(pollFeatureAvailability(ingress).operations["poll.vote"],"blocked");
+    assert.deepEqual(pollFeatureAvailability(ingress).managementBlockers,["wt-05-advanced-polls"]);
   }
   assert.equal(pollFeatureAvailability("available","available").interactiveWorkflowAdvertisable,true);
   assert.equal(pollFeatureAvailability("available","available").operations["poll.vote"],"implemented");
+  assert.deepEqual(pollFeatureAvailability("available","available").managementBlockers,[]);
 });
 
 test("F0 create uses one shared child and registers actual message/poll identity", async () => {

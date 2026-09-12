@@ -25,6 +25,30 @@ An exception after possible provider dispatch yields unknown-outcome with retry=
 ## Local protocol and durable work
 `createRuntimeHost` supplies execute, status, capabilities, doctor, work, start and stop. The injected LocalExecutor authenticates/authorizes every call and shares the one durable runtime. execute maps to the retained wire method submit; doctor is local readiness, with historical diagnostics still available through the retained protocol. Work methods are work.list, work.claim, work.heartbeat and work.ack with bounded limits/leases. Claim/heartbeat/ack must check principal/task/generation/lease/fence in one authoritative transaction. Claim returns durable events; wake payload is never the task's work payload. Ack only follows durable processing, not wake acceptance.
 
+### Conversational poll answers
+
+An authenticated inbound Spectrum `poll_option` is normalized as the internal
+`poll-answer` event when its public option/title, selection boolean, sender, and
+route are valid. It remains a poll interaction with capture provenance; it is
+not registered as a text message or granted a fabricated `MessageRef`. The event
+contains `senderId`, `optionText`, nullable `question`, `selected`, bounded
+`answerText`, `captureId`, and nullable verified poll/option correlation in
+addition to the ordinary inbound envelope.
+
+Question provenance is used only when the received public payload supplies it.
+Absent native poll and option identities, the authorized conversation's active
+task receives an explicitly ambiguous textual answer. A supplied authoritative
+identity must resolve to the exact persisted poll owner; failure remains
+unresolved and never falls back to the conversation's current task. Selection,
+deselection, and later selection events retain their distinct provider-derived
+event identities. Capture replay and duplicate delivery preserve one logical
+handoff, and wake continues to carry only its durable pointer.
+
+Conversational answer ingress is independent of native poll management.
+`poll.create` remains available through the shared owner, while `poll.get`,
+`poll.vote`, `poll.unvote`, and `poll.addOption` still require their separately
+approved management binding.
+
 ## Compatibility and adaptation
 The committed baseline already includes legacy `contracts/ports.ts`, table-based ExecutionServices, private `runtime/core/execution-boundary.ts` and feature-local child record access. These remain untouched and are NOT the frozen public service contract. New authors use the exact `feature.ts` and `services.ts` entry points; old root/`./contracts` type names are retained to keep existing CLI/lane code compiling. This is an explicit compatibility boundary, not permission for new features to use private records.
 

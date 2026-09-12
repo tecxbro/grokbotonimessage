@@ -10,10 +10,14 @@ export interface PollModuleConfiguration {
 }
 export function pollWorkflowAvailability(config: PollModuleConfiguration) {
   const managementImplemented = config.management === "available";
-  const interactiveWorkflowAdvertisable = managementImplemented && config.voteIngress === "available";
-  return { creationImplemented: true, managementImplemented, interactiveWorkflowAdvertisable,
-    blockers: [...(managementImplemented ? [] : ["Approved shared-owner poll management is unavailable or unverified."]),
-      ...(config.voteIngress === "available" ? [] : ["Active vote ingress is unavailable or unverified."])] };
+  const conversationalAnswersImplemented = config.voteIngress === "available";
+  const interactiveWorkflowAdvertisable = conversationalAnswersImplemented;
+  return { creationImplemented: true, conversationalAnswersImplemented,
+    managementImplemented, interactiveWorkflowAdvertisable,
+    blockers: conversationalAnswersImplemented ? [] :
+      ["Conversational poll-answer ingress is unavailable or unverified."],
+    managementBlockers: managementImplemented ? [] :
+      ["Approved shared-owner poll management is unavailable or unverified."] };
 }
 export function createPollModule(config: PollModuleConfiguration = {
   voteIngress: "unknown", reduction: { orderedSources: [] },
@@ -75,8 +79,9 @@ export function pollFeatureAvailability(voteIngress: PollModuleConfiguration["vo
       "poll.vote": ready ? "implemented" : "blocked", "poll.unvote": ready ? "implemented" : "blocked",
       "poll.addOption": ready ? "implemented" : "blocked" } as const,
     outboundProviderAvailability: "unverified" as const,
-    voteIngress, interactiveWorkflowAdvertisable: ready && voteIngress === "available",
-    blockers: [...(ready ? [] : ["wt-05-advanced-polls"]),
-      ...(voteIngress === "available" ? [] : ["wt-05-vote-ingress"])],
+    voteIngress, conversationalAnswers: voteIngress === "available" ? "implemented" : voteIngress,
+    interactiveWorkflowAdvertisable: voteIngress === "available",
+    blockers: voteIngress === "available" ? [] : ["wt-05-vote-ingress"],
+    managementBlockers: ready ? [] : ["wt-05-advanced-polls"],
   };
 }

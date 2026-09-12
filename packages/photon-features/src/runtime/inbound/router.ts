@@ -31,7 +31,9 @@ export interface InboundPolicy {
   continuation?(event: IncomingEvent): boolean;
 }
 export const conversational = (e: IncomingEvent) =>
-  e.direction === "inbound" && e.type === "message" && e.change === "created";
+  e.direction === "inbound" &&
+  ((e.type === "message" && e.change === "created") ||
+    e.type === "poll-answer");
 export const batchable = (e: IncomingEvent) =>
   conversational(e) && e.type === "message" && e.content.type === "text";
 export function activeRoute(
@@ -79,8 +81,14 @@ export class InboundRouter {
       if (prior) {
         if (!sameScope(prior.scope, event.scope))
           throw new Error("EVENT_ID_COLLISION");
-        const { receivedAt: _a, ...a } = prior.event,
-          { receivedAt: _b, ...b } = event;
+        const comparable = (value: IncomingEvent) => {
+          const { receivedAt: _receivedAt, ...rest } = value;
+          if (rest.type !== "poll-answer") return rest;
+          const { captureId: _captureId, ...answer } = rest;
+          return answer;
+        };
+        const a = comparable(prior.event),
+          b = comparable(event);
         if (prior.event.type === "unresolved" && event.type !== "unresolved") {
           const stable = (e: IncomingEvent) => ({
             eventId: e.eventId,

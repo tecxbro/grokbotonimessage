@@ -150,11 +150,25 @@ test("authoritative correlation separates duplicate labels and routes to each or
         actorId: "alice", change: "vote" as const,
       };
       assert.equal(f.store.transaction(tx => routePollEvent(event, tx)?.taskId), resolved?.route.taskId);
+      const answer = {
+        ...event,
+        type: "poll-answer" as const,
+        ordering: { source: "spectrum.messages" },
+        targets: [resolved!.poll, resolved!.option],
+        senderId: "alice",
+        question: "Pick?",
+        optionText: "Same",
+        selected: true,
+        answerText: "[Poll response]\nQuestion: Pick?\nSelected: Same",
+        captureId: `capture-${poll.guid}`,
+        correlation: { poll: resolved!.poll, option: resolved!.option },
+      };
+      assert.equal(f.store.transaction(tx => routePollEvent(answer, tx)?.taskId), resolved?.route.taskId);
     }
   } finally { f.close(); }
 });
 
-test("production Spectrum snapshot preserves no authoritative poll IDs; replay resolves only with an external trusted identity", () => {
+test("production Spectrum snapshot becomes a conversational answer with optional trusted identity", () => {
   const space = { __platform: "imessage", id: "native-chat", phone: "line-phone",
     send: async () => undefined } as unknown as Space;
   const message = { __platform: "imessage", id: "opaque-spectrum-event", platform: "imessage", direction: "inbound",
@@ -167,8 +181,14 @@ test("production Spectrum snapshot preserves no authoritative poll IDs; replay r
   assert.equal(JSON.stringify(snapshot).includes("optionIdentifier"), false);
   assert.equal(JSON.stringify(snapshot).includes("pollMessageGuid"), false);
   const routes = new ProviderContext(scope.projectId, [{ accountId: scope.accountId, lineId: scope.lineId, phone: "line-phone" }]);
-  const unresolved = normalizeCaptured(snapshot, "capture-1", routes, 10);
-  assert.equal(unresolved.type, "unresolved");
+  const conversational = normalizeCaptured(snapshot, "capture-1", routes, 10);
+  assert.equal(conversational.type, "poll-answer");
+  if (conversational.type !== "poll-answer") throw new Error("poll answer not normalized");
+  assert.equal(conversational.question, "Pick?");
+  assert.equal(conversational.optionText, "Same");
+  assert.equal(conversational.selected, true);
+  assert.equal(conversational.answerText, "[Poll response]\nQuestion: Pick?\nSelected: Same");
+  assert.equal(conversational.correlation, null);
   const captureScope = routes.inbound("line-phone", "native-chat");
   const poll: PollRef = { version: 1, kind: "poll", scope: captureScope,
     id: scopedId("poll", captureScope, "native-poll"),
@@ -176,8 +196,34 @@ test("production Spectrum snapshot preserves no authoritative poll IDs; replay r
   const option = { version: 1 as const, kind: "poll-option" as const, scope: captureScope,
     pollId: poll.id, id: scopedId("option", captureScope, "native-poll", "native-option-b") };
   const replayed = normalizeCaptured(snapshot, "capture-1", routes, 10, { poll: () => ({ poll, option }) });
-  assert.equal(replayed.type, "poll");
-  if (replayed.type !== "poll") throw new Error("poll replay not resolved");
-  assert.equal(replayed.poll.id, poll.id);
-  assert.equal(replayed.option.id, option.id);
+  assert.equal(replayed.type, "poll-answer");
+  if (replayed.type !== "poll-answer" || !replayed.correlation) throw new Error("poll replay not resolved");
+  assert.equal(replayed.correlation.poll.id, poll.id);
+  assert.equal(replayed.correlation.option.id, option.id);
+  assert.deepEqual(replayed.targets, [poll, option]);
+});
+
+test("conversational answers preserve deselection and explicit unknown question semantics", () => {
+  const routes = new ProviderContext(scope.projectId, [{ accountId: scope.accountId, lineId: scope.lineId, phone: "line-phone" }]);
+  const raw = {
+    id: "vote-without-question", platform: "imessage", direction: "inbound",
+    timestamp: new Date(2).toISOString(), sender: { id: "alice" },
+    space: { id: "native-chat", platform: "imessage", phone: "line-phone" },
+    content: { type: "poll_option", title: "Red", option: { title: "Red" }, selected: false },
+  };
+  const event = normalizeCaptured(raw, "capture-unknown-question", routes, 10);
+  assert.equal(event.type, "poll-answer");
+  if (event.type !== "poll-answer") throw new Error("poll answer not normalized");
+  assert.equal(event.question, null);
+  assert.equal(event.selected, false);
+  assert.equal(event.answerText,
+    "[Poll response]\nDeselected: Red\nSource question: not identified by the received event.");
+  const malformed = normalizeCaptured({ ...raw, content: {
+    ...raw.content, title: "Blue",
+  } }, "capture-malformed", routes, 11);
+  assert.equal(malformed.type, "unresolved");
+  const wrongPollType = normalizeCaptured({ ...raw, content: {
+    ...raw.content, poll: { type: "text", title: "Invented?" },
+  } }, "capture-wrong-poll-type", routes, 12);
+  assert.equal(wrongPollType.type, "unresolved");
 });

@@ -157,13 +157,24 @@ Shared preparation adds atomic admission metadata for card updates, a context-au
 
 ## Repair integration projection
 
-Production live ingress and capture replay now share one processor: normalize,
-register authenticated message/attachment identities, record independent receipt
-evidence, then expose the event to the inbox/router. Poll routing consults the
-persisted poll owner, never the latest conversation task. The host accepts optional
-approved native poll identity/management ports, but default Spectrum 12.8.0 remains
-explicitly unavailable because its public narrowed surface lacks the necessary
-identity, ordering, and management contract.
+Production live ingress and capture replay share one processor: normalize,
+authorize the current conversation/task generation, register authenticated
+message/attachment identities, record independent receipt evidence, then expose
+the event to the inbox/router. A public Spectrum `poll_option` becomes a durable
+conversational `poll-answer` and follows the same pointer-only work path as
+ordinary incoming conversation work without needing native poll management.
+When an approved native identity is supplied, routing consults the exact
+persisted poll owner and never falls back to the latest conversation task after
+an unresolved or stale correlation. Without that identity, question/option
+labels stay uncorrelated user content in the authorized conversation.
+
+The default Spectrum 12.8.0 surface is sufficient for conversational answers:
+it exposes option text, selection state, optional poll title, sender, message
+identity, direction, and timestamp. It does not expose authoritative native
+poll/option IDs or provider ordering through the public snapshot. Native
+`poll.get`, `poll.vote`, `poll.unvote`, and `poll.addOption` therefore remain
+separately unavailable unless an approved shared-owner management binding is
+configured.
 
 The production card runtime projects its inert session snapshot into the existing
 durable `wt06.card-session` checkpoint after a successful shared handler result.

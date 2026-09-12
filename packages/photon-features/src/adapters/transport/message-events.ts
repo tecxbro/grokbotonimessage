@@ -13,6 +13,9 @@ export interface CaptureProcessing {
   receipts: ReceiptAcquisition;
   registerReferences: RegisterIncomingReferences;
   correlations?: Correlations;
+  /** Single-route hosts reject foreign conversations after authenticated
+   * normalization but before any reference or inbox authorization is granted. */
+  authorize?(event: IncomingEvent): boolean;
 }
 export class UnresolvedCapturedMessage extends Error {}
 
@@ -40,6 +43,8 @@ export async function processCapturedMessage(options: {
   } catch (error) {
     throw new UnresolvedCapturedMessage("UNRESOLVED_ROUTE", { cause: error });
   }
+  if (processing.authorize && !processing.authorize(event))
+    throw new UnresolvedCapturedMessage("UNRESOLVED_ROUTE");
   await processing.registerReferences(snapshot, event);
   await observeReceipt(snapshot, owner.routes, capturedAt, processing.receipts);
   await accept(event);

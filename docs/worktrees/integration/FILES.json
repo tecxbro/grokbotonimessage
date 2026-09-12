@@ -50,6 +50,7 @@
     ,{"path":"packages/photon-features/tests/integration/production-host.test.ts","purpose":"Concrete one-owner host IPC offline Spectrum and pointer-only Grok path tests"}
     ,{"path":"packages/photon-features/tests/integration/production-lifecycle.test.ts","purpose":"Selected release strict activation and exclusive ownership lifecycle tests"}
     ,{"path":"packages/photon-features/tests/integration/production-resources.test.ts","purpose":"Real production media stream cancellation restart and SDK-owner integration coverage"}
+    ,{"path":"packages/photon-features/tests/integration/poll-answer-journey.test.ts","purpose":"Default production poll creation and conversational answer work-path acceptance"}
     ,{"path":"packages/photon-features/tests/lanes/wt-08/distribution.test.mjs","purpose":"Deterministic clean-candidate release-boundary regression fixture"}
     ,{"path":"packages/photon-features/scripts/package.mjs","purpose":"Checksummed release payload collector including the required SQLite migration"}
     ,{"path":"packages/photon-features/src/adapters/state/sqlite.ts","purpose":"Production SQLite adapter with package-relative migration resolution"}

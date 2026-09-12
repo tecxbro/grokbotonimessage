@@ -285,7 +285,9 @@ test("manual operating decisions cover required behavior and preserve the genera
   const skill = await import("node:fs/promises").then(fs =>
     fs.readFile(new URL("../../../../SKILL.md", import.meta.url), "utf8"));
   for (const phrase of [
-    "Ordinary answer", "targeted acknowledgment", "requested celebration", "structured choice",
+    "Ordinary answer", "targeted acknowledgment", "requested celebration", "independently choose",
+    "Do not turn ordinary questions, lists, or multiple-choice text into polls", "inbound `poll-answer`",
+    "A deselection is not a positive answer", "Do not create a separate poll on Grok's server",
     "authorized existing card", "Generated media", "Do not leave typing active while waiting for the user",
     "timer-driven filler", "genuinely unavailable", "unknown outcome", "make Grok a second",
     "stable identity without creating a replacement action",

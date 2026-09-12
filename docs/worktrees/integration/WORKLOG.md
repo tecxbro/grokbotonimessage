@@ -263,3 +263,34 @@ ports. Supplying inert offline test ports made that fixture pass 2/2 without cha
 production behavior. The final source-derived non-live runner selected 90 files and
 passed 826/826. No push, archive installation, activation, real Grok/provider action,
 or device test occurred.
+
+## 2026-09-12 — optional poll creation with conversational answers
+
+Revalidated the registered `fix-1` checkout at reviewed commit
+`8d2a158e161873d3123241c7507d4d8f9d3bc69f`, fetched `origin/fix-1`, and found
+zero divergence and a clean starting tree. Inspected the pinned Spectrum 12.8.0
+public declarations and provider conversion plus the requested official Photon
+poll, message, inbound-pipeline, and recovery documentation.
+
+Added a bounded internal `poll-answer` projection over public `poll_option`
+fields and connected it through the shared live/replay capture processor,
+authorized durable inbox, pointer-only wake, and existing work claim interface.
+Uncorrelated public answers route only to the active authorized conversation;
+supplied native identity must resolve to the persisted original poll owner or
+remain unresolved. No native identity, ordering, source question, option index,
+message reference, second SDK owner, mirrored Grok poll, terminal action, or
+automatic text-to-poll decision is invented.
+
+The production acceptance fixture exercises an explicit idempotent poll send,
+realistic selection through scripted external boundaries, authenticated claim,
+ordinary text response, acknowledgment, duplicate delivery, restart, selection
+deltas, duplicate labels, ambiguity, foreign input, denied authority, and the
+single owner/listener invariant. During this work the test exposed a nested
+SQLite transaction after successful `poll.create`; removing redundant feature-
+level transaction assertions left the shared transaction facade's existing
+claim/fence checks in force. It also exposed that inactive authority needed to
+be rejected before reference registration so invalid input could not stop the
+receiver.
+
+No push, deployment, activation, approval change, provider send, live Grok task,
+iMessage tap, or device test occurred.

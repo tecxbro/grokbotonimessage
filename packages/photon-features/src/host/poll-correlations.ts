@@ -33,8 +33,9 @@ export function resolveNativePollVote(tx: Transaction, scope: Scope, identity: N
   return { poll: poll.reference, option, route };
 }
 
-/** Adapter consumed by A's normalization. Supplying the trusted native identity resolver is mandatory;
- * absence is an explicit production dependency, never a title-based or synthetic-ID fallback. */
+/** Optional exact-attribution adapter consumed by normalization. Without a
+ * trusted native identity, the public interaction remains an uncorrelated
+ * conversational answer; titles and synthetic SDK IDs are never substitutes. */
 export function createPollCorrelations(store: TransactionStore,
   nativeIdentity: (message: CapturedMessage, scope: Scope) => NativePollVoteIdentity | undefined): Correlations {
   return { poll: (message, scope) => {
@@ -42,17 +43,24 @@ export function createPollCorrelations(store: TransactionStore,
     if (!identity) return;
     return store.transaction(tx => {
       const result = resolveNativePollVote(tx, scope, identity);
-      return result ? { poll: result.poll, option: result.option } : undefined;
+      return result
+        ? { status: "verified" as const, poll: result.poll, option: result.option }
+        : { status: "unresolved" as const };
     });
   } };
 }
 
 /** Routing must use the persisted originating poll owner, never the latest task in a conversation. */
 export function routePollEvent(event: IncomingEvent, tx: Transaction): TaskRoute | undefined {
-  if (event.type !== "poll" || !event.option) return;
-  const poll = tx.get("references", event.poll.id), option = tx.get("references", event.option.id);
+  const correlation = event.type === "poll"
+    ? { poll: event.poll, option: event.option }
+    : event.type === "poll-answer"
+      ? event.correlation
+      : null;
+  if (!correlation) return;
+  const poll = tx.get("references", correlation.poll.id), option = tx.get("references", correlation.option.id);
   if (!poll || !option) return;
   const resolved = resolveNativePollVote(tx, event.scope, { pollMessageGuid: poll.providerId, optionIdentifier: option.providerId });
-  return resolved && isDeepStrictEqual(resolved.poll, event.poll) && isDeepStrictEqual(resolved.option, event.option)
+  return resolved && isDeepStrictEqual(resolved.poll, correlation.poll) && isDeepStrictEqual(resolved.option, correlation.option)
     ? resolved.route : undefined;
 }

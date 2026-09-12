@@ -30,7 +30,7 @@ import { DurableLocalProtocol, listenDurableLocal } from "../runtime/core/local-
 import { ExecutionClaims } from "../runtime/core/claims.js";
 import { executeOperation } from "../runtime/core/executor.js";
 import { requestIdentity } from "../runtime/core/idempotency.js";
-import { InboundRouter } from "../runtime/inbound/router.js";
+import { InboundRouter, activeRoute } from "../runtime/inbound/router.js";
 import { TextBatcher } from "../runtime/inbound/batching.js";
 import { recoverCaptures } from "../runtime/inbound/recovery.js";
 import type { Correlations, CapturedMessage } from "../runtime/inbound/normalize.js";
@@ -134,6 +134,7 @@ class ProductionLocalExecutor implements LocalExecutor {
       owner: SpectrumOwner;
       receipts: ReceiptAcquisition;
       registerReferences: CaptureProcessing["registerReferences"];
+      authorize?: CaptureProcessing["authorize"];
     },
     private readonly pump: InboundPump,
     private readonly report: (code: string) => void,
@@ -343,11 +344,14 @@ export async function createProductionComposition(
     voiceBehavior: "native",
   });
   const pollManagementAvailable = dependencies.pollManagement !== undefined;
-  const voteIngressAvailable = dependencies.nativePollIdentity !== undefined;
+  // Public Spectrum PollOption content is sufficient for conversational answers.
+  // Native identity remains an optional, stricter attribution/management seam.
+  const voteIngressAvailable = true;
+  const nativePollIdentityAvailable = dependencies.nativePollIdentity !== undefined;
   const legacyPoll = createPollModule({
     management: pollManagementAvailable ? "available" : "unavailable",
     voteIngress: voteIngressAvailable ? "available" : "unavailable",
-    reduction: voteIngressAvailable
+    reduction: nativePollIdentityAvailable
       ? { orderedSources: ["spectrum.messages"], selectionSemantics: "independent-option-deltas" }
       : { orderedSources: [] },
   });
@@ -493,9 +497,13 @@ export async function createProductionComposition(
   );
 
   const router = new InboundRouter(store, { now }, {
-    route: (event, tx) => event.type === "poll" ? routePollEvent(event, tx) : sameScope(event.scope, scope) ? {
-      taskId: context.taskId, generation: context.generation, principalId: context.principalId,
-    } : undefined,
+    route: (event, tx) => {
+      if (event.type === "poll" || (event.type === "poll-answer" && event.correlation))
+        return routePollEvent(event, tx);
+      return sameScope(event.scope, scope) ? {
+        taskId: context.taskId, generation: context.generation, principalId: context.principalId,
+      } : undefined;
+    },
     continuation: event => event.type === "poll" || event.type === "app-interaction",
   }, [...assembled.compatibilityRegistry.reducers.values()]);
   const captures = new FileCaptureStore(configuration.runtime.captureDirectory);
@@ -547,13 +555,34 @@ export async function createProductionComposition(
         : undefined;
     },
   };
-  const captureProcessing = { owner, receipts, registerReferences };
+  const authorizeCapture = (event: IncomingEvent) => {
+    if (!sameScope(event.scope, scope)) return false;
+    return store.transaction(tx => {
+      const route = {
+        taskId: context.taskId,
+        generation: context.generation,
+        principalId: context.principalId,
+      };
+      const grant = tx.get("contexts", context.contextId);
+      return activeRoute(tx, scope, route) &&
+        !!grant && isDeepStrictEqual(grant.context, context) &&
+        grant.context.revokedAt === null && grant.context.issuedAt <= now() &&
+        grant.context.expiresAt > now();
+    });
+  };
+  const captureProcessing = {
+    owner,
+    receipts,
+    registerReferences,
+    authorize: authorizeCapture,
+  };
   const executor = new ProductionLocalExecutor(store, protocol, claims, recovery, router, captures,
     providerRoutes, resources, requestId => services => resourcePorts.bind(requestId, services), capability,
     correlations, captureProcessing, pump,
     dependencies.report ?? (() => undefined));
   const ingressSource = new SpectrumEventSource(owner, captures, { now }, diagnostic =>
-    (dependencies.report ?? (() => undefined))(diagnostic.code), correlations, { receipts, registerReferences });
+    (dependencies.report ?? (() => undefined))(diagnostic.code), correlations,
+    { receipts, registerReferences, authorize: authorizeCapture });
   const ingress = {
     authentication: "authenticated-stream" as const,
     start: (accept: (event: IncomingEvent) => Promise<void>) => ingressSource.start(accept),

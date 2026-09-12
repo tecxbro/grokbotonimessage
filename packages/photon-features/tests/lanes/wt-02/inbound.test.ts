@@ -93,7 +93,7 @@ test("unknown, senderless, unsent, card and ambiguous poll content is durably un
       {
         type: "poll_option",
         option: { title: "A" },
-        poll: { title: "Q", options: [{ title: "A" }, { title: "B" }] },
+        poll: { type: "poll", title: "Q", options: [{ title: "A" }, { title: "B" }] },
         selected: true,
       },
     ]) {
@@ -130,8 +130,9 @@ test("correlated poll votes and unvotes retain distinct identities and scoped re
     const build = (selected: boolean) => {
       const raw = snapshot("same", {
         type: "poll_option",
+        title: "A",
         option: { title: "A" },
-        poll: { title: "Q", options: [{ title: "A" }] },
+        poll: { type: "poll", title: "Q", options: [{ title: "A" }] },
         selected,
       });
       return normalizeCaptured(raw, f.captures.put(raw), routes, 1, {
@@ -140,9 +141,9 @@ test("correlated poll votes and unvotes retain distinct identities and scoped re
     };
     const vote = build(true),
       unvote = build(false);
-    assert.equal(vote.type, "poll");
+    assert.equal(vote.type, "poll-answer");
     assert.notEqual(vote.eventId, unvote.eventId);
-    if (vote.type === "poll") assert.deepEqual(vote.targets, [poll, option]);
+    if (vote.type === "poll-answer") assert.deepEqual(vote.targets, [poll, option]);
   } finally {
     f.close();
   }
@@ -504,8 +505,9 @@ test("poll capture can be promoted from unresolved after authoritative correlati
   try {
     const raw = snapshot("vote", {
         type: "poll_option",
+        title: "A",
         option: { title: "A" },
-        poll: { title: "Q", options: [{ title: "A" }] },
+        poll: { type: "poll", title: "Q", options: [{ title: "A" }] },
         selected: true,
       }),
       capture = f.captures.put(raw);
@@ -513,9 +515,11 @@ test("poll capture can be promoted from unresolved after authoritative correlati
       f.store,
       f.clock,
       { route: () => taskRoute, continuation: () => true },
-      [{ type: "poll", reduce: () => {} }],
+      [],
     );
-    const early = normalizeCaptured(raw, capture, routes, f.clock.now());
+    const early = normalizeCaptured(raw, capture, routes, f.clock.now(), {
+      poll: () => ({ status: "unresolved" }),
+    });
     await router.accept(early);
     const poll = {
         version: 1 as const,
@@ -538,7 +542,7 @@ test("poll capture can be promoted from unresolved after authoritative correlati
     await router.accept(later);
     assert.equal(
       f.store.transaction((tx) => tx.get("inbox", early.eventId))?.event.type,
-      "poll",
+      "poll-answer",
     );
     assert.equal(
       f.store.transaction((tx) => tx.list("handoffs", scope, 100)).length,

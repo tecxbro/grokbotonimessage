@@ -198,10 +198,9 @@ function scopedBinding(binding: PollProviderBinding, s: F0ExecutionServices) {
   return value;
 }
 
-function reconcileManagedState(action: Action, s: F0ExecutionServices,
+function reconcileManagedState(s: F0ExecutionServices,
   poll: PollRef, conversationId: string, state: unknown) {
   return s.transaction(unit => {
-    assertPollActionActive(action, s);
     return reconcileNativePollState(unit, s.context, {
       poll, conversationId,
       state: state as Parameters<typeof reconcileNativePollState>[2]["state"],
@@ -256,7 +255,6 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
         "The shared Spectrum owner has no approved public native poll-management surface.",
         "blocked", "wt-05-advanced-polls");
       const target = s.transaction(unit => {
-        assertPollActionActive(action, s);
         const poll = resolvePollIdentity(unit, pollAction.arguments.poll, s.context);
         const pollOwner = referenceOwner(unit, poll.reference);
         assertPollOwner(pollOwner, s.context);
@@ -284,7 +282,7 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
         catch { return f0Failure(s, requestId, "PROVIDER_FAILURE", "Authoritative poll state retrieval failed."); }
         assertPollActionActive(action, s);
         let reconciled;
-        try { reconciled = reconcileManagedState(action, s, target.poll, providerBinding.conversationId, state); }
+        try { reconciled = reconcileManagedState(s, target.poll, providerBinding.conversationId, state); }
         catch (error) {
           if (error instanceof Error && error.message === "SCOPE_MISMATCH") throw error;
           return f0Failure(s, requestId, "PROVIDER_FAILURE", "Provider returned invalid or conflicting poll state.");
@@ -306,7 +304,7 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
                 : await management.addOption(target.nativePollGuid, pollAction.operation === "poll.addOption"
                   ? pollAction.arguments.option.label : (() => { throw new Error("INVALID_REQUEST"); })());
             assertPollActionActive(action, s);
-            const reconciled = reconcileManagedState(action, s, target.poll, providerBinding.conversationId, state);
+            const reconciled = reconcileManagedState(s, target.poll, providerBinding.conversationId, state);
             return f0Result(s, requestId, { status: "provider-accepted", references: reconciled.references,
               value: reconciled.value,
               observations: [{ kind: "accepted", source: "sdk-return", at: s.clock.now() }] });
@@ -349,7 +347,6 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
           // Persist actual native GUID while the child remains unfinished. A failed commit is uncertain,
           // so runtime recovery must not resend. There is no feature-owned dispatch journal.
           s.transaction(unit => {
-            assertPollActionActive(action, s);
             for (const reference of [messageRef, pollRef]) {
               const prior = unit.get("references", reference.id);
               if (prior) {
