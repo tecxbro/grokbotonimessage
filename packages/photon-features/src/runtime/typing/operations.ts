@@ -3,6 +3,7 @@ import { canonicalJson } from "../../adapters/transport/provider-context.js";
 import {
   assertScope,
   type Action,
+  type Capability,
   type ExecutionServices,
   type FeatureModule,
   type OperationResult,
@@ -21,6 +22,34 @@ export type BindTypingExecution = (
   action: Action,
   services: ExecutionServices,
 ) => TypingExecutionBinding;
+
+/** Cloud iMessage implements typing controls at the pinned SDK boundary. These
+ * declarations are consumed independently from handler registration and never
+ * imply that a recipient device rendered the indicator. */
+export function typingCapabilities(): Capability[] {
+  return (["typing.begin", "typing.end"] as const).map((operation) => ({
+    operation,
+    providerSupport: "native",
+    availability: {
+      account: "unknown",
+      conversation: "unknown",
+      checkedAt: null,
+    },
+    implementation: "implemented",
+    direction: { inbound: "not-applicable", outbound: "implemented" },
+    evidence: [],
+    sdkVersion: "12.8.0",
+    sources: [
+      "npm:spectrum-ts@12.8.0",
+      "npm:@spectrum-ts/imessage@12.8.0",
+      "https://photon.codes/docs/spectrum-ts/content/typing-indicators",
+    ],
+    blockers: [
+      "Host registration, authoritative bindings and resource adapters require integration.",
+      "SDK completion does not prove that a recipient device rendered the indicator.",
+    ],
+  }));
+}
 export function createTypingModule(
   leases: TypingLeases,
   bind: BindTypingExecution,
@@ -31,7 +60,7 @@ export function createTypingModule(
     mode: "production",
     compilers: [],
     reducers: [],
-    capabilities: [],
+    capabilities: typingCapabilities(),
     handlers: (["typing.begin", "typing.end"] as const).map((operation) => ({
       operation,
       recoveryCodec: { id: "wt-02.transient-typing", version: 1 },

@@ -280,6 +280,11 @@ export class InboundRouter {
     }
   }
   pending(scope: Scope): InboxRecord[] {
+    const productionQuery = this.store as TransactionStore & {
+      pendingInbox?: (scope: Scope, limit?: number) => InboxRecord[];
+    };
+    if (productionQuery.pendingInbox)
+      return productionQuery.pendingInbox(scope, 1000);
     return this.store.transaction((tx) => {
       const rows = tx.list("inbox", scope, 1000);
       // F0 has no pagination/filter cursor. Surface a blocker rather than silently

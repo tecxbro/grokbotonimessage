@@ -23,6 +23,8 @@ function owner() {
   return new SpectrumOwner({inbound: 'photon-webhook', outbound: 'imessage', wake: 'existing-grok-task-handoff'}, routes,
     async () => ({messages: async function* () {}, space: async () => {throw new Error('unused');}, stop: async () => {}}));
 }
+const registerReferences = async () => {};
+const noReceipts = {writer: {recordReceipt() {}}};
 
 test('shared SQLite handoff is committed before wake and failed wakes retry by durable identity', async () => {
   const f = fixture();
@@ -50,7 +52,7 @@ test('webhook acknowledgement awaits shared receipt writer then durable inbox, i
     await sdk.start();
     const ingress = new NativeWebhookIngress(sdk, f.captures, f.clock, 'test-secret', {}, {writer: {async recordReceipt() {
       records++; await gate.promise; if (fail) throw new Error('disk');
-    }}});
+    }}}, registerReferences);
     await ingress.start(async () => { accepted++; });
     const m = snapshot('read-event', {type: 'read', target: {id: 'target'}});
     const body = JSON.stringify({event: 'messages', message: m, space: m.space});
@@ -68,7 +70,7 @@ test('webhook acknowledgement awaits shared receipt writer then durable inbox, i
 test('tampered, alternate, mismatched and unavailable receipt webhooks never acknowledge', async () => {
   const f = fixture(), sdk = owner();
   try {
-    await sdk.start(); const ingress = new NativeWebhookIngress(sdk, f.captures, f.clock, 'test-secret');
+    await sdk.start(); const ingress = new NativeWebhookIngress(sdk, f.captures, f.clock, 'test-secret', {}, noReceipts, registerReferences);
     await ingress.start(async () => {throw new Error('inbox-disk-failure');});
     const m = snapshot(), body = JSON.stringify({event: 'messages', message: m, space: m.space});
     const good = signed(body, f.clock.now());
@@ -92,7 +94,8 @@ test('one stream subscription captures read before shared writer and exposes rec
   try {
     await Promise.all([startSpectrumOwner(sdk), startSpectrumOwner(sdk)]);
     const options = {owner: sdk, captures: f.captures, clock: f.clock, accept: async () => {throw new Error('inbox-failed');},
-      receipts: {writer: {recordReceipt() {assert.equal([...f.captures.ids()].length, 1); written++;}}}, report: () => {}};
+      receipts: {writer: {recordReceipt() {assert.equal([...f.captures.ids()].length, 1); written++;}}},
+      registerReferences, report: () => {}};
     const subscription = subscribeMessageEvents(options);
     assert.throws(() => subscribeMessageEvents(options), /COMPETING_RECEIVE_PATH/);
     await assert.rejects(subscription.completion, /inbox-failed/);
@@ -134,7 +137,7 @@ test('typing unavailable/disconnected is explicit and delayed resource resolutio
 test('official standalone iMessage wire spelling routes through the same signed ingress', async () => {
   const f = fixture(), sdk = owner(); let accepted = 0;
   try {
-    await sdk.start(); const ingress = new NativeWebhookIngress(sdk, f.captures, f.clock, 'test-secret');
+    await sdk.start(); const ingress = new NativeWebhookIngress(sdk, f.captures, f.clock, 'test-secret', {}, noReceipts, registerReferences);
     await ingress.start(async event => {assert.deepEqual(event.scope, scope); accepted++;});
     const m = {...snapshot(), platform: 'iMessage', space: {...snapshot().space, platform: 'iMessage'}};
     assert.equal((await ingress.handle(signed(JSON.stringify({event: 'messages', message: m, space: m.space}), f.clock.now()))).status, 200);

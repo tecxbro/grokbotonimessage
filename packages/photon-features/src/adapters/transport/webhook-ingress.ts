@@ -1,5 +1,5 @@
 import { isIMessagePlatform } from "./provider-context.js";
-import { observeReceipt, type ReceiptAcquisition } from "../../runtime/inbound/receipt-observer.js";
+import type { ReceiptAcquisition } from "../../runtime/inbound/receipt-observer.js";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import type {
@@ -9,9 +9,12 @@ import type {
 } from "../../contracts/index.js";
 import {
   slimMessage,
-  normalizeCaptured,
   type Correlations,
 } from "../../runtime/inbound/normalize.js";
+import {
+  processCapturedMessage,
+  type RegisterIncomingReferences,
+} from "./message-events.js";
 import type { CaptureStore } from "./capture.js";
 import type { SpectrumOwner } from "./spectrum-owner.js";
 
@@ -59,6 +62,7 @@ export class NativeWebhookIngress implements IngressAdapter {
     private readonly secret: string,
     private readonly correlations: Correlations = {},
     private readonly receipts?: ReceiptAcquisition,
+    private readonly registerReferences?: RegisterIncomingReferences,
   ) {
     if (!secret) throw new Error("WEBHOOK_SECRET_REQUIRED");
   }
@@ -131,20 +135,25 @@ export class NativeWebhookIngress implements IngressAdapter {
     try {
       // app.webhook's callback is fire-and-forget in 12.8.0. This route deliberately
       // consumes the public native wire shape itself and awaits durable acceptance.
+      const capturedAt = this.clock.now();
       const captureId = this.captures.put({
-        capturedAt: this.clock.now(),
+        capturedAt,
         ...envelope,
       });
-      const event = normalizeCaptured(
-        message,
+      if (!this.receipts || !this.registerReferences)
+        throw new Error("INGRESS_PROCESSING_NOT_CONFIGURED");
+      await processCapturedMessage({
+        snapshot: message,
         captureId,
-        this.owner.routes,
-        this.clock.now(),
-        this.correlations,
-      );
-      if (message.content.type === "read" && !this.receipts) throw new Error("RECEIPT_SERVICE_NOT_CONFIGURED");
-      if (this.receipts) await observeReceipt(message, this.owner.routes, this.clock.now(), this.receipts);
-      await this.accept!(event);
+        owner: this.owner,
+        capturedAt,
+        accept: this.accept!,
+        processing: {
+          receipts: this.receipts,
+          registerReferences: this.registerReferences,
+          correlations: this.correlations,
+        },
+      });
       return new Response(null, { status: 200 });
     } catch {
       return new Response(null, { status: 503 });

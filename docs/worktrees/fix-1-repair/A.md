@@ -109,3 +109,61 @@ Create your named repair test file before invoking its command. Run other affect
 Coordinator wires the common capture/reference/receipt path into host/production.ts, supplies receipt storage/target mapping and B correlation, and runs complete production-journey tests.
 
 Append a handoff to your own repair document with before/after reproduction, exact commands/exit codes/counts, source and pinned SDK evidence, changed paths, precise proposed coordinator wiring, remaining external dependencies, and any unverified behavior. Commit only your reviewed owned changes locally and return exact SHA(s), base and clean/dirty state for immutable integration. Do not push. Do not declare all 13 failures resolved: coordinator owns final inventory reconciliation (12), complete production-path tests (13), and separate actual Grok/provider/device evidence.
+
+## Worker A handoff (2026-09-11)
+
+### Base and reproduction
+
+- Worktree `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1-a`, branch `repair/fix-1-a`, prepared base `513ede497a96bd9c30cc597faee868e201ea3456`.
+- The worktree was clean before installation and edits. Its local `node_modules` was absent; the first pinned typecheck exited 2 because `spectrum-ts` could not be resolved. The authorized `npm ci --ignore-scripts --no-audit --no-fund` then exited 0 and installed 185 lockfile packages.
+- With dependencies present, the pre-repair WT-02 suite passed 67 tests, while direct baseline inspection reproduced the four assigned gaps: typing `capabilities` was empty; `SpectrumEventSource` normalized and accepted without reference registration or receipt observation; normalization reused a synthetic `"voice"` attachment identity and parented grouped attachments to the outer message; and `InboundRouter.pending` threw `INBOX_PAGINATION_REQUIRED` when the first 1000 rows were historical.
+
+### Implemented behavior
+
+- `typing.begin` and `typing.end` now have explicit Spectrum 12.8.0 cloud-iMessage declarations with implemented handler status, native provider support and zero live/device evidence. Existing context/resource/fence checks and lease token/generation cleanup remain unchanged.
+- `processCapturedMessage` is the single ordered post-capture path: normalize, await trusted reference registration, await receipt acquisition, then accept into the inbox. `SpectrumEventSource`, `subscribeMessageEvents`, and `NativeWebhookIngress` use it; `recoverCaptures` uses the identical path when the coordinator supplies the prepared processing services.
+- `incomingReferenceBindings(snapshot, event)` derives only authenticated created-message identities. It preserves outer and grouped-child provider message IDs, parents each nested attachment to its actual child message, preserves each provider attachment GUID, never grants reaction/reply/read/edit targets, and returns no fabricated voice attachment when the public capture lacks an ID.
+- `DurableSQLiteStore.pendingInbox(scope, limit)` filters reduced history in SQLite before limiting. It is bounded at 1000 and gives pending and unresolved backlogs equal page capacity when both exist. `InboundRouter` automatically uses this production query while retaining the explicit blocker for generic stores with no approved pending query.
+
+### Verification evidence
+
+All commands used Node 24.13.0 and npm 10.9.2 from this worktree.
+
+- `npm run typecheck --workspace=@grokbot/photon-features && npm run photon:build && node --test packages/photon-features/dist/tests/lanes/wt-02/*.test.js packages/photon-features/dist/tests/integration/repair-ingress.test.js` — exit 0; 75 tests passed, 0 failed/skipped.
+- `npm run photon:check` — exit 0; 3 schemas, 49 files, contract digest `11affb7fbe3adcfb4dbc55615ebd4df50a8b2706590ce30c0b1e23cbff9be6f1`.
+- `npm test` — exit 0; 31 tests passed, 0 failed/skipped.
+- `git diff --check` — exit 0 before handoff append; rerun immediately before commit.
+
+Repair-specific coverage includes exact message/attachment identity registration, two same-named attachments retaining distinct GUIDs and child parents, cross-line/cross-task/stale-generation/parent/collision rejection, unresolved voice identity, live and replay receipt acquisition, receipt idempotence, one owner stream, no receipt handoff, 999/1000/1001/10000 reduced-row history, mixed pending/unresolved pages, fair bounded progress and restart deduplication. These are offline/provider-contract fixtures, not provider or device evidence.
+
+### Source and pinned SDK evidence
+
+- Pinned installed packages: `spectrum-ts@12.8.0` and `@spectrum-ts/imessage@12.8.0`.
+- Installed public implementation exposes typing content and cloud iMessage start/stop typing handling; no private SDK fields are used.
+- Official source provenance remains in `docs/worktrees/integration/source-lock.json.repairPreparation`, including HTTP 200 Markdown bodies and hashes for typing, messages, attachments, attachment fetching, read, inbound receipts, inbound pipeline and recovery/state. The implementation agrees with those sources: message/attachment IDs remain opaque, message read is a chat-level effect, inbound receipts are separate events on the message stream, and a resolved void typing call is not device-visible evidence.
+
+### Exact changed paths
+
+- `docs/worktrees/fix-1-repair/A.md`
+- `packages/photon-features/src/adapters/state/sqlite.ts`
+- `packages/photon-features/src/adapters/transport/event-source.ts`
+- `packages/photon-features/src/adapters/transport/message-events.ts`
+- `packages/photon-features/src/adapters/transport/snapshot.ts`
+- `packages/photon-features/src/adapters/transport/webhook-ingress.ts`
+- `packages/photon-features/src/runtime/inbound/normalize.ts`
+- `packages/photon-features/src/runtime/inbound/recovery.ts`
+- `packages/photon-features/src/runtime/inbound/router.ts`
+- `packages/photon-features/src/runtime/typing/operations.ts`
+- `packages/photon-features/tests/integration/repair-ingress.test.ts`
+- `packages/photon-features/tests/lanes/wt-02/integration.test.ts`
+- `packages/photon-features/tests/lanes/wt-02/transport.test.ts`
+
+### Exact coordinator production wiring
+
+1. In `host/production.ts`, define `registerReferences(snapshot, event)` to reject a scope mismatch, derive `incomingReferenceBindings(snapshot, event)`, and synchronously call `registerIncomingReferences(tx, context, bindings, now())` in the one `DurableSQLiteStore` transaction.
+2. Define one `ReceiptAcquisition` whose writer is that same store and whose `resolveTarget(scope, providerTargetId)` returns only an exact current-generation message reference row matching the full scope, principal, task and provider ID. Missing or ambiguous matches remain unresolved.
+3. Pass B's `Correlations` plus `{ receipts, registerReferences }` to the existing `SpectrumEventSource` constructor. Do not start `subscribeMessageEvents` beside it; the owner's receiver claim continues to enforce one stream.
+4. Pass the same correlations and `{ owner, receipts, registerReferences }` as the final argument to `recoverCaptures`. If webhook ingress is configured instead, pass the same receipt acquisition and registrar as its sixth and seventh constructor arguments; never enable stream and webhook together.
+5. No pagination composition change is required: the existing `InboundRouter(store, ...)` detects `DurableSQLiteStore.pendingInbox`. Typing declarations flow through the existing compatibility-module capability map.
+
+Coordinator-owned final production journey tests must prove registration occurs before handoff through the actual fixed context/store closure, receipt target mapping is exact, and live/replay use identical B correlations. No live Grok execution, provider acceptance/delivery/read, installation/activation, webhook deployment, or device-visible typing/read behavior was performed or claimed.

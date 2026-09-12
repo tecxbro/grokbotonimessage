@@ -44,6 +44,10 @@ export interface Correlations {
       }
     | undefined;
 }
+export interface IncomingReferenceBinding {
+  reference: Extract<ResourceRef, { kind: "message" | "attachment" }>;
+  providerId: string;
+}
 const object = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -69,6 +73,15 @@ export function messageRef(
     id: opaqueId("message", scopeKey(scope), id),
   };
 }
+export function attachmentRef(scope: Scope, messageId: string, providerId: string): Extract<ResourceRef, { kind: "attachment" }> {
+  return {
+    version: 1,
+    kind: "attachment",
+    scope,
+    id: opaqueId("attachment", scopeKey(scope), messageId, providerId),
+    messageId,
+  };
+}
 function content(
   raw: Record<string, unknown>,
   scope: Scope,
@@ -91,19 +104,13 @@ function content(
       break;
     case "attachment":
     case "voice":
+      // Spectrum's Voice shape does not guarantee a provider attachment ID.
+      // Without one the capture remains unresolved rather than inventing a GUID.
+      const providerAttachmentId = string(raw.id);
       value = {
         type: raw.type,
         media: {
-          version: 1,
-          kind: "attachment",
-          scope,
-          id: opaqueId(
-            "attachment",
-            scopeKey(scope),
-            messageId,
-            raw.type === "attachment" ? string(raw.id) : "voice",
-          ),
-          messageId,
+          ...attachmentRef(scope, messageId, providerAttachmentId),
         },
       };
       break;
@@ -129,9 +136,13 @@ function content(
       value = {
         type: "group",
         items: Array.isArray(raw.items)
-          ? raw.items.map((i) =>
-              content(object(object(i).content), scope, messageId, depth + 1),
-            )
+          ? raw.items.map((i) => {
+              const child = object(i);
+              const childMessageId = typeof child.id === "string" && child.id
+                ? messageRef(scope, child.id).id
+                : messageId;
+              return content(object(child.content), scope, childMessageId, depth + 1);
+            })
           : [],
       };
       break;
@@ -170,6 +181,58 @@ function content(
       throw new Error("UNSUPPORTED_PAYLOAD");
   }
   return contentSchema.parse(value);
+}
+
+/** Derive durable bindings only from authenticated capture fields. Reaction,
+ * reply, read and edit targets are not granted merely because an event names
+ * them. Group children retain their own provider message parents. */
+export function incomingReferenceBindings(
+  input: unknown,
+  event: IncomingEvent,
+): IncomingReferenceBinding[] {
+  if (event.type !== "message") return [];
+  const message = slimMessage.parse(input);
+  const bindings = new Map<string, IncomingReferenceBinding>();
+  const add = (binding: IncomingReferenceBinding) => {
+    const prior = bindings.get(binding.reference.id);
+    if (prior && (prior.providerId !== binding.providerId || prior.reference.kind !== binding.reference.kind))
+      throw new Error("INCOMING_REFERENCE_COLLISION");
+    bindings.set(binding.reference.id, binding);
+  };
+  const walk = (
+    raw: Record<string, unknown>,
+    parent: Extract<ResourceRef, { kind: "message" }>,
+    depth: number,
+  ): void => {
+    if (depth > 8) throw new Error("CONTENT_DEPTH_EXCEEDED");
+    if (raw.type === "attachment" || raw.type === "voice") {
+      if (typeof raw.id !== "string" || !raw.id) return;
+      add({ reference: attachmentRef(event.scope, parent.id, raw.id), providerId: raw.id });
+      return;
+    }
+    if (["effect", "reply", "edit"].includes(String(raw.type))) {
+      walk(object(raw.content), parent, depth + 1);
+      return;
+    }
+    if (raw.type !== "group" || !Array.isArray(raw.items)) return;
+    for (const value of raw.items) {
+      const child = object(value);
+      if (typeof child.id !== "string" || !child.id) {
+        walk(object(child.content), parent, depth + 1);
+        continue;
+      }
+      const childRef = messageRef(event.scope, child.id);
+      add({ reference: childRef, providerId: child.id });
+      walk(object(child.content), childRef, depth + 1);
+    }
+  };
+  const root = messageRef(event.scope, message.id);
+  // Created provider messages are the only normal message events whose own ID
+  // is exposed as an actionable message. An unrelated wrapper/target is not.
+  if (event.change !== "created" || event.message.id !== root.id) return [];
+  add({ reference: root, providerId: message.id });
+  walk(message.content, root, 0);
+  return [...bindings.values()];
 }
 export function normalizeCaptured(
   input: unknown,
