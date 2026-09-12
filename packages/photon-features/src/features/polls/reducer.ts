@@ -13,8 +13,8 @@ export interface PollReductionPolicy {
 }
 
 function sameEvent(a: IncomingEvent, b: IncomingEvent): boolean {
-  const { receivedAt: _a, eventId: _aid, ...left } = a;
-  const { receivedAt: _b, eventId: _bid, ...right } = b;
+  const { receivedAt: _a, eventId: _aid, providerEventId: _apid, ...left } = a;
+  const { receivedAt: _b, eventId: _bid, providerEventId: _bpid, ...right } = b;
   return isDeepStrictEqual(left, right);
 }
 
@@ -57,6 +57,10 @@ export function createPollReducer(policy: PollReductionPolicy = { orderedSources
       if (!priorInbox) tx.put("inbox", {
         id: event.eventId, scope: event.scope, revision: 0, event, state: "pending",
       }, null);
+      if (event.direction !== "inbound") {
+        retainUnresolved(event, tx, "INBOUND_INTERACTION_REQUIRED");
+        return;
+      }
       let poll;
       try {
         if (!sameScope(event.poll.scope, event.scope) || !sameScope(event.option.scope, event.scope) ||
@@ -84,8 +88,14 @@ export function createPollReducer(policy: PollReductionPolicy = { orderedSources
         return;
       }
       const option = options[0]!;
-      const handoffId = scopedId("handoff", event.scope,
-        event.ordering.source, event.providerEventId ?? event.eventId, owner.taskId, owner.generation);
+      // F0 requires actorId. WT-02 must quarantine missing actors, never fill a sentinel/bot identity.
+      const seq = event.ordering.sequence;
+      if (!policy.orderedSources.includes(event.ordering.source) || !seq || !/^\d{1,100}$/.test(seq)) {
+        retainUnresolved(event, tx, "AUTHORITATIVE_ORDERING_REQUIRED");
+        return;
+      }
+      const handoffId = scopedId("handoff", event.scope, event.ordering.source, BigInt(seq).toString(),
+        poll.id, option.reference.id, event.actorId, owner.taskId, owner.generation);
       const priorHandoff = tx.get("handoffs", handoffId);
       if (priorHandoff) {
         const original = tx.get("inbox", priorHandoff.eventIds[0]!);
@@ -93,12 +103,6 @@ export function createPollReducer(policy: PollReductionPolicy = { orderedSources
           retainUnresolved(event, tx, "PROVIDER_EVENT_IDENTITY_CONFLICT"); return;
         }
         markReduced(event, tx); return;
-      }
-      // F0 requires actorId. WT-02 must quarantine missing actors, never fill a sentinel/bot identity.
-      const seq = event.ordering.sequence;
-      if (!policy.orderedSources.includes(event.ordering.source) || !seq || !/^\d{1,100}$/.test(seq)) {
-        retainUnresolved(event, tx, "AUTHORITATIVE_ORDERING_REQUIRED");
-        return;
       }
       if (event.change !== "option-added") {
         if (policy.selectionSemantics !== "independent-option-deltas") {

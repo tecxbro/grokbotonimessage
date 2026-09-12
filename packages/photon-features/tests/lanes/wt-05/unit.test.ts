@@ -29,7 +29,8 @@ function fixture() {
         {...space,id:"other-chat"}:space,content:await content.build() } as unknown as Message;
     },
   } as unknown as Space;
-  const binding = { resolveSpace:async()=>space };
+  const binding = { resolveSpace:async()=>space,
+    binding:()=>({scope,phone:scope.lineId,conversationId:"native-chat"}) };
   const action:Action={version:1,contextId:context.contextId,idempotencyKey:"create",operation:"poll.create",
     arguments:{space:ref,question:"Pick?",options:[{key:"a",label:"Same"},{key:"b",label:"Same"}]}};
   return {...f,s,ref,space,binding,action,calls:()=>calls,setBehavior:(value:typeof behavior)=>{behavior=value;}};
@@ -41,6 +42,8 @@ test("F0 factory registers five typed handlers without starting any provider", (
     assert.equal(pollFeatureAvailability(ingress).interactiveWorkflowAdvertisable,false);
     assert.equal(pollFeatureAvailability(ingress).operations["poll.vote"],"blocked");
   }
+  assert.equal(pollFeatureAvailability("available","available").interactiveWorkflowAdvertisable,true);
+  assert.equal(pollFeatureAvailability("available","available").operations["poll.vote"],"implemented");
 });
 
 test("F0 create uses one shared child and registers actual message/poll identity", async () => {
@@ -89,7 +92,8 @@ test("F0 native operations validate identities and stay blocked without inventin
     {...f.action,operation:"poll.addOption",arguments:{poll,option:{key:"c",label:"C"}}},
   ];
   for(const action of actions) {
-    assert.equal(mapPollOperation(action as Parameters<typeof mapPollOperation>[0]).kind,"blocked");
+      assert.equal(mapPollOperation(action as Parameters<typeof mapPollOperation>[0]).kind,
+        action.operation.replace("poll.",""));
     const result=await executePollOperation(action,f.s,f.binding);
     assert.equal(result.status,"blocked"); assert.equal(result.error?.blockerId,"wt-05-advanced-polls");
   }
