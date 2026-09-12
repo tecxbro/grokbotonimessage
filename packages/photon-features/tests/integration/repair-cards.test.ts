@@ -6,6 +6,7 @@ import type { Action, OperationResult, ResourceRef } from "../../src/contracts/i
 import type { ProductionHostConfiguration } from "../../src/host/configuration.js";
 import { createProductionComposition, type ProductionComposition } from "../../src/host/production.js";
 import type { OwnedSdk } from "../../src/adapters/transport/spectrum-owner.js";
+import { DurableSQLiteStore } from "../../src/adapters/state/sqlite.js";
 import { authenticateInteraction, createInteractionAdapter } from "../../src/features/cards/interaction-adapter.js";
 import { CardRuntime } from "../../src/features/cards/operations.js";
 import { applyCardInteraction } from "../../src/features/cards/reducer.js";
@@ -91,6 +92,12 @@ test("prepared production binding preserves admission revision and original card
         teamId: "TESTTEAM01",
         extensionBundleId: "invalid.fixture.messages",
       },
+      interactions: {
+        participantIds: ["participant-1"],
+        actionIds: ["confirm"],
+        ttlMs: 30_000,
+        backendContractId: "fixture-backend-v1",
+      },
     }],
     runtime: {
       statePath: join(runtimeDirectory, "state.sqlite"),
@@ -107,10 +114,17 @@ test("prepared production binding preserves admission revision and original card
     provider: () => ({ space: {}, getMembers: async () => [], getAttachment: async () => undefined }) as never,
     stop: async () => stopStream(),
   };
+  let authenticated: unknown;
+  let callbackWakes = 0;
   const composition = await createProductionComposition(configuration, root, root, {
     now: () => now,
     sdkFactory: async () => sdk,
-    grokRunner: async () => "accepted",
+    grokRunner: async () => { callbackWakes++; return "accepted"; },
+    cardBackend: {
+      id: "fixture-backend-v1",
+      source: "test-double:repair-cards-production-v1",
+      authenticate: async () => authenticated,
+    },
   });
 
   try {
@@ -175,6 +189,37 @@ test("prepared production binding preserves admission revision and original card
       assert.equal(edit.type, "edit");
       if (edit.type === "edit") assert.equal(edit.target, original);
     }
+
+    const observer = new DurableSQLiteStore(configuration.runtime.statePath, () => now);
+    const checkpointRows = observer.scan("checkpoints");
+    const data = checkpointRows.map(row => {
+      try { return decodeSession(row.payloadJson); } catch { return undefined; }
+    }).find(value => value?.session.id === session.id);
+    observer.close();
+    assert.ok(data?.callback, `the production card send must create the callback session binding: ${JSON.stringify(checkpointRows)}`);
+    authenticated = {
+      version: 1,
+      eventId: "fixture-callback-event-1",
+      session: data.session,
+      scope: data.card.scope,
+      taskId: data.taskId,
+      generation: data.generation,
+      participantId: "participant-1",
+      nonce: data.callback.nonce,
+      actionId: "confirm",
+      selection: ["yes"],
+      occurredAt: now,
+    };
+    const interaction = await composition.acceptCardInteraction({
+      body: new Uint8Array([1]),
+      headers: { "content-type": "application/json" },
+    });
+    assert.equal(interaction.status, "committed", JSON.stringify(interaction));
+    assert.equal(callbackWakes, 1);
+    assert.deepEqual(await composition.acceptCardInteraction({
+      body: new Uint8Array([1]),
+      headers: { "content-type": "application/json" },
+    }), { status: "replayed" });
   } finally {
     await composition.runtime.stop();
   }

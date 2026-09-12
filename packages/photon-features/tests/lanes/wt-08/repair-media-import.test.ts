@@ -292,5 +292,5 @@ test("manual operating decisions cover required behavior and preserve the genera
   ]) assert.match(skill, new RegExp(phrase, "i"));
   const block = skill.slice(skill.indexOf(generatedStart), skill.indexOf(generatedEnd) + generatedEnd.length);
   assert.equal(createHash("sha256").update(block).digest("hex"),
-    "0645ee6f47d8d841d155a54acad1257696073e9fb787e45eb3496bb5bcbcfc21");
+    "09d1d50216d5eb9062bcf419bde203e14af56e3cc9dfb886da3f40dc3ca4144f");
 });

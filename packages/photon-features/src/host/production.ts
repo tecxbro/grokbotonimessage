@@ -33,6 +33,10 @@ import { requestIdentity } from "../runtime/core/idempotency.js";
 import { InboundRouter } from "../runtime/inbound/router.js";
 import { TextBatcher } from "../runtime/inbound/batching.js";
 import { recoverCaptures } from "../runtime/inbound/recovery.js";
+import type { Correlations, CapturedMessage } from "../runtime/inbound/normalize.js";
+import { incomingReferenceBindings } from "../runtime/inbound/normalize.js";
+import type { CaptureProcessing } from "../adapters/transport/message-events.js";
+import type { ReceiptAcquisition } from "../runtime/inbound/receipt-observer.js";
 import { configuredGrokWake, WakeDispatcher } from "../runtime/inbound/wake-dispatcher.js";
 import { InboundPump } from "../runtime/inbound/pump.js";
 import { TypingLeases } from "../runtime/typing/leases.js";
@@ -40,8 +44,13 @@ import { createTypingFeatureModule, createTypingModule, type BindTypingExecution
 import { createTextMessageModule, createFeatureModule as createTextFeature } from "../features/text-messages/module.js";
 import { createMediaModule, createFeatureModule as createMediaFeature } from "../features/media/module.js";
 import { createPollModule, createFeatureModule as createPollFeature } from "../features/polls/module.js";
+import type { PollManagement, PollProviderBinding } from "../features/polls/sdk.js";
 import { createCardsModule, createFeatureModule as createCardFeature } from "../features/cards/module.js";
+import { createInteractionAdapter, type AppBackendContract, type InteractionResult } from "../features/cards/interaction-adapter.js";
 import type { CardTemplate } from "../features/cards/configuration.js";
+import { CardRuntime } from "../features/cards/operations.js";
+import { SESSION_CODEC } from "../features/cards/session-codec.js";
+import { key as cardStateKey } from "../features/cards/state.js";
 import { createNativeModule, createPublicFeatureModule as createNativeFeature, publicServiceAdapter } from "../features/native/module.js";
 import { assembleFeatureSurface, createPollContentModule } from "../integration/assembly.js";
 import type { ProductionHostConfiguration } from "./configuration.js";
@@ -53,6 +62,8 @@ import { ProductionStreamRegistry } from "./stream-registry.js";
 import { ProductionResourcePorts } from "./resource-ports.js";
 import { dirname, join } from "node:path";
 import { productionCapability } from "./capabilities.js";
+import { registerIncomingReferences } from "./incoming-resources.js";
+import { createPollCorrelations, routePollEvent, type NativePollVoteIdentity } from "./poll-correlations.js";
 
 const adminOperations = new Set<Operation>([
   "space.create", "space.rename", "space.addMembers", "space.removeMembers", "space.leave",
@@ -118,6 +129,12 @@ class ProductionLocalExecutor implements LocalExecutor {
     private readonly resources: ResourceResolver,
     private readonly bindResources: (requestId: string) => BindExecutionResources,
     private readonly capability: (operation: Operation, context: TrustedContext, action?: Action) => Capability,
+    private readonly correlations: Correlations,
+    private readonly captureProcessing: {
+      owner: SpectrumOwner;
+      receipts: ReceiptAcquisition;
+      registerReferences: CaptureProcessing["registerReferences"];
+    },
     private readonly pump: InboundPump,
     private readonly report: (code: string) => void,
     private readonly concurrency = 4,
@@ -137,7 +154,7 @@ class ProductionLocalExecutor implements LocalExecutor {
   async recover(): Promise<void> {
     this.recovery.recover();
     await recoverCaptures(this.captures.ids(), this.captures, this.providerRoutes,
-      this.claims.contexts.clock, event => this.router.accept(event));
+      this.claims.contexts.clock, event => this.router.accept(event), this.correlations, this.captureProcessing);
   }
   async startOutbox(): Promise<void> {
     if (this.active) throw new Error("OUTBOX_ALREADY_STARTED");
@@ -204,6 +221,14 @@ class ProductionLocalExecutor implements LocalExecutor {
 export interface ProductionCompositionDependencies {
   sdkFactory?: SdkFactory;
   grokRunner?: GrokCommandRunner;
+  /** Optional approved adapter over the already-owned provider connection. The
+   * shipped Spectrum 12.8.0 adapter cannot supply this public surface. */
+  pollManagement?: (context: TrustedContext) => Promise<PollManagement>;
+  /** Authenticated provider metadata extractor. It must return exact native IDs;
+   * the shipped Spectrum snapshot intentionally returns no inferred fallback. */
+  nativePollIdentity?: (message: CapturedMessage, scope: Scope) => NativePollVoteIdentity | undefined;
+  /** Concrete deployment-owned verifier. Absence keeps callbacks unavailable. */
+  cardBackend?: AppBackendContract;
   now?: () => number;
   report?: (code: string) => void;
 }
@@ -217,6 +242,7 @@ export interface ProductionComposition {
   registerTextStream(principal: AuthenticatedPrincipal, source: AsyncIterable<string>, expiresAt: number): Promise<Extract<ResourceRef, { kind: "stream" }>>;
   importMediaFile(principal: AuthenticatedPrincipal, filename: string,
     metadata: import("../features/media/metadata.js").SourceMetadata): Promise<import("../features/media/staging.js").StagedMedia>;
+  acceptCardInteraction(request: { body: Uint8Array; headers: Readonly<Record<string, string>> }): Promise<InteractionResult>;
   startLocalInterface(): Promise<{ close(): Promise<void> }>;
 }
 
@@ -316,7 +342,15 @@ export async function createProductionComposition(
       conversationId: configuration.provider.conversationId, provider: owner.provider() }),
     voiceBehavior: "native",
   });
-  const legacyPoll = createPollModule();
+  const pollManagementAvailable = dependencies.pollManagement !== undefined;
+  const voteIngressAvailable = dependencies.nativePollIdentity !== undefined;
+  const legacyPoll = createPollModule({
+    management: pollManagementAvailable ? "available" : "unavailable",
+    voteIngress: voteIngressAvailable ? "available" : "unavailable",
+    reduction: voteIngressAvailable
+      ? { orderedSources: ["spectrum.messages"], selectionSemantics: "independent-option-deltas" }
+      : { orderedSources: [] },
+  });
   const templates = configuration.cards as readonly CardTemplate[];
   const legacyCards = createCardsModule({ templates, binding, requestId: request });
   const nativeDependencies = {
@@ -348,6 +382,68 @@ export async function createProductionComposition(
       compiler.compile(content, publicServiceAdapter(services, nativeDependencies, services.signal)),
   }));
   const scopedProvider = resolveProviderContext(owner, scope, configuration.provider.conversationId);
+  const pollBinding: PollProviderBinding = {
+    resolveSpace: resources.space,
+    binding: trusted => {
+      if (!sameScope(trusted.scope, scope)) throw new Error("SCOPE_MISMATCH");
+      return { scope, phone: configuration.provider.phone, conversationId: configuration.provider.conversationId };
+    },
+    ...(dependencies.pollManagement ? { management: dependencies.pollManagement } : {}),
+  };
+  const cardRuntime = new CardRuntime({
+    templates,
+    binding,
+    space: (reference, services) => resources.space(reference, services.context),
+    requestId: request,
+    updateRevision: (action, services) => {
+      const captured = services.admission?.cardUpdate;
+      return captured?.cardId === action.arguments.card.id && captured.sessionId === action.arguments.session.id
+        ? captured.expectedRevision : undefined;
+    },
+  });
+  const cardFeature = createCardFeature(cardRuntime);
+  const persistCardSession = (result: import("../contracts/results.js").OperationResult,
+    services: PublicExecutionServices) => {
+    const session = result.references.find((reference): reference is Extract<ResourceRef, { kind: "card-session" }> =>
+      reference.kind === "card-session");
+    if (!session) return result;
+    const payloadJson = cardRuntime.snapshot(session.id);
+    if (!payloadJson) return result;
+    services.assertActiveClaim();
+    store.transaction(tx => {
+      const mapped = tx.get("references", session.id);
+      if (!mapped || !sameScope(mapped.scope, services.context.scope) ||
+        mapped.taskId !== services.context.taskId || mapped.generation !== services.context.generation ||
+        mapped.ownedByPrincipalId !== services.context.principalId || !isDeepStrictEqual(mapped.reference, session))
+        throw new Error("RESOURCE_NOT_FOUND");
+      const id = cardStateKey("session", session.id);
+      const previous = tx.get("checkpoints", id);
+      if (previous?.payloadJson === payloadJson) return;
+      tx.put("checkpoints", {
+        id,
+        scope: session.scope,
+        revision: previous ? previous.revision + 1 : 0,
+        requestId: result.requestId,
+        codecId: SESSION_CODEC.id,
+        codecVersion: SESSION_CODEC.version,
+        payloadJson,
+        nextChildIndex: 0,
+        claim: services.claim,
+      }, previous?.revision ?? null);
+    });
+    return result;
+  };
+  const wiredCardFeature: typeof cardFeature = {
+    ...cardFeature,
+    handlers: {
+      "app.send": async (action, services) => persistCardSession(
+        await cardFeature.handlers["app.send"]!(action, services), services),
+      "app.sendCustomized": async (action, services) => persistCardSession(
+        await cardFeature.handlers["app.sendCustomized"]!(action, services), services),
+      "app.update": async (action, services) => persistCardSession(
+        await cardFeature.handlers["app.update"]!(action, services), services),
+    },
+  };
   const publicModules = [
     createTypingFeatureModule(typing, publicTypingBind),
     createTextFeature({ provider: scopedProvider, binding, resources, compilers: () => publicCompilers }),
@@ -356,13 +452,8 @@ export async function createProductionComposition(
       voiceBehavior: "native",
       stageAttachment: (reference, services) => resourcePorts.stageAttachment(reference, services),
     }),
-    createPollFeature({ resolveSpace: resources.space }),
-    createCardFeature({ templates, binding, space: (reference, services) => resources.space(reference, services.context), requestId: request,
-      updateRevision: (action, services) => {
-        const captured = services.admission?.cardUpdate;
-        return captured?.cardId === action.arguments.card.id && captured.sessionId === action.arguments.session.id
-          ? captured.expectedRevision : undefined;
-      } }),
+    createPollFeature(pollBinding),
+    wiredCardFeature,
     createNativeFeature(nativeDependencies),
   ];
   const assembled = assembleFeatureSurface({ publicModules, compatibilityModules });
@@ -385,6 +476,14 @@ export async function createProductionComposition(
       streams: true,
       checkedAt: now(),
       operationBlockers: {
+        "poll.get": pollManagementAvailable ? [] :
+          ["The configured Spectrum owner has no approved public native poll-management adapter."],
+        "poll.vote": pollManagementAvailable ? [] :
+          ["The configured Spectrum owner has no approved public native poll-management adapter."],
+        "poll.unvote": pollManagementAvailable ? [] :
+          ["The configured Spectrum owner has no approved public native poll-management adapter."],
+        "poll.addOption": pollManagementAvailable ? [] :
+          ["The configured Spectrum owner has no approved public native poll-management adapter."],
         "app.update": templates.some(template => template.kind === "customized") ? [] :
           ["No customized template or concrete universal update URL backend is configured."],
       },
@@ -394,7 +493,7 @@ export async function createProductionComposition(
   );
 
   const router = new InboundRouter(store, { now }, {
-    route: event => sameScope(event.scope, scope) ? {
+    route: (event, tx) => event.type === "poll" ? routePollEvent(event, tx) : sameScope(event.scope, scope) ? {
       taskId: context.taskId, generation: context.generation, principalId: context.principalId,
     } : undefined,
     continuation: event => event.type === "poll" || event.type === "app-interaction",
@@ -411,6 +510,12 @@ export async function createProductionComposition(
   }, dependencies.grokRunner);
   const wake = configuredGrokWake(handoff);
   const dispatcher = new WakeDispatcher(store, { now }, wake);
+  const interactions = createInteractionAdapter({
+    backend: dependencies.cardBackend,
+    transactions: store,
+    clock: { now },
+    wake,
+  });
   const batcher = new TextBatcher(router);
   const pump = new InboundPump(() => [{ scope, task: {
     taskId: context.taskId, generation: context.generation, principalId: context.principalId,
@@ -422,11 +527,33 @@ export async function createProductionComposition(
     capabilities: trusted => configuration.task.permissions.map(operation => capability(operation, trusted)),
     diagnostics: () => diagnostics(),
   });
+  const correlations = createPollCorrelations(store, dependencies.nativePollIdentity ?? (() => undefined));
+  const registerReferences: CaptureProcessing["registerReferences"] = async (snapshot, event) => {
+    if (!sameScope(event.scope, scope)) throw new Error("SCOPE_MISMATCH");
+    const bindings = incomingReferenceBindings(snapshot, event);
+    store.transaction(tx => registerIncomingReferences(tx, context, bindings, now()));
+  };
+  const receipts: ReceiptAcquisition = {
+    writer: store,
+    resolveTarget: (receiptScope, providerTargetId) => {
+      if (!sameScope(receiptScope, scope)) return;
+      const matches = [...scanAll(store, "references")].filter(row =>
+        row.reference.kind === "message" && row.providerId === providerTargetId &&
+        sameScope(row.scope, receiptScope) && row.ownedByPrincipalId === context.principalId &&
+        row.taskId === context.taskId && row.generation === context.generation,
+      );
+      return matches.length === 1 && matches[0]!.reference.kind === "message"
+        ? { providerId: providerTargetId, reference: matches[0]!.reference }
+        : undefined;
+    },
+  };
+  const captureProcessing = { owner, receipts, registerReferences };
   const executor = new ProductionLocalExecutor(store, protocol, claims, recovery, router, captures,
-    providerRoutes, resources, requestId => services => resourcePorts.bind(requestId, services), capability, pump,
+    providerRoutes, resources, requestId => services => resourcePorts.bind(requestId, services), capability,
+    correlations, captureProcessing, pump,
     dependencies.report ?? (() => undefined));
   const ingressSource = new SpectrumEventSource(owner, captures, { now }, diagnostic =>
-    (dependencies.report ?? (() => undefined))(diagnostic.code));
+    (dependencies.report ?? (() => undefined))(diagnostic.code), correlations, { receipts, registerReferences });
   const ingress = {
     authentication: "authenticated-stream" as const,
     start: (accept: (event: IncomingEvent) => Promise<void>) => ingressSource.start(accept),
@@ -442,6 +569,7 @@ export async function createProductionComposition(
       principal,
       registerTextStream: (caller, source, expiresAt) => streamRegistry.register(caller, context.contextId, source, expiresAt),
       importMediaFile: (caller, filename, metadata) => resourcePorts.importFile(caller, context.contextId, filename, metadata),
+      acceptCardInteraction: request => interactions.accept(request),
       startLocalInterface: () => listenDurableLocal(configuration.local.socketPath,
         [{ token: localToken, principal }], executor),
     };

@@ -29,7 +29,8 @@ test('webhook awaits durable acceptance; database failure is 503 and alternate e
   const owner = new SpectrumOwner({inbound:'photon-webhook',outbound:'imessage',wake:'existing-grok-task-handoff'}, routes,
     async () => ({messages: async function* () {}, space: async () => {throw new Error('offline');}, stop: async () => {}}));
   await owner.start(); t.after(() => owner.stop());
-  const ingress = new NativeWebhookIngress(owner,new FileCaptureStore(join(r.dir,'capture')),r.clock,secret);
+  const ingress = new NativeWebhookIngress(owner,new FileCaptureStore(join(r.dir,'capture')),r.clock,secret,{},
+    {writer:{recordReceipt(){}}},async()=>{});
   t.after(() => ingress.stop());
   let release!: () => void; const barrier = new Promise<void>(resolve => {release = resolve;});
   let started!: () => void; const entered = new Promise<void>(resolve => {started = resolve;});

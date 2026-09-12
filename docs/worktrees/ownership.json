@@ -447,6 +447,7 @@
     "packages/photon-features/src/state/ports.ts",
     "packages/photon-features/tests/e2e/install-rollback.test.ts",
     "packages/photon-features/tests/foundation/feature-services.test.ts",
+    "packages/photon-features/tests/security/webhook-auth.test.ts",
     "packages/photon-features/tests/lanes/wt-08/regression.test.ts",
     "docs/contracts/execution.md",
     "docs/contracts/receipts.md",

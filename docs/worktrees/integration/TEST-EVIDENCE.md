@@ -319,3 +319,47 @@ The first aggregate overlapped a foundation build and failed while importing a p
 Manual diff review and exact repair ownership validation: changed paths all belong to coordinator preparation or its explicitly authored A-E prompt documents; no duplicate/wildcard maintenance assignments. Existing checks passing do not resolve the known thirteen feature failures or the historical structural inventory overstatement. A-E and final coordinator production wiring remain required. External native-poll and card-backend dependencies are recorded in CHANGE-REQUESTS.md.
 
 Preparation commit: `513ede497a96bd9c30cc597faee868e201ea3456`. Created `repair/fix-1-a` through `repair/fix-1-e` under `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1-a` through `fix-1-e` with `git worktree add -b <branch> <path> 513ede497a96bd9c30cc597faee868e201ea3456`. Verified each HEAD, branch and empty porcelain status. No existing branch/path was overwritten. Dependencies and workers were not started in these new checkouts. Only prompt/registration documentation changed after the tested preparation commit.
+
+## A-E merge and automated production-path verification (2026-09-11)
+
+All commands used Node 24.13.0/npm 10.9.2. The merged input commits were A
+`60a7c9b15d0f2a174efb1ddb74fe00d264a4f0a2`, B
+`80ff9845e07b79acb997f3f825037c3dd209634a`, C
+`ab0e275f4f2c9d096159f445f7fec670686eec71`, D
+`cb69d2145fbb883c9b0592385df38d81b1c51195`, and E
+`ce109824310d1617105e1863b8f7ed7c103f1798`. Merge commits are listed in
+WORKLOG.md. No branch was pushed.
+
+- Merged focused command: 265/266 passed initially. The only failure was D's
+  intentionally pinned pre-coordinator generated-block hash after the required
+  final inventory regeneration. Updating that one expected hash made its test
+  pass 4/4; manual skill text was preserved.
+- Production card plus journey command: 5/5 passed.
+- Red mutation: removing `{ receipts, registerReferences }` from production
+  `SpectrumEventSource` caused `repair-production-journey.test.js` to fail one
+  test with `runner timeout` and exit 1. Restoring it passed 1/1 and exit 0.
+- Root `npm test`: 31/31 passed. Package `typecheck`: passed. `npm run
+  photon:test`: 64/64 passed. `npm run photon:check`: passed with 3 schemas,
+  49 files, digest `d887593c10ffd67616af84ea065cfc181463ec96b25e1c3f49385a3934c64580`.
+- First aggregate: every emitted subtest passed but the process hit the 300-second
+  bound because the old webhook security fixture omitted lane A's newly mandatory
+  processing ports. Per-file isolation identified only
+  `security/webhook-auth.test.js` as retaining the wait; this was not called a pass.
+  After fixture repair it passed 2/2.
+- Final `npm run photon:test:integration`: 90 files, 826/826 tests, zero failed,
+  cancelled, or skipped. The live suite is excluded by the explicit authorization
+  boundary. This proves runner selection of the new journey test.
+- Generated skill drift: 44 operations, 44 examples, four assigned examples,
+  48 files, check true.
+- Ownership: 493 changed paths, 406 reviewed-lane paths, 75 integration paths,
+  26 exact historical maintenance paths, and 99 exact repair-assigned paths.
+- Package dry-run: 347 files, 335,058 bytes. This is inventory only, not an
+  installed or activated production archive.
+
+The automated journey uses a scripted external-agent double and offline provider
+double. It does not verify a real Grok model, provider acceptance/delivery/read,
+extension rendering, human interaction, or a physical device. Positive poll
+continuation cannot be production-proven at Spectrum 12.8.0 without authoritative
+native poll/option IDs and provider ordering. Actual Grok/device verification is
+NOT RUN because there is no authorized activated configuration, provider/Grok
+credential, intended user message, or device access in this task.

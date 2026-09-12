@@ -27,6 +27,16 @@ const cardTemplate = z.strictObject({
     extensionBundleId: z.string().min(3).max(200).regex(/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/),
     appStoreId: z.number().int().positive().optional(),
   }).optional(),
+  live: z.strictObject({
+    installedExtensionVerified: z.literal(true),
+    evidence: z.string().min(1).max(1000),
+  }).optional(),
+  interactions: z.strictObject({
+    participantIds: unique(idSchema, 32).min(1),
+    actionIds: unique(idSchema, 32).min(1),
+    ttlMs: z.number().int().positive().max(86_400_000),
+    backendContractId: idSchema,
+  }).optional(),
 }).superRefine((value, context) => {
   if (value.kind === "customized" && !value.extension)
     context.addIssue({ code: "custom", message: "customized template extension required" });

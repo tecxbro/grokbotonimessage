@@ -65,13 +65,21 @@ export function assembleFeatureSurface(input: IntegratedFeatureSurface) {
   );
   if (missingCompilers.length)
     throw new Error(`MISSING_COMPILERS:${missingCompilers.join(",")}`);
+  const declarations = new Map<string, CompatibilityModule["capabilities"][number]>();
+  for (const capability of input.compatibilityModules.flatMap(module => module.capabilities)) {
+    if (declarations.has(capability.operation))
+      throw new Error(`DUPLICATE_CAPABILITY_DECLARATION:${capability.operation}`);
+    declarations.set(capability.operation, capability);
+  }
   const assembledOperationRegistrations = Object.freeze(
     operationRegistrations.map(({ operation, owner }) => Object.freeze({
       operation,
       owner,
-      implementation: publicRegistry.handlers.has(operation)
-        ? ("implemented" as const)
-        : ("unimplemented" as const),
+      handlerRegistration: publicRegistry.handlers.has(operation) ? ("registered" as const) : ("unregistered" as const),
+      implementation: declarations.get(operation)?.implementation ?? ("unimplemented" as const),
+      providerSupport: declarations.get(operation)?.providerSupport ?? ("unknown" as const),
+      configuredAvailability: "runtime-discovery-required" as const,
+      liveVerified: declarations.get(operation)?.evidence.some(item => item.tier === "live") ?? false,
     })),
   );
   return { publicRegistry, compatibilityRegistry, operationRegistrations: assembledOperationRegistrations };

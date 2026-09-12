@@ -78,3 +78,32 @@
 - RP-7: The tested preparation is committed; five isolated workers start at that immutable commit and receive complete exact-scope prompts. Worktree creation alone does not mean workers ran.
 
 These preparation cases do not close every assigned feature failure. Final coordinator acceptance still requires a complete production incoming-message journey through durable work and authorized execution. Actual Grok processing, activation, external provider delivery/read, extension rendering/interactions and physical-device behavior remain separately unverified.
+
+## fix-1 A-E repair integration acceptance (2026-09-11)
+
+The coordinator merged A-E exactly once, connected their production seams, and
+ran the source-derived non-live runner. “Closed locally” below means compiled and
+automatically verified with offline provider/Grok doubles; it is not provider or
+device evidence.
+
+| Problem | Result | Production files/symbols | Regression and exact focused command | Production dependency / live status |
+| --- | --- | --- | --- | --- |
+| 1 | Closed locally | `runtime/typing/operations.ts`; `createTypingModule` declarations consumed by assembly | `node --test packages/photon-features/dist/tests/lanes/wt-02/*.test.js packages/photon-features/dist/tests/integration/repair-ingress.test.js` | Shared owner binding is configured; device-visible typing not verified. |
+| 2 | Closed locally | `normalize.incomingReferenceBindings`; `production.registerReferences`; `registerIncomingReferences` | Same WT-02 command plus `repair-production-journey.test.js` | Authenticated live/replay capture supplies IDs; offline only. |
+| 3 | Conditional seam wired; externally incomplete | `createPollCorrelations`; `routePollEvent`; `ProductionCompositionDependencies.nativePollIdentity` | `node --test packages/photon-features/dist/tests/lanes/wt-05/*.test.js packages/photon-features/dist/tests/integration/repair-polls.test.js` | Spectrum 12.8.0 exposes neither authoritative native poll/option IDs nor provider ordering; production retains unresolved input. |
+| 4 | Implemented behind unavailable production dependency | `executePollOperation`; `PollProviderBinding`; `ProductionCompositionDependencies.pollManagement` | Same WT-05 command | No approved public shared-owner poll-management adapter exists at the pin; operations report unavailable with precise blockers. |
+| 5 | Closed locally | admission `cardUpdate.expectedRevision`; production `CardRuntime` binding and durable session projection | `node --test packages/photon-features/dist/tests/lanes/wt-06/*.test.js packages/photon-features/dist/tests/integration/repair-cards.test.js` | Actual extension/provider behavior not verified. |
+| 6 | Repository seam closed; deployment dependency absent | `createInteractionAdapter`; `acceptCardInteraction`; `persistCardSession` | `node --test packages/photon-features/dist/tests/integration/repair-cards.test.js` | A configured authenticated backend contract works with a session created by the production send; no real backend/extension contract or live interaction was supplied. |
+| 7 | Closed locally | `processCapturedMessage`; production `receipts` and replay `captureProcessing` | WT-02 command plus `repair-production-journey.test.js` | One receiving path records correlated observations; provider delivery/read not observed. |
+| 8 | Closed locally | `cli.commandRequest`; `main`; `DurableLocalProtocol.media.import`; `ProductionResourcePorts.importFile` | `node --test packages/photon-features/dist/tests/lanes/wt-08/repair-media-import.test.js packages/photon-features/dist/tests/integration/production-resources.test.js` | Authenticated owner-only import directory is required; no live send. |
+| 9 | Closed locally | `DurableSQLiteStore.pendingInbox`; `InboundRouter.pending` | WT-02 command | Bounded SQLite filtering covers 999/1000/1001/10000 history and mixed backlogs. |
+| 10 | Closed in code; remote publication pending | workflow full-history checkout; `resolveHistoryBaseline` | `node --test packages/photon-features/dist/tests/lanes/wt-00/repair-ci-history.test.js` | Hosted jobs and the locally recorded tag/lane refs are not published or observed; no push was authorized. |
+| 11 | Closed locally through package inventory | manually authored `SKILL.md` decision sections; regenerated operation block | `node --test packages/photon-features/dist/tests/lanes/wt-08/repair-media-import.test.js`; `npm pack --workspace=@grokbot/photon-features --dry-run --json --ignore-scripts` | 347-file package inventory includes the updated skill; no production archive install or activation. |
+| 12 | Closed locally | `assembleFeatureSurface.operationRegistrations`; `generate-skill.mjs` | `node --test packages/photon-features/dist/tests/integration/assembly.test.js`; `node packages/photon-features/scripts/generate-skill.mjs --check` | Registration, declaration, provider support, runtime availability, and live evidence are separate facts. |
+| 13 | Automated production-path verification passes; real Grok/device NOT RUN | `createProductionComposition`; production ingress/recovery/card-session/callback wiring; `repair-production-journey.test.ts` | `node --test packages/photon-features/dist/tests/integration/repair-production-journey.test.js`; full `npm run photon:test:integration` selected 90 files and passed 826/826 | Scripted Grok/provider boundaries only. Missing authorized activated configuration, real Grok gateway/task observation, provider credentials, intended user message, and device access. |
+
+The required mutation check removed the production `SpectrumEventSource` receipt/reference
+processing argument. The journey test failed with `runner timeout`; restoring the
+binding returned it to one pass. The full source-derived runner then passed 826/826
+with zero failures, cancellations, or skips; the authorization-gated live suite was
+excluded explicitly.

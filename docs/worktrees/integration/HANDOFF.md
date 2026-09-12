@@ -108,3 +108,28 @@ A new coordinator maintenance assignment begins at a3c36b3a04208a022fa7f994f1580
 Worker A owns incoming references/typing/receipts/pagination; B owns poll state/operations/correlation; C owns cards/sessions/interactions; D owns import CLI/manual operating instructions; E owns CI baseline resolution. The coordinator retains shared production/configuration/protocol/state and final integration tests/inventory. Workers are not launched automatically. Native poll API and actual card backend limitations are described in CHANGE-REQUESTS.md. No push, deployment, activation, credentials or live messaging occurred.
 
 Shared preparation committed as `513ede497a96bd9c30cc597faee868e201ea3456`. Verified A-E worktrees are clean at that exact SHA. Final prompts are saved in the coordinator checkout at ../fix-1-repair/A.md through E.md; each contains the actual base, full instructions, exact owned paths, source links, interfaces, tests and handoff requirements. Documentation finalization follows separately to avoid embedding a fabricated future SHA in the preparation commit.
+
+## A-E integration result (2026-09-11)
+
+All five repair branches are merged into `fix-1` with explicit merge commits and
+no conflicts. The coordinator connected live/replay reference and receipt processing,
+conditional scoped poll ports, card admission/session/callback wiring, authenticated
+media import, pending-work pagination, repaired history verification, and a truthful
+generated inventory. The final non-live runner selected 90 files and passed 826/826;
+root 31/31 and foundation 64/64 also pass.
+
+This is automated production-path verification, not real Grok verification. The
+journey uses real composition, SQLite, capture, routing, work protocol, socket and
+CLI, with only the external provider and Grok process scripted. It derives outbound
+actions from persisted inbound references and verifies formatting, target reply,
+attachment fetch/import/send, receipt correlation, stale fences, acknowledgment,
+and restart deduplication. A production card send now creates the durable session
+used by the connected callback adapter when an authenticated backend contract is
+supplied.
+
+Remaining gates are explicit: poll management and positive vote continuation need
+an approved shared-owner provider surface with native IDs and ordering; the real
+card backend/extension contract is absent; the remote historical refs required by
+CI are not published; package dry-run is not installation; and actual Grok/provider/
+device verification is NOT RUN. No push, install, activation, provisioning, or live
+message occurred.

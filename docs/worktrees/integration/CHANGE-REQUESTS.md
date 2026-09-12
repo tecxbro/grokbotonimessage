@@ -108,3 +108,16 @@ External dependency P-1: spectrum-ts 12.8.0's public narrowed iMessage provider 
 External dependency C-1: no concrete authenticated card backend wire/version, verifier/key policy, participant authentication, signed nonce transport, deployed extension callback contract or universal update URL mapping is supplied. Existing generic adapter and templates are not evidence these exist. Continue other work; do not claim problem 6 complete using a test verifier.
 
 Final coordinator work: connect A's shared live/replay reference and receipt path; bind B's real resolver/management only where a public contract exists; integrate C's revision/session work and real backend when supplied; integrate D's CLI/manual skill and E's CI; then reconcile generated capability inventory and run full production-journey regressions. Actual Grok and device observations remain separately unverified.
+
+## Post-merge status (2026-09-11)
+
+The local coordinator work named above is complete and covered by the 826-test
+non-live aggregate. CR-I-028 remains external: supply an approved public shared-owner
+poll management plus authenticated native poll/option identity and monotonic ordering
+contract. CR-I-029 remains external: supply the concrete authenticated card backend,
+extension callback protocol/version/key policy, and deployment mapping. CR-I-030
+remains external: publish or otherwise make the exact recorded historical Git objects
+available to hosted CI without weakening immutable verification. CR-I-031 remains
+authorization-gated: install/activate a production-approved release and perform the
+user-authorized real Grok/provider/device journey. None of these external gates was
+performed or relabeled as passing.

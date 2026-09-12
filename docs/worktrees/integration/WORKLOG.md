@@ -229,3 +229,37 @@ Implemented shared admission, import, capability and resource/correlation primit
 Shared preparation verification: 28 focused tests, typecheck, generated contracts, 31 root CLI tests, 60 foundation tests, documentation/ownership and skill drift checks passed. Full aggregate initially hit a concurrent-build import race; the serialized rerun passed 800/800 across 84 files with zero skips. Raw logs and hashes are recorded in TEST-EVIDENCE.md.
 
 Committed shared preparation as `513ede497a96bd9c30cc597faee868e201ea3456`, then created five previously unoccupied A-E worktrees/branches at that SHA. Finalized exact-SHA prompts and registration metadata in a separate documentation-only handoff. Primary and historical working trees remain untouched; no agents were launched or branches pushed.
+
+## 2026-09-11 — merged repair lanes A-E and coordinator production verification
+
+Revalidated the registered `fix-1` worktree, fetched origin without changing the
+checkout, and confirmed each repair branch was a clean descendant of prepared
+base `513ede497a96bd9c30cc597faee868e201ea3456`. Merged A through E with explicit
+no-fast-forward commits: `d33593c`, `e760b61`, `3ac6e07`, `2d5e815`, and
+`0b2282a`. There were no merge conflicts and no lane-to-lane source overlap.
+
+Connected the common capture processor to both live production ingress and replay,
+including trusted incoming reference registration and receipt target correlation.
+Connected the scoped poll management/correlation ports and original-owner route,
+while leaving them explicitly unavailable when the pinned public provider cannot
+supply native management, identity, and ordering. Connected card admission,
+durable production session projection, and the authenticated callback adapter;
+the real backend remains a deployment-supplied dependency. Rebuilt the generated
+skill inventory from explicit capability declarations after preserving D's manual
+sections.
+
+Added the automated production-path journey over real temporary SQLite, one provider
+owner/stream, the authenticated Unix socket, compiled CLI, durable work claim,
+heartbeat, stale-fence rejection and acknowledgment, captured message and attachment
+references, generated media import, voice-formatted text, targeted reply, correlated
+read evidence, unresolved poll evidence, and restart/no-duplicate behavior. A
+test-double backend case uses a session created by the actual production card send.
+The regression mutation removing ingress processing failed with `runner timeout`;
+restoration passed.
+
+The first aggregate exposed a merged-fixture hang: `security/webhook-auth.test.ts`
+still constructed lane A's now-fail-closed webhook ingress without receipt/reference
+ports. Supplying inert offline test ports made that fixture pass 2/2 without changing
+production behavior. The final source-derived non-live runner selected 90 files and
+passed 826/826. No push, archive installation, activation, real Grok/provider action,
+or device test occurred.

@@ -154,3 +154,25 @@ support and live evidence.
 This maintenance assignment makes the registered fix-1 branch the repair coordinator. Historical integration ownership and F0 evidence above remain historical. Exact scope is recorded in ../fix-1-repair/FILES.json and executable/delegated interfaces in ../fix-1-repair/INTERFACES.md.
 
 Shared preparation adds atomic admission metadata for card updates, a context-authenticated media-import protocol delegating to the existing importer, explicit implementation/configuration capability facts, and trusted incoming-reference/native-poll correlation primitives over the existing SQLite store. There is no new provider owner, receiving loop, outbox, model, callback wire protocol or applied-migration rewrite. Only the card-admission and local-import production bindings are connected in preparation. A-E implement their exact lanes; final receiver/poll/callback composition and structural-inventory reconciliation remain coordinator work.
+
+## Repair integration projection
+
+Production live ingress and capture replay now share one processor: normalize,
+register authenticated message/attachment identities, record independent receipt
+evidence, then expose the event to the inbox/router. Poll routing consults the
+persisted poll owner, never the latest conversation task. The host accepts optional
+approved native poll identity/management ports, but default Spectrum 12.8.0 remains
+explicitly unavailable because its public narrowed surface lacks the necessary
+identity, ordering, and management contract.
+
+The production card runtime projects its inert session snapshot into the existing
+durable `wt06.card-session` checkpoint after a successful shared handler result.
+The callback adapter reads that same durable session, authenticates through a
+deployment-owned backend contract, consumes the nonce and creates the continuation
+atomically, then wakes through the existing pointer-only path. No callback listener,
+wire schema, key policy, provider client, or default verifier is invented.
+
+The assembled operation projection derives registration from the public registry and
+implementation/provider support from explicit capability declarations. Runtime
+configuration and live verification remain separate fields. Missing declarations
+fail closed as unimplemented even when a handler is registered.
