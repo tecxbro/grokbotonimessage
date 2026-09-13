@@ -31,7 +31,8 @@ async function fixture(t: TestContext, options: { stalledAttachment?: boolean; u
       issuedAt: 1_000, expiresAt: 100_000, grokAgentId: "agent-1" },
     grok: { executable: "/usr/bin/false", timeoutMs: 1000 },
     authorization: { administrativeOperations: ["space.setAvatar"], allowedRecipients: [], allowNativeContent: true },
-    cards: [], runtime: { statePath: join(runtime, "state.sqlite"), captureDirectory: join(runtime, "captures"),
+    cards: [],
+    textStreaming: { delivery: "buffered" }, runtime: { statePath: join(runtime, "state.sqlite"), captureDirectory: join(runtime, "captures"),
       stagingDirectory: join(runtime, "staging"), importDirectory: join(runtime, "imports") },
   };
   const sent: Content[] = [];

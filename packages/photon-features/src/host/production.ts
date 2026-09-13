@@ -1,3 +1,6 @@
+import { configurationBlockers } from "./configuration-inventory.js";
+import { SignedCardBackend } from "./card-backend.js";
+import { ProductionTextProducer } from "./text-producer.js";
 import { isDeepStrictEqual } from "node:util";
 import type {
   Action,
@@ -97,7 +100,7 @@ function createResources(store: DurableSQLiteStore, owner: SpectrumOwner): Resou
       return owner.space(context.scope, row.providerId);
     },
     message: async (reference, context) => {
-      if (reference.kind !== "message") throw new Error("RESOURCE_NOT_FOUND");
+      if (reference.kind !== "message" && reference.kind !== "reaction") throw new Error("RESOURCE_NOT_FOUND");
       const message = rowFor(store, reference, context);
       const spaceRef: ResourceRef = { version: 1, kind: "space", id: context.scope.spaceId, scope: context.scope };
       const spaceRow = rowFor(store, spaceRef, context);
@@ -251,6 +254,7 @@ export interface ProductionComposition {
     metadata: import("../features/media/metadata.js").SourceMetadata): Promise<import("../features/media/staging.js").StagedMedia>;
   acceptCardInteraction(request: { body: Uint8Array; headers: Readonly<Record<string, string>> }): Promise<InteractionResult>;
   startLocalInterface(): Promise<{ close(): Promise<void> }>;
+  startCardBackend(): Promise<{ close(): Promise<void> } | undefined>;
 }
 
 /** Complete single-route production composition. Construction may open only
@@ -315,6 +319,7 @@ export async function createProductionComposition(
       message: (reference: ResourceRef) => resources.message(reference, trusted) };
   };
   const streamRegistry = new ProductionStreamRegistry(store, contexts, principal);
+  const textProducer = new ProductionTextProducer(streamRegistry, contexts);
   const resourcePorts = new ProductionResourcePorts({
     stagingDirectory: configuration.runtime.stagingDirectory,
     approvedRoots: [configuration.runtime.importDirectory ?? join(dirname(configuration.runtime.statePath), "imports")],
@@ -369,9 +374,33 @@ export async function createProductionComposition(
       ? { orderedSources: ["spectrum.messages"], selectionSemantics: "independent-option-deltas" }
       : { orderedSources: [] },
   });
-  const templates = configuration.cards as readonly CardTemplate[];
+  const backend = configuration.cardBackend ? new SignedCardBackend(configuration.cardBackend,
+    join(dirname(configuration.runtime.statePath), "card-pages"), store) : undefined;
+  await backend?.initialize();
+  const templates: readonly CardTemplate[] = configuration.cards.map(template =>
+    template.backendId && backend ? backend.template(template) : template);
   const legacyCards = createCardsModule({ templates, binding, requestId: request });
   const nativeDependencies = {
+    registerCreatedSpaceForExecution: (space: import("../features/native/sdk.js").NativeSpace, services: PublicExecutionServices): ResourceRef => {
+      services.assertActiveClaim();
+      if (space.phone !== configuration.provider.phone) throw new Error("SCOPE_MISMATCH");
+      const newScope = providerRoutes.inbound(space.phone, space.id);
+      const reference: ResourceRef = { version: 1, kind: "space", id: newScope.spaceId, scope: newScope };
+      store.transaction(tx => {
+        contexts.refresh(tx, services.context);
+        const previous = tx.get("references", reference.id);
+        if (previous) {
+          if (previous.providerId !== space.id || previous.taskId !== services.context.taskId ||
+            previous.generation !== services.context.generation || previous.ownedByPrincipalId !== services.context.principalId ||
+            !isDeepStrictEqual(previous.reference, reference)) throw new Error("RESOURCE_CONFLICT");
+        } else tx.put("references", { id: reference.id, scope: newScope, revision: 0, reference, providerId: space.id,
+          taskId: services.context.taskId, generation: services.context.generation, ownedByPrincipalId: services.context.principalId }, null);
+      });
+      return reference;
+    },
+    retainAvatarForExecution: async (image: { bytes: Uint8Array; mimeType: string }, services: PublicExecutionServices) =>
+      (await resourcePorts.mediaFor(services)).stage({ type: "bytes", bytes: image.bytes,
+        metadata: { mimeType: image.mimeType, size: image.bytes.length } }, services.context),
     binding: async (trusted: TrustedContext) => {
       if (!sameScope(trusted.scope, scope)) throw new Error("SCOPE_MISMATCH");
       return { scope, phone: configuration.provider.phone, dedicated: configuration.provider.dedicated,
@@ -464,7 +493,7 @@ export async function createProductionComposition(
   };
   const publicModules = [
     createTypingFeatureModule(typing, publicTypingBind),
-    createTextFeature({ provider: scopedProvider, binding, resources, compilers: () => publicCompilers }),
+    createTextFeature({ streamDelivery: configuration.textStreaming?.delivery ?? "progressive", provider: scopedProvider, binding, resources, compilers: () => publicCompilers }),
     createMediaFeature({
       provider: mediaProvider,
       voiceBehavior: "native",
@@ -494,6 +523,7 @@ export async function createProductionComposition(
       streams: true,
       checkedAt: now(),
       operationBlockers: {
+        ...configurationBlockers(configuration),
         "poll.get": pollManagementAvailable ? [] :
           ["The configured Spectrum owner has no approved public native poll-management adapter."],
         "poll.vote": pollManagementAvailable ? [] :
@@ -502,11 +532,20 @@ export async function createProductionComposition(
           ["The configured Spectrum owner has no approved public native poll-management adapter."],
         "poll.addOption": pollManagementAvailable ? [] :
           ["The configured Spectrum owner has no approved public native poll-management adapter."],
-        "app.update": templates.some(template => template.kind === "customized") ? [] :
-          ["No customized template or concrete universal update URL backend is configured."],
+        ...(action?.operation === "app.send" || action?.operation === "app.sendCustomized" ? {
+          [action.operation]: templates.some(template => template.id === action.arguments.templateId &&
+            template.kind === (action.operation === "app.send" ? "universal" : "customized")) ? [] :
+            ["The requested template ID and kind must match a configured production card template."],
+        } : {}),
       },
     },
-    declared.get(operation),
+    operation === "text.stream" && declared.has(operation) ? {
+      ...declared.get(operation)!,
+      providerSupport: configuration.textStreaming?.delivery === "buffered" ? "fallback" : "native",
+      blockers: [configuration.textStreaming?.delivery === "buffered" ?
+        "Explicit buffered fallback sends only after source completion." :
+        "Public text(AsyncIterable) progressively sends and edits one remote message; SDK exposes only the final receipt."],
+    } : declared.get(operation),
     action,
   );
 
@@ -533,7 +572,8 @@ export async function createProductionComposition(
   const wake = configuredGrokWake(handoff);
   const dispatcher = new WakeDispatcher(store, { now }, wake);
   const interactions = createInteractionAdapter({
-    backend: dependencies.cardBackend,
+    backend: backend ?? dependencies.cardBackend,
+    authorize: tx => { contexts.current(tx, context.principalId, context.contextId); },
     transactions: store,
     clock: { now },
     wake,
@@ -545,6 +585,7 @@ export async function createProductionComposition(
   let diagnostics: () => { ready: boolean; activation: "disabled" | "enabled" } =
     () => ({ ready: false, activation: configuration.activation });
   const protocol = new DurableLocalProtocol({ contexts, submission, work,
+    streamProducer: (caller, request) => textProducer.dispatch(caller, request),
     importMedia: (caller, contextId, input) => resourcePorts.importFile(caller, contextId, input.filename, input.metadata),
     capabilities: trusted => configuration.task.permissions.map(operation => capability(operation, trusted)),
     diagnostics: () => diagnostics(),
@@ -570,8 +611,18 @@ export async function createProductionComposition(
     },
   };
   const authorizeCapture = (event: IncomingEvent) => {
-    if (!sameScope(event.scope, scope)) return false;
+    // A new owner grant does not authorize historical captures. Preserve them
+    // unresolved, and do not reassign already accepted resources or work to the
+    // successor generation during restart/reconnect replay.
+    if (!sameScope(event.scope, scope) || event.receivedAt < context.issuedAt) return false;
     return store.transaction(tx => {
+      const prior = tx.get("inbox", event.eventId);
+      if (prior && prior.event.receivedAt < context.issuedAt) return false;
+      if (event.type === "message") {
+        const reference = tx.get("references", event.message.id);
+        if (reference && (reference.taskId !== context.taskId || reference.generation !== context.generation ||
+          reference.ownedByPrincipalId !== context.principalId)) return false;
+      }
       const route = {
         taskId: context.taskId,
         generation: context.generation,
@@ -594,6 +645,7 @@ export async function createProductionComposition(
     providerRoutes, resources, requestId => services => resourcePorts.bind(requestId, services), capability,
     correlations, captureProcessing, pump,
     async () => {
+      textProducer.shutdown();
       typingBinding.shutdown();
       typing.shutdown();
       await typing.drain();
@@ -618,6 +670,10 @@ export async function createProductionComposition(
       registerTextStream: (caller, source, expiresAt) => streamRegistry.register(caller, context.contextId, source, expiresAt),
       importMediaFile: (caller, filename, metadata) => resourcePorts.importFile(caller, context.contextId, filename, metadata),
       acceptCardInteraction: request => interactions.accept(request),
+      startCardBackend: async () => {
+        try { return await backend?.listen(request => interactions.accept(request)); }
+        catch (error) { store.close(); throw error; }
+      },
       startLocalInterface: () => listenDurableLocal(configuration.local.socketPath,
         [{ token: localToken, principal }], executor),
     };

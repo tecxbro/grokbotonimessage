@@ -61,7 +61,7 @@ export class ProductionStreamRegistry {
         reference,
         principalId: context.principalId,
         taskId: context.taskId,
-        codecId: "production.buffered-text",
+        codecId: "production.incremental-text",
         codecVersion: 1,
         checkpointId: null,
         state: "registered",
@@ -77,6 +77,9 @@ export class ProductionStreamRegistry {
     });
     return reference;
   }
+
+  /** Drop unconsumed inert input after producer termination; durable rows remain evidence. */
+  forget(id: string): void { this.sources.delete(id); }
 
   bind(requestId: string, services: ExecutionServices): RegisteredStreams {
     return {

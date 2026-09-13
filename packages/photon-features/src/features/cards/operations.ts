@@ -121,7 +121,7 @@ export class CardOperations {
     let url = data.url;
     if (data.kind === 'universal') {
       requireCard(template.updateUrl, 'UNAVAILABLE', 'Universal layout updates require a configured backend URL mapping; F0 has no update URL.', 'universal_update_url_required');
-      url = approvedUrl(template, await template.updateUrl(action.arguments.layout, s.context));
+      url = approvedUrl(template, await template.updateUrl(action.arguments.layout, s.context, s.media, data.url));
     }
     const message = await restoreOriginal(data, s, this.options, this.retained.get(data.session.id));
     const builder = await cardContent(template, url, data.kind === 'customized' ? action.arguments.layout : undefined, s);
@@ -295,7 +295,7 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
       let url = data.url;
       if (template.kind === 'universal') {
         requireCard(template.updateUrl, 'UNAVAILABLE', 'Universal layout updates require the actual backend URL mapping.', 'universal_update_url_required');
-        url = approvedUrl(template, await template.updateUrl(action.arguments.layout, s.context));
+        url = approvedUrl(template, await template.updateUrl(action.arguments.layout, s.context, s.media, data.url));
         publicActive(s, action, signal);
       }
       const content = await mapCardOperation(template, url, template.kind === 'customized' ? action.arguments.layout : undefined, s, original);
@@ -344,7 +344,11 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
     publicActive(s, action, signal);
     publicSpace(space, runtime, s);
     assertSpaceMapping();
-    const content = await mapCardOperation(template, args.url, 'layout' in args ? args.layout : undefined, s);
+    const scope = s.context.scope;
+    const identity = createHash('sha256').update(JSON.stringify([scope, s.context.principalId, s.context.taskId, s.context.generation, requestId])).digest('hex');
+    const url = template.prepareUrl ? approvedUrl(template, await template.prepareUrl(args.url, `wt06.session.${identity}`,
+      s.context, s.media, 'layout' in args ? args.layout : undefined)) : args.url;
+    const content = await mapCardOperation(template, url, 'layout' in args ? args.layout : undefined, s);
     publicActive(s, action, signal);
     assertSpaceMapping();
     dispatched = true;
@@ -354,8 +358,7 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
     publicSpace(message.space, runtime, s);
     const metadata = sessionMetadata(message);
     requireCard(!metadata || metadata.chatGuid === space.id, 'SCOPE_MISMATCH', 'Provider card session chat differs.');
-    const scope = s.context.scope;
-    const identity = createHash('sha256').update(JSON.stringify([scope, s.context.principalId, s.context.taskId, s.context.generation, requestId])).digest('hex');
+
     const messageRef: CardSession['message'] = { version: 1, kind: 'message', id: `wt06.message.${identity}`, scope };
     const card: CardSession['card'] = { version: 1, kind: 'card', id: `wt06.card.${identity}`, messageId: messageRef.id, scope };
     const session: CardSession['session'] = { version: 1, kind: 'card-session', id: `wt06.session.${identity}`, cardId: card.id, scope };
@@ -363,7 +366,7 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
     const data: CardSession = { version: 1, sdkVersion: '12.8.0', card, session, message: messageRef,
       providerMessageId: message.id, templateId: template.id, kind: template.kind,
       taskId: s.context.taskId, principalId: s.context.principalId, generation: s.context.generation,
-      cardRevision: 0, url: args.url, phase: 'ready', metadata,
+      cardRevision: 0, url, phase: 'ready', metadata,
       callback: config ? { backendContractId: config.backendContractId, nonce: session.id,
         participantIds: [...config.participantIds], actionIds: [...config.actionIds], expiresAt: s.clock.now() + config.ttlMs } : null };
     encodeCardSession(data);

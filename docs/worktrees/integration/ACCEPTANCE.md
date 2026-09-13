@@ -1,5 +1,87 @@
 # Integration acceptance
 
+## Current completion acceptance — 2026-09-13
+
+Handoff is blocked. Application-owned production seams are implemented; the full
+requested product cannot be declared code complete while the upstream public SDK
+gaps below remain. Historical acceptance sections are checkpoints, not current
+release approval.
+
+| Requirement | Current acceptance and evidence boundary |
+| --- | --- |
+| Unchanged operation surface | All 44 rows in `../../../packages/photon-features/examples/production-inventory.json`; handler, implementation, actual SDK call, dependencies, startup, authorization, resources, launcher and four evidence tiers recorded |
+| Text receive/claim/reply/ack | Actual installed launcher/socket/SQLite/production owner/SDK against controlled transport; repeated acknowledgement and durable claim/heartbeat exercised |
+| Typing | Completion, overlap, cancellation, lease expiry and shutdown; existing typing-lifetime regressions retained |
+| Poll create/human answer | Actual installed SDK creates two polls including duplicate labels; incoming native vote/unvote becomes conversational work; existing poll-answer journey suite retained |
+| Native poll get/vote/unvote/addOption | OPEN upstream blocker: public Spectrum owner has no poll-management API; injected PollManagement tests are not production completion |
+| Media and voice | Actual installed import, attachment send/fetch and voice send; guarded real temporary resources and transport doubles only |
+| Progressive text | Installed producer path, first send before source close, same GUID edits, final content, abort/stall/cancellation/expiry/provider failure, duplicate consumption, bounds, restart and explicit buffered fallback |
+| Card updates | Actual installed universal and customized adapters update original message repeatedly and refresh provider metadata; cold restoration intentionally blocks without a replacement bubble |
+| Card interactions | Shipped browser signer + real WebCrypto; actual HTTP backend + Ed25519 authentication; tamper/replay/expiry/participant/scope/transaction/restart and old-generation rejection |
+| Authority | Owner-only inspect/apply; renewal/replacement/CAS/revocation checks; preserve queued/unknown state; installed denied ordinary credential, restart and old launcher/callback fencing |
+| Configuration | Generated minimal/messaging/administrative profiles require explicit owner grants; exact missing dependencies reported; no JavaScript/module/executable configuration |
+| Archive | Actual npm archive fresh/repeated production-only installs and installed runtime journeys; approved `.gpf.gz` release, target installation and compatible actual approved-archive rollback remain pending |
+| Live device | No live external messages authorized or sent; all live/provider/device checks explicitly pending |
+
+Source/component, production offline, archive, target and live evidence must not be
+collapsed into a single green state. See `TEST-EVIDENCE.md` for commands, failures,
+skips and artifact checksums, and `HANDOFF.md` for the current gate.
+
+## All 44 operation evidence rows
+
+This summary derives from the complete generated JSON inventory. No row is removed for missing upstream support. Dedicated installed evidence is narrower than registry or lane coverage.
+
+| Operation | Offline evidence | Open production limitation |
+| --- | --- | --- |
+| typing.begin | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| typing.end | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| text.send | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| text.stream | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| markdown.send | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| link.send | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| content.group | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| content.compose | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| message.get | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| message.reply | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| message.react | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| reaction.remove | Installed actual adapter / controlled transport | Warm owner SDK cache supplies the real reaction handle. After cold lookup Spectrum retains reactionRecord metadata but rebuilds text content; native reaction removal requires a real reaction content handle. No cast or re-send is permitted. |
+| message.edit | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| message.unsend | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| message.markRead | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| attachment.send | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| attachment.fetch | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| voice.send | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| contact.send | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| poll.create | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| poll.get | Injected interface only; production blocked | spectrum-ts/providers/imessage public PlatformInstance exposes no polls or client; latest registry version remains 12.8.0. Optional tests inject PollManagement, normal startup cannot construct it. |
+| poll.vote | Injected interface only; production blocked | spectrum-ts/providers/imessage public PlatformInstance exposes no polls or client; latest registry version remains 12.8.0. Optional tests inject PollManagement, normal startup cannot construct it. |
+| poll.unvote | Injected interface only; production blocked | spectrum-ts/providers/imessage public PlatformInstance exposes no polls or client; latest registry version remains 12.8.0. Optional tests inject PollManagement, normal startup cannot construct it. |
+| poll.addOption | Injected interface only; production blocked | spectrum-ts/providers/imessage public PlatformInstance exposes no polls or client; latest registry version remains 12.8.0. Optional tests inject PollManagement, normal startup cannot construct it. |
+| app.send | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| app.sendCustomized | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| app.update | Installed actual adapter / controlled transport | Cold original-card SDK session restoration unavailable. Checkpoints restore callback state only; update after restart blocks without a replacement bubble. |
+| space.get | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| space.create | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| space.getName | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| space.rename | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| space.getMembers | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| space.addMembers | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| space.removeMembers | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| space.leave | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| space.getAvatar | Installed actual adapter / controlled transport | No application wiring blocker found; actual configured account and live evidence pending |
+| space.setAvatar | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| space.clearAvatar | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| space.setBackground | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| space.clearBackground | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| account.shareContact | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| effect.send | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| metadata.get | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+| custom.send | Lane/composition evidence; no dedicated installed journey | No application wiring blocker found; actual configured account and live evidence pending |
+
+## Historical checkpoints before this completion pass
+
+The following records are retained for provenance. Current behavior and gates are stated above.
+
 1. **PASS — identity:** registered worktree, branch, exact F0, reflog, remote,
    and pre-existing state are recorded.
 2. **PASS — reviewed inputs:** every included commit is immutable,
@@ -130,3 +212,7 @@ Native `poll.get`, `poll.vote`, `poll.unvote`, and `poll.addOption` management
 remain separately unavailable without the approved shared-owner management
 binding. This maintenance does not claim final/latest vote state when the public
 stream lacks authoritative ordering.
+
+## Completion pass 2026-09-13
+
+Completion acceptance is the user 2026-09-13 inventory and installed-program journeys: all 44 operations retain status; progressive producer delivery, original-card updates/callback authentication, audited authority replacement, restart/uncertainty, pinned component checks and installed archive validation. None is marked passed until commands and assertions are recorded.

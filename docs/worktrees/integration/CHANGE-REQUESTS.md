@@ -1,5 +1,37 @@
 # Integration change requests
 
+## Current completion decisions and open requirements — 2026-09-13
+
+The user's completion assignment is the explicit authorization for necessary
+cross-lane edits on the existing `fix-1` worktree. No historical lane restriction
+requires returning these implementation seams to Grok. Exact paths and retained
+historical ownership are in `FILES.json.completionFiles` and
+`ownership.json.integrationMaintenance`.
+
+| ID | Status | Decision or exact blocker |
+| --- | --- | --- |
+| C-01 | Implemented | Construct the serialized signed-card-v1 layout backend, trusted template functions, browser signer and separate authenticated callback ingress in normal startup |
+| C-02 | Implemented | Versioned local stream producer and real public `text(AsyncIterable)` provider path; buffered path is explicitly selectable fallback |
+| C-03 | Implemented | Separate audited stopped-host owner renewal/replacement with CAS, generation fencing, replay recovery and no deletion/reseeding |
+| C-04 | Implemented | Additive interaction proof/audit tables; avatar bytes, created-chat references and reaction resource resolution through shared state/resources |
+| C-06 | Implemented | Generated production text.stream provider declaration changes from fallback to native; the retained buffered path is explicit. The historical manual-block hash regression is updated to this reviewed table, while exact 44-row assembly and schemas remain checked |
+| C-05 | Implemented | Reproducible standalone dependency lock, generated profiles/schemas/inventory, executable wrappers, installed journeys and future approved-release completion checks |
+| U-01 | OPEN: missing public SDK surface | `spectrum-ts/providers/imessage` 12.8.0 public `PlatformInstance` exposes neither `polls.get/vote/unvote/addOption` nor a reusable native client. Latest registry release checked is 12.8.0. Advanced SDK docs alone do not solve the shared-owner boundary |
+| U-02 | OPEN: missing public SDK surface | `space.getMessage` does not restore `miniAppCardSession`; no public supported cold original-card update restoration mechanism found or exercised |
+| U-03 | OPEN: missing public SDK surface | Cold reaction lookup preserves `reactionRecord` metadata but rebuilds text content, so native reaction removal lacks its actual reaction handle |
+| R-01 | OPEN: release approval evidence | No actual approving workflow/owner release approval for this commit; do not manufacture approval to build `.gpf.gz` |
+| D-01 | OPEN: deployment inputs | Real domain/TLS forwarding, verified participant key enrollment, owner/task/Photon credentials, Apple identifiers and installed recipient extension, target process supervisor and existing Grok gateway/executable |
+| L-01 | OPEN: target/live evidence | Linux/macOS workflow definitions retained; only local macOS execution observed in this pass. Target activation, provider delivery/read and device behavior not authorized or verified |
+
+U-01/U-02/U-03 require upstream public capability, not configuration that hides an
+operation. These remain release gates. No dependency version was changed, no
+private SDK field was used and no second client/listener was introduced. Grok is
+not asked to implement any missing adapter or repair deployment architecture.
+
+## Historical checkpoints before this completion pass
+
+The following records are retained for provenance. Current behavior and gates are stated above.
+
 ## Locally closed assembled seams
 
 - CR-I-001: **closed locally.** Public feature modules execute through
@@ -121,3 +153,7 @@ available to hosted CI without weakening immutable verification. CR-I-031 remain
 authorization-gated: install/activate a production-approved release and perform the
 user-authorized real Grok/provider/device journey. None of these external gates was
 performed or relabeled as passing.
+
+## Completion pass 2026-09-13
+
+The 2026-09-13 user assignment grants this coordinator cross-lane completion ownership for the existing 44-operation product on fix-1. Preserve execution-service contracts and fixed typing, poll answers, media and durable authority; record exact paths in FILES.json. Upstream gaps stay open and never become configuration-only completion.

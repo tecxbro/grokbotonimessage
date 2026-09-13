@@ -1,5 +1,129 @@
 # Integration test evidence
 
+## Current completion verification — 2026-09-13
+
+The current local candidate runs on macOS arm64 with exact Node 24.13.0 and npm
+10.9.2. Commands used the pinned npx toolchain, not the machine's default Node.
+Spectrum 12.8.0 and zod 4.5.4 remain unchanged; public declarations, runtime hashes
+and registry retrieval are in `source-lock.json.completionPass`.
+
+The test record is `completion-results.json`; local full logs are under
+`.photon-local/completion/` (ignored, with SHA-256 values committed in that record).
+Initial checkout/branch/HEAD/registration/divergence are in
+`completion-preflight.json`; exact completion changes are in
+`FILES.json.completionFiles`. No branch/worktree changes, F0 tag movement or push.
+
+| Command | Actual result |
+| --- | --- |
+| `npm ci --ignore-scripts --no-audit --no-fund` | PASS; 185 packages, lifecycle scripts disabled |
+| `npm run typecheck --workspace=@grokbot/photon-features` | PASS |
+| `npm test` | PASS; 31/31 |
+| `npm run photon:test` | PASS; 64/64 |
+| `npm run photon:check` | PASS; 3 schemas, candidate digest 56 files |
+| `npm run photon:test:integration` | PASS; 849/849 across 97 files; 0 failed/cancelled/skipped |
+| `node packages/photon-features/scripts/generate-skill.mjs --check` | PASS; 44 operations and 48 example files validated |
+| `node packages/photon-features/scripts/generate-configuration.mjs --check` | PASS; 3 profiles, unchanged 44-operation registry |
+| `node packages/photon-features/scripts/generate-production-inventory.mjs --check` | PASS; all 44 rows retained; 4 explicit upstream blocked operations |
+| `node packages/photon-features/scripts/prepare-npm-lock.mjs --check` | PASS; exact committed-lock derivation |
+| `node scripts/verify-ownership.mjs integration` | PASS; immutable F0/reviewed history and exact assigned paths |
+| `node scripts/verify-docs.mjs integration` | PASS; current deployment/instruction boundaries |
+| `npm pack --workspace=@grokbot/photon-features --dry-run --json --ignore-scripts` | PASS; 448 files; dry run is not installed evidence |
+| `npm run photon:test:installed` | PASS; 7 isolated modes; fresh and repeated production-only installs |
+| `npm run photon:verify-all` | BLOCKED (exit 1); worktree:COMMAND_FAILED / WRONG_WORKTREE_PATH |
+
+The aggregate verifier expects another registered lane and was run unchanged.
+Its real `WRONG_WORKTREE_PATH` failure is a verifier/checkout limitation, not a
+passing aggregate. No integration identity was spoofed. Valid component commands
+pass independently on assigned fix-1. Linux/macOS CI definitions retain both jobs
+and add the new installed matrix; remote workflow execution and branch protection
+were not changed or claimed.
+
+## Actual installed diagnostic archive
+
+Archive: `grokbot-photon-features-0.1.0.tgz`.
+SHA-256: `5713235bd7fb463c85535ca7dcccdf52edaad11f499f67d4fe94d5bfc519afcb`.
+Size: 424764 bytes; 448 npm payload files.
+
+The actual archive was extracted to fresh private temporary installation roots;
+`npm ci --omit=dev --ignore-scripts --no-audit --no-fund` ran twice for each mode.
+The compiled installed runtime, operating skill, wrapper bins, schemas, migrations,
+producer, backend/browser component, generators and standalone shrinkwrap are
+present. TypeScript/development-only runtime dependencies and source-checkout
+runtime files are absent. The test fixtures supply synthetic selected-release
+metadata only to exercise lifecycle; this is explicitly not approval or a
+production installation procedure.
+
+Installed executable → release-pinned launcher → authenticated Unix socket →
+production authorization/composition → real temporary SQLite/resources → actual
+feature and pinned SDK adapter → controlled external gRPC/HTTP boundary covers:
+
+- Incremental producer first-send-before-close, same-message updates, final content;
+  provider error, abort, cancellation, expiry, producer stall/disconnect, queue
+  overflow, duplicate input/consumption and consumed/orphan source restart.
+- Explicit buffered fallback with no provider send until source completion.
+- Incoming text claim/heartbeat/reply/acknowledgement, typing overlap/completion/
+  expiry/cancellation/shutdown, media import/send/fetch and voice send.
+- Two poll creations, duplicate labels, human vote/deselection continuation;
+  native poll-management operations remain blocked by their missing public API.
+- Repeated universal/customized original-card updates, refreshed provider session
+  metadata, authenticated participant callbacks/replay/restart and explicit cold
+  update refusal without a replacement bubble.
+- Avatar retention, created-chat resource retention, warm reaction removal and
+  authority renewal/denied task credential/CAS/restart/old-generation fencing,
+  preserving queued, blocked and unknown work.
+
+Seven independent modes (`provider-failure`, `abort`, `cancel`, `expiry`, `stall`,
+`cold-restore`, `buffered`) preserve the real conversation predecessor barrier.
+The actual SDK and adapter are never injected away. Only external cloud/gRPC,
+media transport and card-origin HTTP are controlled. Unexpected external URLs
+fail. The existing Grok wake invokes a test executable; this does not prove a
+real external Grok gateway acknowledgement.
+
+Source integration separately tests transaction rollback, participant tampering,
+wrong keys/actions/scopes, expiry, replay identity, owner replacement/revocation,
+and the shipped browser script using real WebCrypto with DOM/storage boundaries.
+No actual recipient browser/extension installation is claimed. Actual SDK probes
+confirm U-01, U-02 and U-03 rather than manufacturing usable native handles.
+
+The new approved packager gate requires completion checks and production-only
+payload dependencies. An approved `.gpf.gz` archive could not be produced without
+real approval/workflow evidence; no approval document or workflow URL was forged.
+Existing synthetic installer/compatible-rollback regressions pass. Compatible
+rollback of an actual approved archive and target installation remain pending.
+A clean-commit repack is checked against this tested diagnostic artifact, with
+exact commit/provenance recorded outside the commit to avoid self-reference.
+
+## Failures found and resolved during this pass
+
+Earlier runs failed on a backend configuration import cycle, missing local stream
+response parsing, SDK signal handlers exiting before host cleanup, missing release
+bin launcher, historical capture reassignment after authority renewal and rejection
+of reaction resource kinds. These application defects were fixed and reverified.
+The first full integration run after capability generation changed found a malformed
+manual row; the next found its historical expected hash. Capability declarations
+and the legitimate reviewed manual hash were synchronized; final 849/849 passes.
+
+Test-fixture fixes included valid SDK attachment/raw-message shapes, expected CLI
+exit status for adverse outcomes, correct staging response fields, actual native
+attachment event shape, correct token expiresIn, and independent failure roots so
+unknown predecessors remain fenced. Earlier failed logs are retained locally;
+none is relabeled as a pass. The final installed matrix has no failed or skipped
+mode. Tests do not claim a missing poll adapter, cold native session restoration,
+provider delivery/read, or live device behavior.
+
+## Current handoff gate
+
+Code complete for the full requested scope: **No — upstream U-01/U-02/U-03 open**.
+Supported production paths verified offline: **Yes, with per-operation evidence
+limits in the full 44-row inventory**. Diagnostic npm archive verified: **Yes**;
+approved release artifact: **pending**. Installed/activated on target: **No**.
+Live/device verified: **No**. No production credentials or live messages were used.
+
+## Historical checkpoints before this completion pass
+
+The following records are retained for provenance; their earlier counts and
+limitations do not supersede the current results and gates above.
+
 ## Baseline checkpoint
 
 - Worktree registration: PASS at the exact requested path.

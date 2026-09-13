@@ -38,6 +38,8 @@ export type LocalResponse =
       ok: true;
       result:
         | import("../features/media/staging.js").StagedMedia
+        | z.infer<typeof import("../contracts/protocol.js").streamOpenedSchema>
+        | { accepted: true }
         | OperationResult
         | Capability[]
         | { ready: boolean; activation: "disabled" | "enabled" }
@@ -67,6 +69,7 @@ export class LocalProtocol {
       const ok = (
         result: Extract<LocalResponse, { ok: true }>["result"],
       ): LocalResponse => ({ version: 1, ok: true, result });
+      if (req.method === "stream.open" || req.method === "stream.append" || req.method === "stream.close" || req.method === "stream.abort") throw new Error("UNAVAILABLE");
       if (req.method === "submit") {
         const action = parseAction(req.action);
         if (!c.permissions.includes(action.operation))

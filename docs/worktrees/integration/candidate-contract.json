@@ -2,7 +2,7 @@
   "version": 1,
   "contractVersion": "f0-services-2",
   "foundationDigest": "d95caace5f188fd13b6d4d26250be1c77aafa1f42447263e5e3e7982e7e1a60f",
-  "contractDigest": "2d86137449d36c28850b012ddcc7751e0f259dfd977e73368a3a3cfc342d36c2",
-  "digestFileCount": 50,
+  "contractDigest": "7729d5eae6f6066a1e12eba58ed3d8a6622e56992b1d2bb4cb7da47ab7309a99",
+  "digestFileCount": 56,
   "reason": "Integration adds package, exports, registration, concrete production host and verification wiring without moving photon-v3-f0."
 }

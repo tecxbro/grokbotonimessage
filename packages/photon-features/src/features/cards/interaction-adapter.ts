@@ -26,7 +26,7 @@ export type InteractionResult =
   | { status: 'rejected'; reason: string }
   | { status: 'unresolved' | 'replayed' }
   | { status: 'committed'; handoffId: string; wake: 'accepted' | 'failed' | 'unknown' };
-export function createInteractionAdapter(options: { backend?: AppBackendContract; transactions: TransactionStore; clock: Clock; wake: WakeAdapter }) {
+export function createInteractionAdapter(options: { backend?: AppBackendContract; transactions: TransactionStore; clock: Clock; wake: WakeAdapter; authorize?: (tx: import("../../state/ports.js").Transaction) => void }) {
   return {
     /** Exported HTTP-host seam only. Does not listen, subscribe, create a server or SDK client. */
     async accept(request: { body: Uint8Array; headers: Readonly<Record<string, string>> }): Promise<InteractionResult> {
@@ -57,6 +57,7 @@ export function createInteractionAdapter(options: { backend?: AppBackendContract
             }
             return { status: 'unresolved' as const };
           }
+          options.authorize?.(tx);
           const { data } = loaded, binding = data.callback;
           requireCard(binding && binding.backendContractId === backend.id, 'FORBIDDEN', 'Callback backend is not bound to this session.');
           requireCard(sameScope(assertion.scope, data.card.scope) && sameScope(assertion.session.scope, data.card.scope) &&

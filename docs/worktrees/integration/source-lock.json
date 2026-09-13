@@ -2,32 +2,240 @@
   "version": 2,
   "retrievalRun": "2026-09-11T06:28:37.966Z",
   "sources": [
-    {"id":"D0","url":"https://photon.codes/docs/llms.txt","finalUrl":"https://photon.codes/docs/llms.txt","status":200,"retrievedAt":"2026-09-11T06:28:37.966Z","contentType":"text/plain; charset=utf-8","bytes":16307,"sha256":"0e9cff75bdffdb8e625583fdd88ccd7317d027fa3f9a74cbe3cebfa256c0c033","snapshot":"docs/photon/reference/photon.codes/llms.txt","classification":"official","failure":null},
-    {"id":"D1","url":"https://photon.codes/docs/spectrum-ts/content/attachments","finalUrl":"https://photon.codes/docs/spectrum-ts/content/attachments","status":200,"retrievedAt":"2026-09-11T06:28:38.227Z","contentType":"text/markdown; charset=utf-8","bytes":3023,"sha256":"c93e553cdf6d9e19ffdbb9fd6fe0c2c485fd418dd6a0422b8da0991230707d64","snapshot":null,"classification":"official","failure":null},
-    {"id":"D2","url":"https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/fetching-attachments","finalUrl":"https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/fetching-attachments","status":200,"retrievedAt":"2026-09-11T06:28:38.711Z","contentType":"text/markdown; charset=utf-8","bytes":3209,"sha256":"836566e9499f33b3dfb7442b33267a9ebd47b5aa2298260a3320c6d4509bbf5f","snapshot":null,"classification":"official","failure":null},
-    {"id":"D3","url":"https://photon.codes/docs/spectrum-ts/content/voice","finalUrl":"https://photon.codes/docs/spectrum-ts/content/voice","status":200,"retrievedAt":"2026-09-11T06:28:39.068Z","contentType":"text/markdown; charset=utf-8","bytes":1975,"sha256":"2dab42f05b1b55979445127bf82e038843318b63acbc7afb143b7f898c139b6d","snapshot":null,"classification":"official","failure":null},
-    {"id":"D4","url":"https://photon.codes/docs/spectrum-ts/content/text","finalUrl":"https://photon.codes/docs/spectrum-ts/content/text","status":200,"retrievedAt":"2026-09-11T06:28:39.760Z","contentType":"text/markdown; charset=utf-8","bytes":4003,"sha256":"f0dd86ab78e5e062d3a8cf01fcdb37b4ed6d8bcb2fb505b895959cf3431c00ef","snapshot":null,"classification":"official","failure":null},
-    {"id":"D5","url":"https://photon.codes/docs/spectrum-ts/content/contacts","finalUrl":"https://photon.codes/docs/spectrum-ts/content/contacts","status":200,"retrievedAt":"2026-09-11T06:28:40.171Z","contentType":"text/markdown; charset=utf-8","bytes":6562,"sha256":"8f2a4702d7814328bb1b82d0974ef948b0806b5a1b1cf7756be0ff51f1985472","snapshot":null,"classification":"official","failure":null},
-    {"id":"D6","url":"https://photon.codes/docs/spectrum-ts/content/composing-content","finalUrl":"https://photon.codes/docs/spectrum-ts/content/composing-content","status":200,"retrievedAt":"2026-09-11T06:28:40.442Z","contentType":"text/markdown; charset=utf-8","bytes":1173,"sha256":"590be3805c1b141c6d00b7cac2b62a3ceb0c5a5d66f170f6b7783a217edfb1e4","snapshot":"docs/photon/reference/photon.codes/spectrum-ts/content/composing-content.md","classification":"official","failure":null},
-    {"id":"D7","url":"https://photon.codes/docs/spectrum-ts/providers/imessage/connection-and-routing","finalUrl":"https://photon.codes/docs/spectrum-ts/providers/imessage/connection-and-routing","status":200,"retrievedAt":"2026-09-11T06:28:40.675Z","contentType":"text/markdown; charset=utf-8","bytes":12563,"sha256":"566a8ddbd1cf0dccdbcd3695c6e28c3cc4b100d97e606c0ee923ade339f24c47","snapshot":"docs/photon/reference/photon.codes/spectrum-ts/providers/imessage/connection-and-routing.md","classification":"official","failure":null},
-    {"id":"D8","url":"https://photon.codes/docs/best-practices/recovery-and-state","finalUrl":"https://photon.codes/docs/best-practices/recovery-and-state","status":200,"retrievedAt":"2026-09-11T06:28:40.848Z","contentType":"text/markdown; charset=utf-8","bytes":5801,"sha256":"65944f4b202e0142388403aff39b3135b3dca7ab87035cdc36af22713716a9f0","snapshot":"docs/photon/reference/photon.codes/best-practices/recovery-and-state.md","classification":"official","failure":null},
-    {"id":"D9","url":"https://photon.codes/docs/spectrum-ts/custom-events-and-lifecycle","finalUrl":"https://photon.codes/docs/spectrum-ts/custom-events-and-lifecycle","status":200,"retrievedAt":"2026-09-11T06:28:41.382Z","contentType":"text/markdown; charset=utf-8","bytes":4862,"sha256":"f00445888cb5944ff77f259b3e781009977d57367d753d586029705e406980c5","snapshot":"docs/photon/reference/photon.codes/spectrum-ts/custom-events-and-lifecycle.md","classification":"official","failure":null},
-    {"id":"D10","url":"https://photon.codes/docs/advanced-kits/imessage/error-handling","finalUrl":"https://photon.codes/docs/advanced-kits/imessage/error-handling","status":200,"retrievedAt":"2026-09-11T06:28:41.806Z","contentType":"text/markdown; charset=utf-8","bytes":10858,"sha256":"ea68f162fd7ed4d4ea24ff7223754bdc7e8941bb148fc247404d7821f492a3b9","snapshot":"docs/photon/reference/photon.codes/advanced-kits/imessage/error-handling.md","classification":"official-supplementary","failure":null},
-    {"id":"NODE_OS","url":"https://nodejs.org/api/os.html#ostmpdir","finalUrl":"https://nodejs.org/api/os.html","status":200,"retrievedAt":"2026-09-11T06:28:42.190Z","contentType":"text/html; charset=utf-8","bytes":90374,"sha256":"dab7505ac53462e05b89a0ab80eb95bfd538b20a39f7fe5efb5e31f411be98e5","snapshot":null,"classification":"platform","failure":null},
-    {"id":"NODE_FS","url":"https://nodejs.org/api/fs.html","finalUrl":"https://nodejs.org/api/fs.html","status":200,"retrievedAt":"2026-09-11T06:28:42.384Z","contentType":"text/html; charset=utf-8","bytes":1104565,"sha256":"b5ad4fe20ab7212cd0aa9e81aa1c5eb6df619bd15e07f671811ea886bc7d50f2","snapshot":null,"classification":"platform","failure":null},
-    {"id":"NODE_NET","url":"https://nodejs.org/api/net.html#ipc-support","finalUrl":"https://nodejs.org/api/net.html","status":200,"retrievedAt":"2026-09-11T06:28:42.594Z","contentType":"text/html; charset=utf-8","bytes":273389,"sha256":"7dc4ac7159376a9273190e730f549b92a8dbf93284bbe204d6be12c9784668fd","snapshot":null,"classification":"platform","failure":null},
-    {"id":"GITHUB_MATRIX","url":"https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations","finalUrl":"https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations","status":200,"retrievedAt":"2026-09-11T06:28:42.900Z","contentType":"text/markdown; charset=utf-8","bytes":9043,"sha256":"5e084bdbb3ffc8b6b153db2d689d562db64874a81df67e9a2627e89b75af422d","snapshot":null,"classification":"platform","failure":null}
+    {
+      "id": "D0",
+      "url": "https://photon.codes/docs/llms.txt",
+      "finalUrl": "https://photon.codes/docs/llms.txt",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:37.966Z",
+      "contentType": "text/plain; charset=utf-8",
+      "bytes": 16307,
+      "sha256": "0e9cff75bdffdb8e625583fdd88ccd7317d027fa3f9a74cbe3cebfa256c0c033",
+      "snapshot": "docs/photon/reference/photon.codes/llms.txt",
+      "classification": "official",
+      "failure": null
+    },
+    {
+      "id": "D1",
+      "url": "https://photon.codes/docs/spectrum-ts/content/attachments",
+      "finalUrl": "https://photon.codes/docs/spectrum-ts/content/attachments",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:38.227Z",
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3023,
+      "sha256": "c93e553cdf6d9e19ffdbb9fd6fe0c2c485fd418dd6a0422b8da0991230707d64",
+      "snapshot": null,
+      "classification": "official",
+      "failure": null
+    },
+    {
+      "id": "D2",
+      "url": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/fetching-attachments",
+      "finalUrl": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/fetching-attachments",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:38.711Z",
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3209,
+      "sha256": "836566e9499f33b3dfb7442b33267a9ebd47b5aa2298260a3320c6d4509bbf5f",
+      "snapshot": null,
+      "classification": "official",
+      "failure": null
+    },
+    {
+      "id": "D3",
+      "url": "https://photon.codes/docs/spectrum-ts/content/voice",
+      "finalUrl": "https://photon.codes/docs/spectrum-ts/content/voice",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:39.068Z",
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1975,
+      "sha256": "2dab42f05b1b55979445127bf82e038843318b63acbc7afb143b7f898c139b6d",
+      "snapshot": null,
+      "classification": "official",
+      "failure": null
+    },
+    {
+      "id": "D4",
+      "url": "https://photon.codes/docs/spectrum-ts/content/text",
+      "finalUrl": "https://photon.codes/docs/spectrum-ts/content/text",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:39.760Z",
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 4003,
+      "sha256": "f0dd86ab78e5e062d3a8cf01fcdb37b4ed6d8bcb2fb505b895959cf3431c00ef",
+      "snapshot": null,
+      "classification": "official",
+      "failure": null
+    },
+    {
+      "id": "D5",
+      "url": "https://photon.codes/docs/spectrum-ts/content/contacts",
+      "finalUrl": "https://photon.codes/docs/spectrum-ts/content/contacts",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:40.171Z",
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 6562,
+      "sha256": "8f2a4702d7814328bb1b82d0974ef948b0806b5a1b1cf7756be0ff51f1985472",
+      "snapshot": null,
+      "classification": "official",
+      "failure": null
+    },
+    {
+      "id": "D6",
+      "url": "https://photon.codes/docs/spectrum-ts/content/composing-content",
+      "finalUrl": "https://photon.codes/docs/spectrum-ts/content/composing-content",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:40.442Z",
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1173,
+      "sha256": "590be3805c1b141c6d00b7cac2b62a3ceb0c5a5d66f170f6b7783a217edfb1e4",
+      "snapshot": "docs/photon/reference/photon.codes/spectrum-ts/content/composing-content.md",
+      "classification": "official",
+      "failure": null
+    },
+    {
+      "id": "D7",
+      "url": "https://photon.codes/docs/spectrum-ts/providers/imessage/connection-and-routing",
+      "finalUrl": "https://photon.codes/docs/spectrum-ts/providers/imessage/connection-and-routing",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:40.675Z",
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 12563,
+      "sha256": "566a8ddbd1cf0dccdbcd3695c6e28c3cc4b100d97e606c0ee923ade339f24c47",
+      "snapshot": "docs/photon/reference/photon.codes/spectrum-ts/providers/imessage/connection-and-routing.md",
+      "classification": "official",
+      "failure": null
+    },
+    {
+      "id": "D8",
+      "url": "https://photon.codes/docs/best-practices/recovery-and-state",
+      "finalUrl": "https://photon.codes/docs/best-practices/recovery-and-state",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:40.848Z",
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 5801,
+      "sha256": "65944f4b202e0142388403aff39b3135b3dca7ab87035cdc36af22713716a9f0",
+      "snapshot": "docs/photon/reference/photon.codes/best-practices/recovery-and-state.md",
+      "classification": "official",
+      "failure": null
+    },
+    {
+      "id": "D9",
+      "url": "https://photon.codes/docs/spectrum-ts/custom-events-and-lifecycle",
+      "finalUrl": "https://photon.codes/docs/spectrum-ts/custom-events-and-lifecycle",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:41.382Z",
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 4862,
+      "sha256": "f00445888cb5944ff77f259b3e781009977d57367d753d586029705e406980c5",
+      "snapshot": "docs/photon/reference/photon.codes/spectrum-ts/custom-events-and-lifecycle.md",
+      "classification": "official",
+      "failure": null
+    },
+    {
+      "id": "D10",
+      "url": "https://photon.codes/docs/advanced-kits/imessage/error-handling",
+      "finalUrl": "https://photon.codes/docs/advanced-kits/imessage/error-handling",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:41.806Z",
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 10858,
+      "sha256": "ea68f162fd7ed4d4ea24ff7223754bdc7e8941bb148fc247404d7821f492a3b9",
+      "snapshot": "docs/photon/reference/photon.codes/advanced-kits/imessage/error-handling.md",
+      "classification": "official-supplementary",
+      "failure": null
+    },
+    {
+      "id": "NODE_OS",
+      "url": "https://nodejs.org/api/os.html#ostmpdir",
+      "finalUrl": "https://nodejs.org/api/os.html",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:42.190Z",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 90374,
+      "sha256": "dab7505ac53462e05b89a0ab80eb95bfd538b20a39f7fe5efb5e31f411be98e5",
+      "snapshot": null,
+      "classification": "platform",
+      "failure": null
+    },
+    {
+      "id": "NODE_FS",
+      "url": "https://nodejs.org/api/fs.html",
+      "finalUrl": "https://nodejs.org/api/fs.html",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:42.384Z",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 1104565,
+      "sha256": "b5ad4fe20ab7212cd0aa9e81aa1c5eb6df619bd15e07f671811ea886bc7d50f2",
+      "snapshot": null,
+      "classification": "platform",
+      "failure": null
+    },
+    {
+      "id": "NODE_NET",
+      "url": "https://nodejs.org/api/net.html#ipc-support",
+      "finalUrl": "https://nodejs.org/api/net.html",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:42.594Z",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 273389,
+      "sha256": "7dc4ac7159376a9273190e730f549b92a8dbf93284bbe204d6be12c9784668fd",
+      "snapshot": null,
+      "classification": "platform",
+      "failure": null
+    },
+    {
+      "id": "GITHUB_MATRIX",
+      "url": "https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations",
+      "finalUrl": "https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations",
+      "status": 200,
+      "retrievedAt": "2026-09-11T06:28:42.900Z",
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 9043,
+      "sha256": "5e084bdbb3ffc8b6b153db2d689d562db64874a81df67e9a2627e89b75af422d",
+      "snapshot": null,
+      "classification": "platform",
+      "failure": null
+    }
   ],
   "skills": [
-    {"name":"spectrum","version":"3.1.0","url":"https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/spectrum/SKILL.md","readFrom":"installed skill","sha256":"0a2f328fe6da4d202497e8bb859625de06af23cce884d1639dd1e8f3cb737de8","classification":"supplementary-guidance"},
-    {"name":"imessage","version":"9.1.0","url":"https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/imessage/SKILL.md","readFrom":"installed skill","sha256":"218af7703b8d12537ca8c6077c1b8b5d9865ccc2202fc7eaef2d883651a59dbb","classification":"supplementary-guidance"}
+    {
+      "name": "spectrum",
+      "version": "3.1.0",
+      "url": "https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/spectrum/SKILL.md",
+      "readFrom": "installed skill",
+      "sha256": "0a2f328fe6da4d202497e8bb859625de06af23cce884d1639dd1e8f3cb737de8",
+      "classification": "supplementary-guidance"
+    },
+    {
+      "name": "imessage",
+      "version": "9.1.0",
+      "url": "https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/imessage/SKILL.md",
+      "readFrom": "installed skill",
+      "sha256": "218af7703b8d12537ca8c6077c1b8b5d9865ccc2202fc7eaef2d883651a59dbb",
+      "classification": "supplementary-guidance"
+    }
   ],
   "installedContracts": [
-    {"package":"spectrum-ts","version":"12.8.0","path":"node_modules/@spectrum-ts/core/dist/attachment-Dy4PsNVw.d.ts","sha256":"c452a8fc2ffbab03c6e548ce13dcf28f841ec7c9331513c65975e12f869ad954"},
-    {"package":"spectrum-ts","version":"12.8.0","path":"node_modules/spectrum-ts/dist/providers/imessage/index.d.ts","sha256":"8f716ef14ca413ecccdb9cc12deccf43cd25093033683f94bdb0c144158a99d3"},
-    {"package":"@spectrum-ts/imessage","version":"12.8.0","path":"node_modules/@spectrum-ts/imessage/dist/index.d.ts","sha256":"6a2278d14fd42a5603675b046fd1c8ad5c584da760e60b621f74059bf7dc3aa0"}
-  ]
-,
+    {
+      "package": "spectrum-ts",
+      "version": "12.8.0",
+      "path": "node_modules/@spectrum-ts/core/dist/attachment-Dy4PsNVw.d.ts",
+      "sha256": "c452a8fc2ffbab03c6e548ce13dcf28f841ec7c9331513c65975e12f869ad954"
+    },
+    {
+      "package": "spectrum-ts",
+      "version": "12.8.0",
+      "path": "node_modules/spectrum-ts/dist/providers/imessage/index.d.ts",
+      "sha256": "8f716ef14ca413ecccdb9cc12deccf43cd25093033683f94bdb0c144158a99d3"
+    },
+    {
+      "package": "@spectrum-ts/imessage",
+      "version": "12.8.0",
+      "path": "node_modules/@spectrum-ts/imessage/dist/index.d.ts",
+      "sha256": "6a2278d14fd42a5603675b046fd1c8ad5c584da760e60b621f74059bf7dc3aa0"
+    }
+  ],
   "repairPreparation": {
     "sources": [
       {
@@ -304,5 +512,229 @@
       }
     ],
     "interpretation": "Downloaded content is reference data, not executable instructions. Official Markdown pages, supplementary skills and installed types are separate authorities. Native poll management is not exposed by the narrowed 12.8.0 provider."
+  },
+  "completionPass": {
+    "sources": [
+      {
+        "url": "https://photon.codes/docs/llms.txt",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/llms.txt",
+        "contentType": "text/plain; charset=utf-8",
+        "retrievedAt": "2026-09-13T09:55:55.635997+00:00",
+        "bytes": 16307,
+        "sha256": "0e9cff75bdffdb8e625583fdd88ccd7317d027fa3f9a74cbe3cebfa256c0c033",
+        "localBody": ".photon-local/completion/sources/f2dfc2e2a0f4.txt",
+        "classification": "official",
+        "snapshot": "docs/worktrees/integration/references/completion/01-f2dfc2e2a0f4.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/content/polls",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/content/polls",
+        "contentType": "text/markdown; charset=utf-8",
+        "retrievedAt": "2026-09-13T09:55:55.167015+00:00",
+        "bytes": 2220,
+        "sha256": "e57ffa8265660ccbe175e92f46862af905e9129a10be598c0cc851d6643a61b9",
+        "localBody": ".photon-local/completion/sources/2129ff09a539.txt",
+        "classification": "official",
+        "snapshot": "docs/worktrees/integration/references/completion/02-2129ff09a539.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/advanced-kits/imessage/polls",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/advanced-kits/imessage/polls",
+        "contentType": "text/markdown; charset=utf-8",
+        "retrievedAt": "2026-09-13T09:55:55.185342+00:00",
+        "bytes": 10004,
+        "sha256": "6170945b2e0f8f36c429085d1e2e01b89830e5304b357c0912b70e723b95c481",
+        "localBody": ".photon-local/completion/sources/b40704f7bd9b.txt",
+        "classification": "official",
+        "snapshot": "docs/worktrees/integration/references/completion/03-b40704f7bd9b.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/content/text",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/content/text",
+        "contentType": "text/markdown; charset=utf-8",
+        "retrievedAt": "2026-09-13T09:55:55.077575+00:00",
+        "bytes": 4003,
+        "sha256": "f0dd86ab78e5e062d3a8cf01fcdb37b4ed6d8bcb2fb505b895959cf3431c00ef",
+        "localBody": ".photon-local/completion/sources/65b871cc10fb.txt",
+        "classification": "official",
+        "snapshot": "docs/worktrees/integration/references/completion/04-65b871cc10fb.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/content/app",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/content/app",
+        "contentType": "text/markdown; charset=utf-8",
+        "retrievedAt": "2026-09-13T09:55:55.068259+00:00",
+        "bytes": 5484,
+        "sha256": "81ae485a85373813cb78b50de592144527a5ddad80c0252e338e8aa01bdb4a11",
+        "localBody": ".photon-local/completion/sources/2213bca04346.txt",
+        "classification": "official",
+        "snapshot": "docs/worktrees/integration/references/completion/05-2213bca04346.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/apps",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/apps",
+        "contentType": "text/markdown; charset=utf-8",
+        "retrievedAt": "2026-09-13T09:55:55.216239+00:00",
+        "bytes": 7774,
+        "sha256": "1ce74795d053c52245d10b3b375e3a2163ff8b30b18dac23fadf3719b82f6c40",
+        "localBody": ".photon-local/completion/sources/f7348964259a.txt",
+        "classification": "official",
+        "snapshot": "docs/worktrees/integration/references/completion/06-f7348964259a.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/providers/imessage/connection-and-routing",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/providers/imessage/connection-and-routing",
+        "contentType": "text/markdown; charset=utf-8",
+        "retrievedAt": "2026-09-13T09:55:55.306715+00:00",
+        "bytes": 12563,
+        "sha256": "566a8ddbd1cf0dccdbcd3695c6e28c3cc4b100d97e606c0ee923ade339f24c47",
+        "localBody": ".photon-local/completion/sources/ca0aa2274407.txt",
+        "classification": "official",
+        "snapshot": "docs/worktrees/integration/references/completion/07-ca0aa2274407.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/spectrum-ts/custom-events-and-lifecycle",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/spectrum-ts/custom-events-and-lifecycle",
+        "contentType": "text/markdown; charset=utf-8",
+        "retrievedAt": "2026-09-13T09:55:55.461381+00:00",
+        "bytes": 4862,
+        "sha256": "f00445888cb5944ff77f259b3e781009977d57367d753d586029705e406980c5",
+        "localBody": ".photon-local/completion/sources/8f2e40c42187.txt",
+        "classification": "official",
+        "snapshot": "docs/worktrees/integration/references/completion/08-8f2e40c42187.txt"
+      },
+      {
+        "url": "https://photon.codes/docs/best-practices/recovery-and-state",
+        "status": 200,
+        "finalUrl": "https://photon.codes/docs/best-practices/recovery-and-state",
+        "contentType": "text/markdown; charset=utf-8",
+        "retrievedAt": "2026-09-13T09:55:55.555075+00:00",
+        "bytes": 5801,
+        "sha256": "65944f4b202e0142388403aff39b3135b3dca7ab87035cdc36af22713716a9f0",
+        "localBody": ".photon-local/completion/sources/eb1a871718db.txt",
+        "classification": "official",
+        "snapshot": "docs/worktrees/integration/references/completion/09-eb1a871718db.txt"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/spectrum/SKILL.md",
+        "status": 200,
+        "finalUrl": "https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/spectrum/SKILL.md",
+        "contentType": "text/plain; charset=utf-8",
+        "retrievedAt": "2026-09-13T09:55:55.434461+00:00",
+        "bytes": 4842,
+        "sha256": "0a2f328fe6da4d202497e8bb859625de06af23cce884d1639dd1e8f3cb737de8",
+        "localBody": ".photon-local/completion/sources/0d3d03e9c431.txt",
+        "classification": "supplementary-guidance",
+        "snapshot": "docs/worktrees/integration/references/completion/10-0d3d03e9c431.txt"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/imessage/SKILL.md",
+        "status": 200,
+        "finalUrl": "https://raw.githubusercontent.com/tecxbro/photon-skills/main/skills/imessage/SKILL.md",
+        "contentType": "text/plain; charset=utf-8",
+        "retrievedAt": "2026-09-13T09:55:55.400616+00:00",
+        "bytes": 5503,
+        "sha256": "218af7703b8d12537ca8c6077c1b8b5d9865ccc2202fc7eaef2d883651a59dbb",
+        "localBody": ".photon-local/completion/sources/4a6527efce8d.txt",
+        "classification": "supplementary-guidance",
+        "snapshot": "docs/worktrees/integration/references/completion/11-4a6527efce8d.txt"
+      }
+    ],
+    "retrievalFailures": [
+      "Python urllib .md requests returned HTTP 403; retried exact supplied URLs with curl Accept text/markdown."
+    ],
+    "installedContracts": [
+      {
+        "path": "node_modules/spectrum-ts/package.json",
+        "version": "12.8.0",
+        "bytes": 1389,
+        "sha256": "69248e5615aecbe5844d9cc94323aa2a93391e76ac322cf82477c75df95dbcc2"
+      },
+      {
+        "path": "node_modules/spectrum-ts/dist/index.d.ts",
+        "version": "12.8.0",
+        "bytes": 34,
+        "sha256": "ede89b7bc2b923b70c83245525ccb59f3e122f3452be14e88a9ba39aef143242"
+      },
+      {
+        "path": "node_modules/spectrum-ts/dist/providers/imessage/index.d.ts",
+        "version": "12.8.0",
+        "bytes": 38,
+        "sha256": "8f716ef14ca413ecccdb9cc12deccf43cd25093033683f94bdb0c144158a99d3"
+      },
+      {
+        "path": "node_modules/@spectrum-ts/imessage/dist/index.d.ts",
+        "version": "12.8.0",
+        "bytes": 34880,
+        "sha256": "6a2278d14fd42a5603675b046fd1c8ad5c584da760e60b621f74059bf7dc3aa0"
+      },
+      {
+        "path": "node_modules/@spectrum-ts/imessage/dist/index.js",
+        "version": "12.8.0",
+        "bytes": 114644,
+        "sha256": "2f7e13c432ad4e84f96b76eb3d59062d70d3d7e46737a7e15198a47ecda6ef24"
+      },
+      {
+        "path": "node_modules/@spectrum-ts/core/dist/index.d.ts",
+        "version": "12.8.0",
+        "bytes": 4558,
+        "sha256": "651577159733a34e4243b86b80bfd088f9d82281db9ed0f11e1e0a2db769676a"
+      },
+      {
+        "path": "node_modules/@spectrum-ts/core/dist/attachment-Dy4PsNVw.d.ts",
+        "version": "12.8.0",
+        "bytes": 328446,
+        "sha256": "c452a8fc2ffbab03c6e548ce13dcf28f841ec7c9331513c65975e12f869ad954"
+      },
+      {
+        "path": "node_modules/@spectrum-ts/core/dist/index.js",
+        "version": "12.8.0",
+        "bytes": 135215,
+        "sha256": "3c0aee84d815ed67827ff64016e182669528714842036f0b4fca95527a5761e6"
+      },
+      {
+        "path": "node_modules/@spectrum-ts/core/dist/stream-t0CbOOUT.js",
+        "version": "12.8.0",
+        "bytes": 64552,
+        "sha256": "a98f7afa61f64b7ccebee01a5ec6ae4549cb015f98e329187cf9493d89ccfae5"
+      }
+    ],
+    "compatibility": {
+      "old": {
+        "spectrum-ts": "12.8.0",
+        "node": "24.13.0",
+        "npm": "10.9.2",
+        "zod": "4.5.4"
+      },
+      "new": {
+        "spectrum-ts": "12.8.0",
+        "node": "24.13.0",
+        "npm": "10.9.2",
+        "zod": "4.5.4"
+      },
+      "dependencyChange": false,
+      "publicStreamAPI": "text(AsyncIterable<string>) -> space.send; no fabricated streamText export",
+      "pollBoundary": "imessage(app) exports no polls or reusable native client; four native-management operations remain blocked",
+      "coldCardBoundary": "space.getMessage does not reconstruct miniAppCardSession",
+      "coldReactionBoundary": "space.getMessage retains reactionRecord but reconstructs text content rather than a usable reaction handle",
+      "stateSchema": 1,
+      "stateChange": "Additive authorityAudits and interactionClaims tables initialized through the shared StateTables registry; immutable migration and F0 unchanged",
+      "evidence": "Actual installed SDK exercised by completion-sdk.test.mjs and completion-installed.test.mjs through controlled transport only."
+    },
+    "registryCheck": {
+      "command": "npm view spectrum-ts version --json",
+      "observedAt": "2026-09-13T11:03:03.887369+00:00",
+      "version": "12.8.0",
+      "logSha256": "9ae021dabe53d6c89218af12764c8348e3ef97130c3e2f12bbd77d6972ec2897",
+      "compatibilityDecision": "No newer published Spectrum package is available for the missing public shared-owner poll or cold session/reaction APIs; retain exact 12.8.0."
+    }
   }
 }

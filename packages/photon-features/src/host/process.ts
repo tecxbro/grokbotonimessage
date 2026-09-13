@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { configurationBlockers } from "./configuration-inventory.js";
+import { z } from "zod";
+import { administerAuthority, inspectAuthority } from "./authority-admin.js";
 import { constants, realpathSync } from "node:fs";
 import { access, lstat, realpath } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -29,6 +32,7 @@ export async function validateProductionInstallation(root: string, releaseRoot: 
   activation: "disabled" | "enabled";
   taskId: string;
   generation: number;
+  operationBlockers: ReturnType<typeof configurationBlockers>;
 }> {
   const selected = await assertSelectedRelease(root, releaseRoot);
   const configuration = await loadProductionHostConfiguration(root);
@@ -55,6 +59,7 @@ export async function validateProductionInstallation(root: string, releaseRoot: 
     activation: configuration.activation,
     taskId: configuration.task.taskId,
     generation: configuration.task.generation,
+    operationBlockers: configurationBlockers(configuration),
   };
 }
 
@@ -86,6 +91,7 @@ export async function runProductionHost(root: string, releaseRoot: string): Prom
   const configuration = await loadProductionHostConfiguration(root);
   if (validated.activation !== "enabled" || configuration.activation !== "enabled") throw new Error("ACTIVATION_REQUIRED");
   const ownership = await acquireHostOwnership(join(root, "runtime"), selected.release);
+  let cardBackend: { close(): Promise<void> } | undefined;
   let local: { close(): Promise<void> } | undefined;
   let composition: Awaited<ReturnType<typeof createProductionComposition>> | undefined;
   let started = false;
@@ -97,6 +103,7 @@ export async function runProductionHost(root: string, releaseRoot: string): Prom
   process.once("SIGTERM", requestStop);
   const stop = async (): Promise<void> => {
     const failures: unknown[] = [];
+    if (cardBackend) try { await cardBackend.close(); } catch (error) { failures.push(error); }
     if (local) try { await local.close(); } catch (error) { failures.push(error); }
     if (started && composition) try { await composition.runtime.stop(); } catch (error) { failures.push(error); }
     try { await ownership.release(); } catch (error) { failures.push(error); }
@@ -105,6 +112,7 @@ export async function runProductionHost(root: string, releaseRoot: string): Prom
   try {
     composition = await createProductionComposition(configuration, root, releaseRoot,
       { report: code => process.stderr.write(`grok-photon-host: ${code}\n`) });
+    cardBackend = await composition.startCardBackend();
     await composition.runtime.start();
     started = true;
     if (signalRequested) return;
@@ -134,6 +142,20 @@ export async function processMain(
   releaseRoot = fileURLToPath(new URL("../../../", import.meta.url)),
 ): Promise<number> {
   try {
+    if (argv[0] === "authority.inspect") {
+      const [, rootFlag, root, credentialFlag, credentialFile, ...extra] = argv;
+      if (rootFlag !== "--installation-root" || !root || credentialFlag !== "--owner-credential-file" || !credentialFile || extra.length)
+        throw new Error("INVALID_ADMIN_COMMAND");
+      process.stdout.write(JSON.stringify({ version: 1, ...await inspectAuthority(resolve(root), releaseRoot, credentialFile) }) + "\n");
+      return 0;
+    }
+    if (argv[0] === "authority.apply") {
+      const [, rootFlag, root, requestFlag, requestFile, credentialFlag, credentialFile, ...extra] = argv;
+      if (rootFlag !== "--installation-root" || !root || requestFlag !== "--request-file" || !requestFile ||
+        credentialFlag !== "--owner-credential-file" || !credentialFile || extra.length) throw new Error("INVALID_ADMIN_COMMAND");
+      process.stdout.write(JSON.stringify({ version: 1, ...await administerAuthority(resolve(root), releaseRoot, requestFile, credentialFile) }) + "\n");
+      return 0;
+    }
     const { command, root } = parse(argv);
     if (command === "validate") {
       process.stdout.write(JSON.stringify({ version: 1, valid: true, ...await validateProductionInstallation(root, releaseRoot) }) + "\n");
@@ -147,6 +169,11 @@ export async function processMain(
     await runProductionHost(root, releaseRoot);
     return 0;
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      process.stderr.write("grok-photon-host: CONFIGURATION_INVALID " + error.issues.map(issue =>
+        issue.path.map(String).join(".") + ": " + issue.message).join("; ") + "\n");
+      return 1;
+    }
     const message = error instanceof Error && /^[A-Z_]+$/.test(error.message)
       ? error.message : "HOST_FAILED";
     process.stderr.write(`grok-photon-host: ${message}\n`);

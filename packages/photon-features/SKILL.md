@@ -114,6 +114,78 @@ and stop new effects on cancellation; import generated media before sending it;
 explain an unavailable-capability blocker; and reconcile an uncertain send
 under its stable identity without creating a replacement action.
 
+## Incremental text supplied by an authorized producer
+
+Normal production uses public SDK progressive remote-iMessage streaming. Use it
+only when a real authorized producer supplies complete thoughts incrementally.
+This program does not receive Grok's internal token stream. Do not scrape a
+transcript, add a model, or manufacture progress. Each append is inert text,
+not a command, generator, module, URL to fetch or code to run.
+
+Use the same release-pinned task launcher prefix as ordinary commands:
+
+```sh
+grok-photon stream.open --json-stdin < open.json
+grok-photon stream.append --json-stdin < append.json
+grok-photon stream.close --json-stdin < close.json
+grok-photon stream.abort --json-stdin < abort.json
+```
+
+All four inputs have `version:1`. Open input is exactly
+`{"version":1,"ttlMs":30000}`. Save its returned `result.stream` reference.
+Submit a normal `text.stream` action with that reference and the authorized
+space; `execute` queues the consumer without waiting for source completion.
+Then append `{"version":1,"stream":RETURNED_REF,"sequence":0,"text":"First complete thought."}`,
+followed by increasing zero-based sequence values. Close uses the next sequence
+and no text; abort has only version and stream. RETURNED_REF is explanatory
+notation: insert the actual returned JSON object, never a fabricated ID.
+The exact wire schemas are schemas/stream.open.json, stream.append.json,
+stream.close.json and stream.abort.json. A command connection closing normally
+is expected; lack of producer progress for five seconds fails the session.
+
+There is one consumer, at most 32 open sessions, 30 seconds total lifetime,
+4096 chunks, 4096 characters per append, 16000 source characters total and 8192
+queued UTF-8 bytes. Open TTL is 1000–30000 ms and cannot outlive the task.
+An identical repeated append sequence is accepted without adding text or
+extending its deadline; changed/reordered sequences are rejected. Format each
+append as one natural complete thought; the host preserves structured content,
+formats prose and joins thoughts with a space. Use at most one short prose
+question across the answer. Do not wait for the full answer just to format it.
+
+The provider sends the first thought before close and edits the same message.
+Its own edit budget/throttling applies. Only the final receipt is exposed;
+per-edit durability and cancellation of an in-flight provider call are not
+promised. Check status. After a partial/unknown outcome, stop and reconcile;
+never send a replacement or reopen consumed input. Stop/abort the producer and
+end your typing lease on completion, cancellation, expiry or failure. Restart
+never reconstructs incremental input. When capabilities identify the explicit
+`textStreaming.delivery:"buffered"` fallback, nothing is sent before close.
+
+## Native poll and card boundaries
+
+The complete 44-operation registry remains in this release. Native poll
+management (`poll.get`, `poll.vote`, `poll.unvote`, `poll.addOption`) has no public
+shared-owner implementation in Spectrum 12.8.0. Treat the reported upstream
+blocker as unresolved; do not start another SDK client or ask Grok to build one.
+Poll creation and human conversational answers are independent working paths.
+
+For cards, use only configured template IDs and the original returned card and
+session references. Normal startup constructs the signed-card-v1 backend when
+configured. Its signed web interactions use separately owner-enrolled participant
+keys; an address field or forwarded link does not prove who tapped in iMessage.
+Static preview, installed extension/live rendering, updates and authenticated
+web callbacks are separate capabilities. This backend is application-owned,
+not a Photon-native callback protocol. Callback continuation and replay state
+survive restart. The SDK original update-session object does not: a cold update
+remains blocked, never replaced by another bubble or a cast JSON session.
+
+Reaction removal uses the actual SDK reaction handle. Cold provider lookup cannot
+restore that content handle in this pinned SDK; report the blocker, never
+reconstruct a reaction from labels or send another tapback.
+
+Authority expiry/revocation is an owner operation described in DEPLOYMENT.md.
+Ordinary task credentials must not renew themselves or restore cancelled work.
+
 ## Work after a wake
 
 A wake is only a notification. Retrieve `work.list`, claim a returned handoff, and consume the actual persisted typed `events` in the claim response. Persist task acceptance idempotently by handoff ID through the existing Grok task handoff before acknowledging. Heartbeat within the lease using the exact returned fence while accepting work. `work.ack` means the task accepted responsibility, not that outbound messaging finished. Never ack work you have not accepted durably.
@@ -175,7 +247,7 @@ Generated from the assembled public handler registry, explicit capability declar
 | typing.begin | wt-02 | registered | implemented | native | runtime-discovery-required | no | [schema](schemas/typing.begin.json) | [example](examples/wt-08/typing.begin.json) | 2eac56750971175336e2a8520c30ea9b062f37c0f12dcc2ff8be7b8d4196ace7 |
 | typing.end | wt-02 | registered | implemented | native | runtime-discovery-required | no | [schema](schemas/typing.end.json) | [example](examples/wt-08/typing.end.json) | 2b50ec0b1ae6f81389312c0189df294aedb6e8bf76ee4a1fd86e812a9267c974 |
 | text.send | wt-03 | registered | implemented | native | runtime-discovery-required | no | [schema](schemas/text.send.json) | [example](examples/wt-08/text.send.json) | 3cf8a080b0a1f01c40d40ebffb4aeb6697780fbad1704c14d0eef345ad33d646 |
-| text.stream | wt-03 | registered | implemented | fallback | runtime-discovery-required | no | [schema](schemas/text.stream.json) | [example](examples/wt-08/text.stream.json) | eb4e0ae99f352c5be5acbf3081dcd1765076c3d1a9980ee8bc88cea4b2ac1b68 |
+| text.stream | wt-03 | registered | implemented | native | runtime-discovery-required | no | [schema](schemas/text.stream.json) | [example](examples/wt-08/text.stream.json) | eb4e0ae99f352c5be5acbf3081dcd1765076c3d1a9980ee8bc88cea4b2ac1b68 |
 | markdown.send | wt-03 | registered | implemented | native | runtime-discovery-required | no | [schema](schemas/markdown.send.json) | [example](examples/wt-08/markdown.send.json) | f768e62107de269a214d37f841dbc0455ea0191176f65df5c782ff2bce105172 |
 | link.send | wt-03 | registered | implemented | native | runtime-discovery-required | no | [schema](schemas/link.send.json) | [example](examples/wt-08/link.send.json) | 1ad218345cb60274dd66432d4d1f8d0d5dafe27e7f564215d607cd86ea0657ba |
 | content.group | wt-03 | registered | implemented | native | runtime-discovery-required | no | [schema](schemas/content.group.json) | [example](examples/wt-08/content.group.json) | b05dad20732db30c0be8f2fc64e9616e0a0a88847b53249cf18c8a7afec9238e |

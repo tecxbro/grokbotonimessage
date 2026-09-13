@@ -1,5 +1,40 @@
 # Integration sources
 
+## Current completion compatibility evidence — 2026-09-13
+
+All nine supplied Photon URLs and both supplied skill URLs were read. Their exact
+retrieved bodies are committed in `references/completion/`; hashes, timestamps,
+HTTP status and provenance live in `source-lock.json.completionPass`. Initial
+Python urllib requests returned HTTP 403; the recorded exact-URL curl retrievals
+with Markdown negotiation succeeded. The Spectrum/iMessage skills are
+supplementary workflow guidance, not proof of an SDK export.
+
+Actual installed public declarations and implementation are hashed separately:
+`spectrum-ts/dist/providers/imessage/index.d.ts`,
+`@spectrum-ts/imessage/dist/index.d.ts` and `index.js`, and the core content/message
+contracts and streaming implementation. The locked versions stay Spectrum
+12.8.0, zod 4.5.4, Node 24.13.0 and npm 10.9.2. No node_modules patch or dependency
+upgrade is part of this change. The standalone shrinkwrap is derived from the
+committed root lock and checked for drift.
+
+The executed actual SDK probe confirms `text(AsyncIterable)` sends before source
+completion and edits the same GUID; the SDK owns throttling/edit limits and final
+receipt. There is no separate exported `streamText` function used here. The same
+probe confirms missing public poll management, absent cold `miniAppCardSession`
+restoration and cold reaction metadata without a usable reaction content handle.
+These are upstream blockers even though advanced-kit documentation describes
+native poll methods. Actual transport doubles live only at external gRPC/HTTP
+boundaries, with unexpected external URLs rejected.
+
+The signed-card-v1 browser/HTTP protocol is this application's protocol. Photon
+supplies the app-card transport, not participant enrollment or these callbacks.
+The owner binds an out-of-band verified iMessage identity to a public Ed25519 key;
+a claimed participant field or forwarded URL is never authentication.
+
+## Historical checkpoints before this completion pass
+
+The following records are retained for provenance. Current behavior and gates are stated above.
+
 ## Normative official sources
 
 The repository's verified official snapshots in `docs/photon/reference` are the

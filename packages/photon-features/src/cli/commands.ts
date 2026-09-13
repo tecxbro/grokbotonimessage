@@ -1,6 +1,7 @@
 import {
   localRequestSchema,
   mediaImportInputSchema,
+  streamProducerInputSchemas,
   parseAction,
   type LocalRequest,
 } from "../contracts/index.js";
@@ -22,10 +23,14 @@ export function commandRequest(argv: string[], contextId: string | undefined, in
     "work.heartbeat": ["work.heartbeat", ["--handoff-id", "--fence", "--lease-ms", "--json"]],
     "work.ack": ["work.ack", ["--handoff-id", "--fence", "--json"]],
     execute: ["submit", ["--json-stdin"]],
+    "stream.open": ["stream.open", ["--json-stdin"]],
+    "stream.append": ["stream.append", ["--json-stdin"]],
+    "stream.close": ["stream.close", ["--json-stdin"]],
+    "stream.abort": ["stream.abort", ["--json-stdin"]],
     "media.import": ["media.import", ["--json-stdin"]],
   };
   const def = definitions[command ?? ""];
-  const readsStdin = command === "execute" || command === "media.import";
+  const readsStdin = command === "execute" || command === "media.import" || command?.startsWith("stream.");
   if (!def || [...flags.keys()].some(k => !def[1].includes(k)) || !flags.has(readsStdin ? "--json-stdin" : "--json")) throw new CliError("INVALID_ARGUMENTS", 2);
   if (!contextId) throw new CliError("INVALID_CONFIGURATION", 2);
   try {
@@ -33,6 +38,10 @@ export function commandRequest(argv: string[], contextId: string | undefined, in
       const action = parseAction(input);
       if (!contextId || action.contextId !== contextId) throw new CliError("CONTEXT_MISMATCH", 4);
       return localRequestSchema.parse({ version: 1, method: "submit", action });
+    }
+    if (command && command in streamProducerInputSchemas) {
+      const producer = streamProducerInputSchemas[command as keyof typeof streamProducerInputSchemas].parse(input);
+      return localRequestSchema.parse({ ...producer, method: command, contextId });
     }
     if (command === "media.import") {
       const media = mediaImportInputSchema.parse(input);

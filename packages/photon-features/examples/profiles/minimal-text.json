@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "profile": "minimal-text",
+  "allowedOperations": [
+    "typing.begin",
+    "typing.end",
+    "text.send",
+    "message.get",
+    "message.reply",
+    "message.markRead"
+  ],
+  "defaultEnabledOperations": [],
+  "explicitOwnerSelectionRequired": true,
+  "upstreamReleaseBlockers": [
+    "poll.get",
+    "poll.vote",
+    "poll.unvote",
+    "poll.addOption"
+  ],
+  "note": "This is a selection profile, not an executable host configuration. Supply real owner inputs and explicit enable; generation always disables activation."
+}

@@ -294,5 +294,7 @@ test("manual operating decisions cover required behavior and preserve the genera
   ]) assert.match(skill, new RegExp(phrase, "i"));
   const block = skill.slice(skill.indexOf(generatedStart), skill.indexOf(generatedEnd) + generatedEnd.length);
   assert.equal(createHash("sha256").update(block).digest("hex"),
-    "09d1d50216d5eb9062bcf419bde203e14af56e3cc9dfb886da3f40dc3ca4144f");
+    // Completion adds the verified progressive provider declaration; all 44
+    // operations and strict action payloads remain checked by the generator.
+    "b33e3ddda3a06e79e729cce5cab2a1f5b4070706049eaeefa4540804b9eca9ec");
 });

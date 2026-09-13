@@ -1,5 +1,58 @@
 # Integration architecture
 
+## Current completion architecture — 2026-09-13
+
+This section supersedes historical production-wiring claims below. The assigned
+checkout is registered `fix-1` at reviewed baseline
+`55b1821216cefe341e611518e1b125552346a115`. No branch/worktree was created or
+switched, and `photon-v3-f0` remains unchanged. The user explicitly authorizes the
+exact cross-lane completion paths recorded in `FILES.json.completionFiles`.
+
+The executable path remains `grok-photon-host` → strict owner JSON →
+`createProductionComposition` → one Spectrum owner, shared SQLite, guarded
+resources, durable executor, authenticated local socket and existing Grok wake.
+There is no new model, messaging client, inbound listener or command HTTP API.
+`executeChild`, task claims/heartbeats/acknowledgements and structured-content
+voice-policy bypass remain the shared boundaries.
+
+| Gap | Concrete application implementation | Compatibility decision |
+| --- | --- | --- |
+| Progressive producer | `host/text-producer.ts`, `stream-registry.ts`, version-1 `stream.open/append/close/abort` CLI/socket commands | Inert complete thoughts only; 30s session, 5s stall, 16000 characters, 4096 chunks, 8192 queued bytes; single-use scope/generation reservation |
+| Progressive provider | `features/text-messages/streaming.ts` calls actual `text(AsyncIterable)` through the owner | First thought reaches provider before close; SDK edits original GUID; explicit buffered fallback; no per-edit durability or manufactured Grok token stream |
+| Universal card updates | `host/card-backend.ts` builds immutable layout/OG URLs and trusted template functions from serializable `signed-card-v1` config | `space.send(edit(builder, originalMessage))`; preserve customized path and refreshed provider session metadata; cold restoration remains blocked |
+| Card returns | Shipped `host/card-browser.ts` signs exact versioned wire bytes; separate loopback `/interactions` listener verifies enrolled Ed25519 participant keys | Application-owned protocol; owner verifies iMessage identity outside links; TLS origin and enrollment are deployment inputs |
+| Callback durability | Authentication and raw bounds precede scope/session/action checks; shared SQLite transaction writes replay proof, session consumption and continuation before acknowledgement | New `interactionClaims` table is additive; changed claims cannot reuse a nonce; old generations cannot replay after renewal |
+| Owner renewal/replacement | Stopped-host `authority.inspect/apply`, separate owner credential, transactional CAS and audit, atomic configuration persistence | New `authorityAudits` table is additive; new context and generation; preserve pending/unknown work; no startup reseeding or self-escalation |
+| Resource gaps | Production native avatar retention, actual created-chat reference, reaction reference resolution | Shared guarded stager and store; a new chat reference grants no new routing authority; cold reaction removal still lacks a usable SDK handle |
+| Host shutdown | Remove only SDK signal handlers added by the single owner factory, preserving existing host handlers | Public Node listener API; orderly backend/socket/outbox/typing/owner shutdown rather than SDK early process exit |
+| Release payload | Standalone shrinkwrap, three executable wrappers, generated JSON profiles/schemas/inventory; completion release gate runs installed tests and captures production dependencies | Node 24.13.0/npm 10.9.2/Spectrum 12.8.0 unchanged; historical release format remains rollback-compatible |
+
+Inbound transport, outbound provider and Grok wake remain separate. Historical
+captures from an older authority generation remain unresolved with their original
+records; startup never attaches them to renewed work. A partial transmission or
+lost acknowledgement remains `unknown-outcome`/reconcile-first and blocks later
+work in the same conversation. Consumed streams are not reconstructed or replayed
+on restart. Native poll GUIDs/options remain distinct from application keys and
+labels; human answers are input, never duplicated with a bot `poll.vote`.
+
+The public pinned provider has no `imessage(app).polls` export and no public
+shared-owner native client. Advanced-kit poll documentation cannot establish that
+missing boundary. Four native management operations remain upstream release
+blockers. The actual SDK also cannot reconstruct cold card update sessions or
+cold reaction content handles through `space.getMessage`. No JSON cast, private
+field, independent client, replacement bubble or disabled inventory row conceals
+these limits. All 44 operations remain in the generated production inventory.
+
+The single-route deployment scope and same-OS-user credential trust boundary are
+explicit. Root/developer access under the same OS account can bypass local token
+separation; this is not multi-tenant isolation. Actual provider/account capability,
+Apple registration, extension installation, target supervisor and live delivery
+are separate evidence tiers.
+
+## Historical checkpoints before this completion pass
+
+The following records are retained for provenance. Current behavior and gates are stated above.
+
 ## Runtime ownership
 
 The assembled candidate retains one existing Grok orchestrator and worker model.
@@ -187,3 +240,7 @@ The assembled operation projection derives registration from the public registry
 implementation/provider support from explicit capability declarations. Runtime
 configuration and live verification remain separate fields. Missing declarations
 fail closed as unimplemented even when a handler is registered.
+
+## Completion pass 2026-09-13
+
+Completion design: construct serializable trusted backend settings in executable startup; add bounded authenticated inert text producers to the private local protocol; retain one owner, receiver, inbox/outbox and executeChild. Owner authority changes use a separate stopped-host administration procedure, never ordinary task credentials. Native poll management and cold card session restoration require a verified public shared-owner SDK surface.

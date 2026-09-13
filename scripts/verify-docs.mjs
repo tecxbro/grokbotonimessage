@@ -70,14 +70,14 @@ export function verifyDocs(root=process.cwd(),lane='wt-00') {
     for(const marker of ['788 tests','82 files','live suite','not prove installation'])
       if(!evidence.includes(marker))throw new Error(`MISSING_INTEGRATION_EVIDENCE:${marker}`);
     const deployment=read('packages/photon-features/DEPLOYMENT.md');
-    for(const marker of ['Production deployment runbook','grok-photon-host','grok-photon-task','version-2 configuration','systemd lifecycle','pointer-only','controlled external'])
+    for(const marker of ['Grok Photon deployment and owner operations','grok-photon-host','grok-photon-task','version-2','signed-card-v1','authority.apply','stream.open','Handoff remains blocked'])
       if(!deployment.includes(marker))throw new Error(`MISSING_DEPLOYMENT_BOUNDARY:${marker}`);
     const handoff=read('docs/worktrees/integration/HANDOFF.md');
     for(const marker of ['Concrete deployment path','Grok skill and task binding','grok-photon-host','grok-photon-task','GROK_PHOTON_CONTEXT_ID','GROK_PHOTON_SOCKET','GROK_PHOTON_CREDENTIAL_FILE','controlled external'])
       if(!handoff.includes(marker))throw new Error(`MISSING_BINDING_HANDOFF:${marker}`);
     for(const [path,markers] of Object.entries({
       'docs/photon-features/rollout.md':['Historical F0 checkpoint','current deployment runbook'],
-      'packages/photon-features/INSTALL.md':['Historical inactive-install checkpoint','DEPLOYMENT.md'],
+      'packages/photon-features/INSTALL.md':['earlier inactive-install checkpoint','DEPLOYMENT.md'],
       'AGENTS.md':['development-time tests','originating conversation'],
       'packages/photon-features/SKILL.md':['real incoming work','originating conversation','unsolicited development test'],
     })) for(const marker of markers) if(!read(path).includes(marker))

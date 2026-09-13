@@ -9,6 +9,8 @@ import {
   resultSchema,
   incomingEventSchema,
   mediaImportResultSchema,
+  streamOpenedSchema,
+  streamAcceptedSchema,
   scopeSchema,
   idSchema,
   type LocalRequest,
@@ -23,7 +25,7 @@ const handoff = z.strictObject({ id: idSchema, scope: scopeSchema, revision: cou
 const failure = z.strictObject({ version: z.literal(1), ok: z.literal(false), error: z.strictObject({ code: z.string().regex(/^[A-Z_]+$/).max(80), requestId: idSchema.optional() }) });
 export function validateResponse(input: unknown, request: LocalRequest): CliResponse {
   if (input && typeof input === "object" && "ok" in input && input.ok === false) return failure.parse(input);
-  const schema = request.method === "media.import" ? mediaImportResultSchema : request.method === "capabilities" ? z.array(capabilitySchema) : request.method === "diagnostics" ?
+  const schema = request.method === "stream.open" ? streamOpenedSchema : request.method.startsWith("stream.") ? streamAcceptedSchema : request.method === "media.import" ? mediaImportResultSchema : request.method === "capabilities" ? z.array(capabilitySchema) : request.method === "diagnostics" ?
     z.strictObject({ ready: z.boolean(), activation: z.enum(["enabled", "disabled"]) }) : request.method === "work.list" ?
     z.strictObject({ work: z.array(handoff) }) : request.method.startsWith("work.") ?
     z.strictObject({ handoff, events: z.array(incomingEventSchema) }) : resultSchema;

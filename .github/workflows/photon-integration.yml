@@ -61,6 +61,13 @@ jobs:
         run: npm run photon:test:integration
       - name: Generated skill drift
         run: node packages/photon-features/scripts/generate-skill.mjs --check
+      - name: Configuration, inventory and standalone dependency lock drift
+        run: |
+          node packages/photon-features/scripts/generate-configuration.mjs --check
+          node packages/photon-features/scripts/generate-production-inventory.mjs --check
+          node packages/photon-features/scripts/prepare-npm-lock.mjs --check
+      - name: Actual installed archive production journeys
+        run: npm run photon:test:installed
       - name: Integration documentation
         run: node scripts/verify-docs.mjs integration
       - name: Exact integration ownership

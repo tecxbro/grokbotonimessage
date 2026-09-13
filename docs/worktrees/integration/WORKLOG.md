@@ -321,3 +321,33 @@ The first full ownership run then correctly rejected the previously unrecorded
 helper and its production regression to the integration ownership/inventory; the
 verifier then passed without wildcard or history-check changes. Fresh detailed
 command results and evidence boundaries are recorded in `TEST-EVIDENCE.md`.
+
+## Completion pass 2026-09-13
+
+Completion pass started on the clean registered fix-1 checkout at reviewed baseline 55b1821216cefe341e611518e1b125552346a115. Origin, registration, baseline, remote and immutable F0 recorded in completion-preflight.json. User authorizes necessary cross-lane completion on this existing checkout; no branch/worktree changes, push, activation or live sends. Exact toolchain remains Node 24.13.0/npm 10.9.2 and Spectrum 12.8.0.
+
+## 2026-09-13 — concrete completion paths and preserved blockers
+
+Implemented the bounded installed stream producer and actual SDK streaming;
+serialized universal-card backend, browser participant signer and authenticated
+transactional callback path; stopped-host owner inspect/apply renewal and
+replacement; shared avatar/chat/reaction resource wiring; host signal shutdown;
+profile/schema/inventory/shrinkwrap generators and release executable wrappers.
+The user explicitly permits these cross-lane changes. Existing orchestrator,
+shared credential owner, durable inbox/outbox, executeChild, voice policy,
+typing and conversational poll-answer behavior are retained.
+
+Installed execution exposed and closed real adapter/startup gaps: missing stream
+response schema, backend configuration import cycle, early SDK signal exit,
+missing release bin launcher, stale captured-event reassignment on authority
+renewal, and rejected reaction resource references. Fixture corrections were
+kept separate from application fixes. Failure fixtures use independent durable
+stores because unknown/blocked predecessors correctly fence later work in the
+same conversation; no retry bypass was introduced.
+
+Actual public SDK probes establish U-01/U-02/U-03, recorded as release blockers.
+No second native SDK client, fabricated session or hidden capability was added.
+The new installed matrix uses seven isolated failure modes, a real npm archive,
+production-only dependencies, real authenticated CLI/socket/SQLite and actual
+SDK modules with controlled external transport. No production credentials or
+messages were used. Final commands and artifact evidence are in TEST-EVIDENCE.md.

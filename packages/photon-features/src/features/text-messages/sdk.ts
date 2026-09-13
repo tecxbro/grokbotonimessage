@@ -84,6 +84,7 @@ export interface PublicContentCompiler {
 }
 /** Trusted host configuration. Reuse the one existing SDK owner and authoritative handle resolver. */
 export interface PublicTextMessageOptions {
+  streamDelivery?: "progressive" | "buffered";
   provider: ProviderContext;
   binding(context: TrustedContext): Binding;
   resources: Pick<ResourceResolver, "space" | "message">;

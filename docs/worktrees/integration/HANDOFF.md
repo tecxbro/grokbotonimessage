@@ -1,5 +1,79 @@
 # Integration handoff
 
+Handoff remains blocked. The application-owned production work is shipped in
+this candidate, but four native poll-management operations and cold card/reaction
+restoration still require verified public SDK support. No missing implementation
+is assigned to Grok Bot.
+
+## Current candidate and evidence states
+
+Repository: `https://github.com/tecxbro/grokbotonimessage.git`.
+Assigned registered checkout:
+`/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1`.
+Branch: `fix-1`; reviewed starting HEAD/baseline:
+`55b1821216cefe341e611518e1b125552346a115`. Initial tree clean and remote divergence
+0/0; exact pre-edit record is `completion-preflight.json`. The final local commit
+is the commit containing these completion records; `git log -1` and the external
+artifact provenance identify its exact SHA without a self-referential document.
+No push, branch/worktree change or F0 tag movement occurred.
+
+| State | Gate |
+| --- | --- |
+| Code complete | **No, full requested scope blocked upstream.** Supported application wiring implemented; U-01/U-02/U-03 remain open |
+| Production paths verified offline | **Supported journeys verified**, via installed executable → authenticated local interface → real SQLite/resources → actual adapters/SDK → controlled external boundary. Per-operation evidence gaps remain explicit in the 44-row inventory |
+| Release artifact verified | Diagnostic npm archive tested; **approved deployment archive pending** actual approval/workflow and release gates |
+| Installed/activated on target | **No**; only isolated local test installations |
+| Live/device verified | **No**; no live external messages authorized or sent |
+
+## Concrete deployment path
+
+`packages/photon-features/DEPLOYMENT.md` is authoritative. It lists only shipped
+commands, owner configuration/profile generation, filesystem/toolchain/target
+preflight, selected release validation, lifecycle and rollback. No sudo, systemd,
+particular home directory or target Grok gateway login is presumed available.
+This release supports one configured route, not multi-conversation deployment.
+
+`grok-photon-host` constructs the single owner, durable state, producer and signed
+card backend; `grok-photon-task` binds an existing task/generation to the local
+client; `grok-photon` accepts only schema-validated commands. Callback ingress is
+separate from the private socket. Owner authority renewal/replacement is a
+separate stopped-host, credentialed and audited procedure.
+
+## Grok skill and task binding
+
+The existing wake mechanism is unchanged: configured Grok CLI/gateway receives
+only a durable work pointer and selected release skill/launcher path. The task
+then uses claim, heartbeat and acknowledgement through the authenticated local
+interface. `GROK_PHOTON_CONTEXT_ID`, `GROK_PHOTON_SOCKET` and
+`GROK_PHOTON_CREDENTIAL_FILE` are injected only by the release-pinned launcher.
+Gateway acceptance is distinct from task acknowledgement and provider delivery.
+The shipped operating skill documents inert incremental stream commands, existing
+voice policy, explicit optional poll creation and poll-answer continuation.
+
+## Required owner deployment inputs
+
+- Existing Photon project/account/serving phone/conversation and scoped task grant;
+  private project, task and separate owner credential files.
+- Existing authenticated Grok executable, agent ID and gateway access on the target;
+  the owner chooses a supported supervisor without assuming systemd or sudo.
+- For universal update/interaction use: an actual HTTPS domain/TLS reverse proxy
+  to the shipped loopback backend and out-of-band verified participant public keys.
+- For customized cards: actual Apple team/app/extension identifiers and recipient
+  extension installation; static preview is separate from live extension rendering.
+- A real approved workflow/commit and matching platform/architecture release,
+  then separately authorized installation/activation and device checks.
+
+See `CHANGE-REQUESTS.md` for exact upstream APIs still missing, `ACCEPTANCE.md` for
+journeys, `TEST-EVIDENCE.md` for actual commands/results/failures and
+`FILES.json.completionFiles` for every changed path. Historical green registration
+or mocked tests below are not current feature completion or release approval.
+
+## Historical handoff checkpoints
+
+These are retained as historical evidence only. Their previous startup-only
+renewal limitation, in-process-only streaming and systemd-specific instructions
+are superseded by the current deployment document and completion architecture.
+
 Status: concrete production path implemented locally; approved release,
 installation, activation, and external task evidence pending.
 

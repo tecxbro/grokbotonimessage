@@ -13,6 +13,17 @@ const assignedExamples = Object.freeze({
   'update-card.json': 'app.update',
 });
 
+async function exampleAction(operation) {
+  try {
+    const fixture = JSON.parse(await readFile(new URL(`tests/fixtures/${operation}.json`, root), 'utf8'));
+    return parseAction(fixture.valid);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    // Installed archives intentionally omit tests and development-only dependencies.
+    return parseAction(JSON.parse(await readFile(new URL(`examples/wt-08/${operation}.json`, root), 'utf8')));
+  }
+}
+
 export async function validateExamples({ check = false } = {}) {
   const rows = [], names = [];
   const assembled = assembleDocumentedFeatureSurface();
@@ -21,8 +32,7 @@ export async function validateExamples({ check = false } = {}) {
   for (const registration of operationRegistrations) {
     const { operation, owner, handlerRegistration, implementation, providerSupport,
       configuredAvailability, liveVerified } = registration;
-    const fixture = JSON.parse(await readFile(new URL(`tests/fixtures/${operation}.json`, root), 'utf8'));
-    const action = parseAction(fixture.valid);
+    const action = await exampleAction(operation);
     if (action.operation !== operation) throw new Error('EXAMPLE_OPERATION_MISMATCH');
     localRequestSchema.parse({ version: 1, method: 'submit', action });
     const schema = await readFile(new URL(`schemas/${operation}.json`, root), 'utf8');
@@ -34,8 +44,7 @@ export async function validateExamples({ check = false } = {}) {
     rows.push(`| ${operation} | ${owner} | ${handlerRegistration} | ${implementation} | ${providerSupport} | ${configuredAvailability} | ${liveVerified ? 'yes' : 'no'} | [schema](schemas/${name}) | [example](examples/wt-08/${name}) | ${createHash('sha256').update(schema).digest('hex')} |`);
   }
   for (const [name, operation] of Object.entries(assignedExamples)) {
-    const fixture = JSON.parse(await readFile(new URL(`tests/fixtures/${operation}.json`, root), 'utf8'));
-    const action = parseAction(fixture.valid);
+    const action = await exampleAction(operation);
     if (action.operation !== operation) throw new Error('ASSIGNED_EXAMPLE_OPERATION_MISMATCH');
     localRequestSchema.parse({ version: 1, method: 'submit', action });
     const example = JSON.stringify(action, null, 2) + '\n';
