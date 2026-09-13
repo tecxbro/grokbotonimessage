@@ -10,6 +10,17 @@ An authenticated local transport supplies principal independently of action JSON
 
 `ExecutionServices.assertActiveClaim()` checks current owner, fence, task generation, lease, context revocation and cancellation. Invoke before effects and inside transactions; recheck after asynchronous resource/media/stream resolution. A previously valid object is not a durable grant. `resolveResource` returns an authorized reference; provider bindings remain trusted executable code captured by the handler, never caller-supplied SDK objects.
 
+Typing scheduling requires that active claim, but a scheduled typing lease does
+not retain or block the conversation claim while its provider-space lookup is
+pending. The production host issues an in-memory grant for the exact admitted
+typing request, child, owner/fence, generation, scope, conversation, line,
+deadline and TTL. Before a delayed start it rechecks current task/context
+authority, cancellation, permissions and resource ownership. Only the normal
+single-revision executor completion of the confirmed scheduling child may
+outlive claim release; recovery/reassignment, expiry, shutdown or any authority
+change invalidates the grant. Grants are neither persisted nor replayed, and a
+pre-dispatch rejection never creates provider-send uncertainty or a stop RPC.
+
 Unrestricted same-UID processes sharing host credentials can impersonate that identity. Context IDs are not a sandbox. Separate OS identities or isolated workers are needed against malicious local code. F0 does not claim stronger local isolation.
 
 ## Public services and transactions

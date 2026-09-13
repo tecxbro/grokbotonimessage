@@ -64,6 +64,7 @@ import { dirname, join } from "node:path";
 import { productionCapability } from "./capabilities.js";
 import { registerIncomingReferences } from "./incoming-resources.js";
 import { createPollCorrelations, routePollEvent, type NativePollVoteIdentity } from "./poll-correlations.js";
+import { HostTypingBinding } from "./typing-binding.js";
 
 const adminOperations = new Set<Operation>([
   "space.create", "space.rename", "space.addMembers", "space.removeMembers", "space.leave",
@@ -137,6 +138,7 @@ class ProductionLocalExecutor implements LocalExecutor {
       authorize?: CaptureProcessing["authorize"];
     },
     private readonly pump: InboundPump,
+    private readonly stopTyping: () => Promise<void>,
     private readonly report: (code: string) => void,
     private readonly concurrency = 4,
   ) {}
@@ -167,8 +169,12 @@ class ProductionLocalExecutor implements LocalExecutor {
   async stopOutbox(): Promise<void> {
     this.active = false;
     for (const abort of this.running.values()) abort();
-    await this.pump.stop();
-    await this.drive;
+    const failures: unknown[] = [];
+    const typingCleanup = this.stopTyping();
+    try { await this.pump.stop(); } catch (error) { failures.push(error); }
+    try { await this.drive; } catch (error) { failures.push(error); }
+    try { await typingCleanup; } catch (error) { failures.push(error); }
+    if (failures.length) throw new AggregateError(failures, "OUTBOX_SHUTDOWN_FAILED");
   }
   capture(event: IncomingEvent): Promise<void> { return this.router.accept(event); }
 
@@ -330,13 +336,13 @@ export async function createProductionComposition(
     expiresAt: Math.min(services.context.expiresAt, services.claim.leaseUntil),
     assertCurrent: () => undefined,
   });
-  const publicTypingBind = (action: Extract<Action, { operation: "typing.begin" | "typing.end" }>,
-    services: PublicExecutionServices) => ({
-    requestId: requestIdentity(action, services.context),
-    resultRevision: 0,
-    expiresAt: Math.min(services.context.expiresAt, services.claim.leaseUntil),
-    assertCurrent: () => services.assertActiveClaim(),
+  const typingBinding = new HostTypingBinding(claims, providerRoutes, {
+    scope,
+    conversationId: configuration.provider.conversationId,
+    phone: configuration.provider.phone,
   });
+  const publicTypingBind = (action: Extract<Action, { operation: "typing.begin" | "typing.end" }>,
+    services: PublicExecutionServices) => typingBinding.bind(action, services);
   const legacyText = createTextMessageModule({ binding, requestId: request });
   const legacyMedia = createMediaModule({
     bindings: async () => ({ scope, phone: configuration.provider.phone,
@@ -579,6 +585,11 @@ export async function createProductionComposition(
   const executor = new ProductionLocalExecutor(store, protocol, claims, recovery, router, captures,
     providerRoutes, resources, requestId => services => resourcePorts.bind(requestId, services), capability,
     correlations, captureProcessing, pump,
+    async () => {
+      typingBinding.shutdown();
+      typing.shutdown();
+      await typing.drain();
+    },
     dependencies.report ?? (() => undefined));
   const ingressSource = new SpectrumEventSource(owner, captures, { now }, diagnostic =>
     (dependencies.report ?? (() => undefined))(diagnostic.code), correlations,

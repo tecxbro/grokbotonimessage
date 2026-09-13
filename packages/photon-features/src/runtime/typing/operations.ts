@@ -8,7 +8,17 @@ import {
   type FeatureModule,
   type OperationResult,
 } from "../../contracts/index.js";
-import type { TypingLeases } from "./leases.js";
+import type {
+  TypingLeaseAuthorization,
+  TypingLeaseDescriptor,
+  TypingLeases,
+} from "./leases.js";
+
+export interface IssuedTypingLeaseAuthorization
+  extends TypingLeaseAuthorization {
+  /** Confirm the scheduling child returned under the original active claim. */
+  confirmScheduled(): void;
+}
 
 /** WT-01 supplies the already persisted execution identity and current fence
  * validation. F0 ExecutionServices has no requestId; do not substitute an idempotency key. */
@@ -17,6 +27,11 @@ export interface TypingExecutionBinding {
   resultRevision: number;
   expiresAt: number;
   assertCurrent(): void;
+  /** Production hosts issue an in-memory, exact-lease grant. Compatibility
+   * callers without this seam retain claim-bound validation. */
+  issueLease?(
+    lease: Readonly<TypingLeaseDescriptor>,
+  ): IssuedTypingLeaseAuthorization;
 }
 export type BindTypingExecution = (
   action: Action,
@@ -160,27 +175,40 @@ export async function executeTypingOperation(
   assertScope(action.arguments.space, services.context.scope);
   await services.resolveResource(action.arguments.space);
   validate();
-  return services.executeChild({
-    index: 0, key: `${binding.requestId}:typing`,
-    argumentsDigest: createHash("sha256").update(canonicalJson(action)).digest("hex"),
-    dispatch: async () => {
-      validate();
-      let unavailable = false;
-      if (action.operation === "typing.begin") {
-        const ttl = Math.min(action.arguments.ttlMs, binding.expiresAt - services.clock.now(),
-          services.claim.leaseUntil - services.clock.now(), services.context.expiresAt - services.clock.now());
-        unavailable = ttl < 100 || !leases.begin(services.context.scope, services.context.generation,
-          ttl, {signal: services.signal, validate});
-      } else leases.end({scope: services.context.scope, generation: services.context.generation});
-      return {
-        version: 1, requestId: binding.requestId, revision: binding.resultRevision,
-        updatedAt: services.clock.now(), status: unavailable ? "failed" : "executor-completed",
-        value: {type: "void"}, references: [], observations: [],
-        ...(unavailable ? {error: {code: "UNAVAILABLE" as const,
-          message: "No typing start scheduled", retry: "never" as const}} : {}),
-      };
-    },
-  });
+  let issued: IssuedTypingLeaseAuthorization | undefined;
+  try {
+    const result = await services.executeChild({
+      index: 0, key: `${binding.requestId}:typing`,
+      argumentsDigest: createHash("sha256").update(canonicalJson(action)).digest("hex"),
+      dispatch: async () => {
+        validate();
+        let unavailable = false;
+        if (action.operation === "typing.begin") {
+          const ttl = Math.min(action.arguments.ttlMs, binding.expiresAt - services.clock.now(),
+            services.claim.leaseUntil - services.clock.now(), services.context.expiresAt - services.clock.now());
+          unavailable = ttl < 100 || !leases.begin(services.context.scope, services.context.generation,
+            ttl, binding.issueLease
+              ? {
+                  signal: services.signal,
+                  authorize: lease => issued = binding.issueLease!(lease),
+                }
+              : {signal: services.signal, validate});
+        } else leases.end({scope: services.context.scope, generation: services.context.generation});
+        return {
+          version: 1, requestId: binding.requestId, revision: binding.resultRevision,
+          updatedAt: services.clock.now(), status: unavailable ? "failed" : "executor-completed",
+          value: {type: "void"}, references: [], observations: [],
+          ...(unavailable ? {error: {code: "UNAVAILABLE" as const,
+            message: "No typing start scheduled", retry: "never" as const}} : {}),
+        };
+      },
+    });
+    issued?.confirmScheduled();
+    return result;
+  } catch (error) {
+    issued?.dispose();
+    throw error;
+  }
 }
 /** Public f0-services-2 module; host registration remains integration-owned. */
 export function createTypingFeatureModule(
