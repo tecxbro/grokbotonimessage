@@ -409,3 +409,60 @@ but not authoritative native poll/option IDs or provider ordering in the stored
 snapshot. Therefore conversational delivery is proven without management, while
 native management, exact attribution when those IDs are absent, and final/latest
 vote-state claims remain unavailable.
+
+## Typing diagnostics and reviewed-history availability (2026-09-12)
+
+The registered `fix-1` checkout began clean at
+`9daae7b02a30b2e27e55e4f869e026593b012734`, equal to `origin/fix-1` with zero
+divergence. Verification used Node 24.13.0, npm 10.9.2, and the locked Spectrum
+12.8.0 packages. The tested pre-evidence five-file candidate has sorted
+path+NUL+bytes+NUL SHA-256
+`5f8b6a5273564daf7367fb336a591c8c53f9a60c4e081ce00d29086455bf3957`.
+
+The production regression was changed before the constructor. Against the old
+production wiring, its provider-failure variant failed exactly one of 13 tests:
+the composition report callback contained `[]` instead of
+`["TYPING_PROVIDER_FAILURE"]`. After forwarding `dependencies.report` as the
+fourth `TypingLeases` argument, the same file passed 13/13. The case also proves
+the rejected start attempts `stopTyping`, a subsequent ordinary text send remains
+`provider-accepted` at the offline double boundary, shutdown stops typing before
+the SDK owner, and restart does not replay the lease.
+
+The branch-sensitive contract generator preserved `foundation.json` at Git blob
+`1710cd03377e131d8ccbce851a5936dc95fb7d3e`; only the candidate contract changed.
+Its generated digest is
+`2d86137449d36c28850b012ddcc7751e0f259dfd977e73368a3a3cfc342d36c2`
+across 50 source files. No action, event, or result schema changed.
+
+The reviewed-history script first completed an atomic dry run, then atomically
+published 12 exact ledger commits to
+`refs/tags/photon-reviewed/<lane>/<commit>`. A wildcard fetch retrieved all 12
+refs and `verify-ownership.mjs integration --history-only` passed with the
+recorded foundation and exact commit identities. `photon-v3-f0` was not moved.
+PR #1 was confirmed open, draft, and conflicting before it was closed with the
+supersession comment. Its remote head branch remains present; it was not merged
+or deleted.
+
+Fresh combined commands and actual results:
+
+| Command | Result |
+| --- | --- |
+| `npm ci --ignore-scripts --no-audit --no-fund` | passed; 185 packages installed |
+| `npm run typecheck --workspace=@grokbot/photon-features` | passed |
+| `npm run photon:build` | passed |
+| focused typing and poll production tests | 15/15 passed; zero failures, skips, cancellations, or todos |
+| `npm test` | 31/31 passed; zero failures or skips |
+| `npm run photon:test` | 64/64 passed; zero failures or skips |
+| `npm run photon:check` | passed; 3 schemas, 50 digest files, candidate digest `2d86137449d36c28850b012ddcc7751e0f259dfd977e73368a3a3cfc342d36c2` |
+| `npm run photon:test:integration` | 92 selected non-live files; 842/842 passed; zero failures, skips, cancellations, or todos |
+| `node packages/photon-features/scripts/generate-skill.mjs --check` | passed; 44 operations/examples, 4 assigned examples, 48 validated files, drift check true |
+| `node scripts/verify-ownership.mjs integration` | initial exact failure on the unrecorded `typing-binding.ts`; after adding only the binding and regression paths, passed with 502 checked paths, 12 required reviewed commits, 78 integration paths, 26 maintained paths, and 106 repair-assigned paths |
+| `npm pack --workspace=@grokbot/photon-features --dry-run --json --ignore-scripts` | passed; 351 entries, 341,466-byte package, 4,187,550 bytes unpacked |
+| final docs, ownership, and diff checks after this evidence update | passed; docs: 15 sources/9 lanes; ownership: 502 paths and 12 reviewed commits; `git diff --check`: clean |
+
+The full runner excludes the authorization-gated live suite. These results are
+local build, controlled-provider, assembled integration, and package-inventory
+evidence. They do not prove installation, activation, provider rendering,
+recipient-visible typing, delivery/read state, a live Grok task, or device
+behavior. No deployment, credential change, live message, or F0 tag update was
+performed.

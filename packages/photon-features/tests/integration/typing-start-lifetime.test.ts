@@ -536,7 +536,11 @@ async function waitForProductionResult(
   return result;
 }
 
-test("production composition uses the repaired binding and stops typing before its SDK owner", async (t) => {
+for (const rejectTypingStart of [false, true]) {
+test(
+  `production typing: ${rejectTypingStart ? "provider failure" : "success"}, diagnostics, replies, cleanup and restart`,
+  { timeout: 10_000 },
+  async (t) => {
   const root = await privateTestRoot(t, "typing-prod-");
   const runtimeDirectory = join(root, "runtime");
   await Promise.all([
@@ -607,6 +611,7 @@ test("production composition uses the repaired binding and stops typing before i
       starts++;
       calls.push("typing-start");
       typingStarted.resolve();
+      if (rejectTypingStart) throw new Error("OFFLINE_TYPING_START_REJECTED");
     },
     stopTyping: async () => {
       calls.push("typing-stop");
@@ -689,6 +694,27 @@ test("production composition uses the repaired binding and stops typing before i
     assert.equal(replies, 1);
     lookup.resolve(space);
     await typingStarted.promise;
+    await settle();
+    assert.equal(starts, 1);
+    if (rejectTypingStart) {
+      assert.deepEqual(
+        reports.filter(code => code === "TYPING_PROVIDER_FAILURE"),
+        ["TYPING_PROVIDER_FAILURE"],
+        "typing diagnostics must reach the production report callback",
+      );
+      assert.ok(calls.includes("typing-stop"), "failed start must attempt cleanup");
+      const replyAfterFailure = await waitForProductionResult(composition, {
+        version: 1,
+        contextId: composition.context.contextId,
+        idempotencyKey: "production-reply-after-typing-failure",
+        operation: "text.send",
+        arguments: { space: spaceRef, text: "reply survives typing failure" },
+      });
+      assert.equal(replyAfterFailure.status, "provider-accepted");
+      assert.equal(replies, 2);
+    } else {
+      assert.ok(!reports.includes("TYPING_PROVIDER_FAILURE"));
+    }
     await composition.runtime.stop();
     assert.ok(calls.indexOf("typing-stop") >= 0);
     assert.ok(calls.indexOf("typing-stop") < calls.indexOf("sdk-stop"));
@@ -708,3 +734,4 @@ test("production composition uses the repaired binding and stops typing before i
   }
   assert.ok(!reports.includes("TYPING_AUTHORIZATION_REJECTED"));
 });
+}

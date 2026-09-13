@@ -326,10 +326,18 @@ export async function createProductionComposition(
   });
   const binding = () => ({ scope, phone: configuration.provider.phone, nativeSpaceId: configuration.provider.conversationId });
   const request = (action: Action, services: { context: TrustedContext }) => requestIdentity(action, services.context);
-  const typing = new TypingLeases({ now }, async target => {
-    if (!sameScope(target, scope)) throw new Error("SCOPE_MISMATCH");
-    return owner.space(scope, configuration.provider.conversationId);
-  });
+  const typing = new TypingLeases(
+    { now },
+    async target => {
+      if (!sameScope(target, scope)) {
+        throw new Error("SCOPE_MISMATCH");
+      }
+
+      return owner.space(scope, configuration.provider.conversationId);
+    },
+    undefined, // Keep the existing default timers.
+    dependencies.report, // Forward typing diagnostics to the host.
+  );
   const legacyTypingBind: BindTypingExecution = (action, services) => ({
     requestId: requestIdentity(action, services.context),
     resultRevision: 0,

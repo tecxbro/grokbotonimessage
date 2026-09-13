@@ -294,3 +294,30 @@ receiver.
 
 No push, deployment, activation, approval change, provider send, live Grok task,
 iMessage tap, or device test occurred.
+
+## 2026-09-12 — typing diagnostics and CI history follow-up
+
+Started from the clean registered `fix-1` checkout at
+`9daae7b02a30b2e27e55e4f869e026593b012734`, equal to `origin/fix-1`. Kept the
+current conversational poll implementation and `HostTypingBinding`. The only
+runtime change passes the existing production `report` callback into
+`TypingLeases`; `process.ts` already renders those diagnostic codes on stderr.
+
+Extended the real production-composition regression with success and rejected
+typing-start variants. Before the constructor change, the new variant failed
+because the host callback received no `TYPING_PROVIDER_FAILURE`. After the change,
+both variants pass while retaining delayed lookup, independent replies, provider
+failure cleanup, ordered shutdown, and restart/no-replay coverage.
+
+Regenerated the branch-sensitive candidate contract under the exact pinned
+toolchain. The foundation manifest remained byte-identical, all three schemas
+remained unchanged, and the candidate digest advanced to `2d861374...d36c2` over
+50 files. Published the 12 exact reviewed commits as atomic namespaced historical
+tags, fetched them back, and passed the history-only verifier. Closed the older
+draft PR #1 without merging it or deleting its head branch.
+
+The first full ownership run then correctly rejected the previously unrecorded
+`packages/photon-features/src/host/typing-binding.ts`. Added only that exact host
+helper and its production regression to the integration ownership/inventory; the
+verifier then passed without wildcard or history-check changes. Fresh detailed
+command results and evidence boundaries are recorded in `TEST-EVIDENCE.md`.
