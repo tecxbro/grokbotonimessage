@@ -1,20 +1,14 @@
 {
-  "name": "grok-bot-cli",
-  "version": "0.2.2",
-  "description": "CLI for Grok Bot agents and groups: create, update, message, inspect threads, and automate cleanup",
+  "name": "grokbotonimessage",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Photon Feature Runtime workspace for Grokbot on iMessage",
   "type": "module",
-  "bin": {
-    "gbot": "src/cli.js",
-    "grok-bot": "src/cli.js"
-  },
   "engines": {
-    "node": ">=18"
+    "node": ">=24.13.0 <25"
   },
   "scripts": {
-    "changeset": "changeset",
-    "gbot": "node src/cli.js",
-    "release": "changeset publish",
-    "test": "node --test test/*.test.js",
+    "test": "npm run photon:test",
     "photon:build": "npm run build --workspace=@grokbot/photon-features",
     "photon:test": "npm run test --workspace=@grokbot/photon-features",
     "photon:check": "npm run check --workspace=@grokbot/photon-features",
@@ -33,28 +27,6 @@
   },
   "author": "tecxbro (https://github.com/tecxbro)",
   "license": "MIT",
-  "keywords": [
-    "grok",
-    "grok-bot",
-    "grokbot",
-    "gbot",
-    "cursor",
-    "ai-agents",
-    "automation",
-    "terminal",
-    "cli"
-  ],
-  "files": [
-    "src",
-    "README.md",
-    "LICENSE"
-  ],
-  "devDependencies": {
-    "@changesets/cli": "3.0.1"
-  },
-  "dependencies": {
-    "spectrum-ts": "12.8.0"
-  },
   "workspaces": [
     "packages/photon-features"
   ],

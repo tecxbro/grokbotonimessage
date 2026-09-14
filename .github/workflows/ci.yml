@@ -1,4 +1,4 @@
-name: Package CI
+name: Photon workspace CI
 
 on:
   push:
@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  package:
+  photon:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -23,18 +23,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "24"
+          node-version: "24.13.0"
 
-      - name: Test
+      - name: Pin npm
+        run: npm install --global npm@10.9.2
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Test Photon workspace
         run: npm test
 
-      - name: Lint the package
-        run: npx --yes publint@0.3.24
-
-      - name: Pack and smoke-test the executable
-        shell: bash
-        run: |
-          package_file=$(npm pack --json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>process.stdout.write(JSON.parse(s)[0].filename))")
-          install_root=$(mktemp -d)
-          npm install --global --prefix "$install_root" "./$package_file"
-          "$install_root/bin/gbot" --help
+      - name: Check generated contracts
+        run: npm run photon:check

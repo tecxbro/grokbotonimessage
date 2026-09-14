@@ -10,7 +10,8 @@ Use [DEPLOYMENT.md](DEPLOYMENT.md) for owner setup and lifecycle;
 [44-operation inventory](examples/production-inventory.json) records handlers,
 SDK calls, construction, prerequisites and separate evidence tiers. Generated
 [profiles](examples/profiles/messaging.json) require explicit owner permission
-selection and enable no operations by default.
+selection and enable no operations by default. The root workspace is private and
+does not contain the legacy `gbot`/`grok-bot` CLI.
 
 Native poll management (four operations), cold original-card update-session
 restoration and cold reaction-handle restoration remain upstream public-SDK

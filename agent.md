@@ -39,7 +39,7 @@ Use Node 24.13.0 and npm 10.9.2 on PATH; exact dependency versions and compatibi
 
 | Check | Command from repository root |
 | --- | --- |
-| Existing CLI tests | `npm test` |
+| Workspace tests | `npm test` |
 | Package compilation and public SDK probes | `npm run photon:build` |
 | F0 foundation tests | `npm run photon:test` |
 | Schema and foundation digest drift | `npm run photon:check` |

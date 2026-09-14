@@ -33,7 +33,7 @@ Document exported APIs and authorization, ordering, retries, cancellation, unkno
 Run focused checks then typecheck/build, existing regressions, ownership/docs and manual diff review. Missing/skipped required checks cannot PASS. Record tested HEAD and dirty content identity. F0 is separate from full-product verification. Tag photon-v3-f0 only after checks pass, never move it, never embed a future commit SHA in its commit.
 
 ## Operating boundary
-One existing Grok orchestrator and workers; one runtime credential/connection owner; one durable inbox/outbox. Inbound transport, outbound provider and pointer-only wake are distinct. No new model, Grok API, transcript polling, live sends, credentials, installation, activation, hosting changes or provisioning. Runtime/test outputs stay under ignored .photon-local/. Root CLI behavior stays intact.
+One existing Grok orchestrator and workers; one runtime credential/connection owner; one durable inbox/outbox. Inbound transport, outbound provider and pointer-only wake are distinct. No new model, Grok API, transcript polling, live sends, credentials, installation, activation, hosting changes or provisioning. Runtime/test outputs stay under ignored .photon-local/. The legacy root `gbot`/`grok-bot` CLI is not part of this workspace; the supported command-line surface is the Photon package's `grok-photon` tool.
 
 The preceding restrictions govern development and development-time tests. In
 particular, never initiate unsolicited messages as a test. They do not instruct

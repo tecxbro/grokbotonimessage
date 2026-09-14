@@ -6,7 +6,7 @@ Run from the repository root with Node 24.13.0 and npm 10.9.2 on PATH:
 node packages/photon-features/tests/lanes/wt-09/verify.mjs
 ```
 
-This captures a hashed copy of the observed sources in a temporary directory, runs a clean dependency install there, builds, runs the original CLI and foundation checks, executes WT-09, and validates generated skill/examples and the npm package boundary. Logs and provenance are written only under `docs/photon-features/evidence/wt-09/`. A failing test causes a nonzero exit. The source checkout, branches, production dependencies and other lanes are not modified. Temporary copies are not Git worktrees or assembled candidates.
+This captures a hashed copy of the observed sources in a temporary directory, runs a clean dependency install there, builds, runs the Photon workspace and foundation checks, executes WT-09, and validates generated skill/examples and the package boundary. Logs and provenance are written only under `docs/photon-features/evidence/wt-09/`. A failing test causes a nonzero exit. The source checkout, branches, production dependencies and other lanes are not modified. Temporary copies are not Git worktrees or assembled candidates.
 
 For final verification, WT-00 must supply a candidate SHA and make that exact candidate available in the existing checkout. Set `WT09_CANDIDATE_SHA` to that SHA before running the same command. The runner refuses a HEAD mismatch or non-WT-09 dirty changes; it never switches branches. A candidate SHA by itself does not establish assembly or live success. The report must still evaluate the operation inventory and every test result.
 
