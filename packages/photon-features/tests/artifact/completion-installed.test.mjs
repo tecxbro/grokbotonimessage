@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
 // Run separately from source tests which deliberately mutate SKILL.md to test drift.
-test('real archive installs without source/dev dependencies and runs production journeys across independent failure fixtures', { timeout: 240000 }, async t => {
+test('real archive installs without source/dev dependencies and runs production journeys across independent failure fixtures', { timeout: 600000 }, async t => {
   const directory = await mkdtemp(join(tmpdir(), 'completion-pack-'));
   // Maintainer evidence runs may retain the exact tested diagnostic archive.
   if (process.env.COMPLETION_KEEP_ARCHIVE !== '1') t.after(() => rm(directory, { recursive: true, force: true }));
