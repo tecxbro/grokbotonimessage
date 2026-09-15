@@ -2,7 +2,7 @@
 
 WT-08 implements the local CLI, persistent operating skill, schema-validated examples and inactive distribution tooling on the F0 foundation. Integration supplies runtime composition, the package/bin registration and the aggregate test command. This checkout is an assembled local candidate, not an approved release.
 
-Read [SKILL.md](SKILL.md) for the operator contract and all 44 registry-derived action examples. Read [INSTALL.md](INSTALL.md) for staging, activation prerequisites and rollback. The `grok-photon` commands belong to this package; they are separate from the Photon account-management CLI.
+Read [SKILL.md](SKILL.md) for the operator contract and all 44 registry-derived action examples. Read [INSTALL.md](INSTALL.md) for staging, activation prerequisites and rollback. The `grok-photon` commands belong to this package. The root workspace is private and no longer contains the legacy `gbot`/`grok-bot` CLI.
 
 From the repository root with Node **24.13.0** and npm **10.9.2** on PATH:
 

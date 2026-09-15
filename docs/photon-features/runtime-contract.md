@@ -1,7 +1,7 @@
 # Runtime contract
 
 ## Ownership
-One Grok orchestrator and its workers invoke a deterministic local package. One injected host owns authenticated Photon provider connections, ingress, durable store and outbox driver. The program contains no Grok API usage or transcript polling loop. Root gbot/grok-bot remain unchanged.
+One Grok orchestrator and its workers invoke a deterministic local package. One injected host owns authenticated Photon provider connections, ingress, durable store and outbox driver. The program contains no Grok API usage or transcript polling loop. The legacy root `gbot`/`grok-bot` CLI is not part of this workspace; the package-local `grok-photon` tool is the supported command-line surface.
 
 ## Invocation
 Use [execution contract](../contracts/execution.md). JSON is data only, with a server-resolved context and independently authenticated principal. execute/status operate on durable requests; capabilities/doctor report distinct readiness dimensions; durable work is retrieved/claimed/heartbeated/acked separately from pointer-only wake. The `LocalExecutor` contract owns state authorization and receives explicit registered features before startup.
