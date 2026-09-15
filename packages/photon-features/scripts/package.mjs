@@ -24,12 +24,6 @@ export const packagePayloadDirectories = Object.freeze([
   Object.freeze({ source: 'examples', archive: 'examples/' }),
   Object.freeze({ source: 'src/state/migrations', archive: 'src/state/migrations/' }),
 ]);
-export const packagePayloadDirectories = Object.freeze([
-  Object.freeze({ source: 'dist/src', archive: 'dist/src/' }),
-  Object.freeze({ source: 'schemas', archive: 'schemas/' }),
-  Object.freeze({ source: 'examples/wt-08', archive: 'examples/wt-08/' }),
-  Object.freeze({ source: 'src/state/migrations', archive: 'src/state/migrations/' }),
-]);
 const safePath = name => typeof name === 'string' && name.length < 500 && !isAbsolute(name) && !name.includes('\\') && name.split('/').every(p => p && p !== '.' && p !== '..') && !/(^|\/)(\.env(?:\..*)?|\.npmrc|\.git|credentials?|.*\.(sqlite|db|pem|key)|runtime\.sock)(\/|$)/i.test(name);
 export function encodeArchive(files, metadata) {
   const entries = Object.entries(files).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([path, value]) => {
