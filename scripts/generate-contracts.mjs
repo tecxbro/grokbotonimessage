@@ -26,7 +26,7 @@ const hash = createHash('sha256');
 for (const path of files) hash.update(path+'\0').update(readFileSync(resolve(root,path))).update('\0');
 const digest = hash.digest('hex');
 const branch=execFileSync('git',['-C',root,'branch','--show-current'],{encoding:'utf8'}).trim();
-const candidateBranch=branch==='photon-v3/integration'||branch==='fix-1'||/^repair\/fix-1-[a-e]$/.test(branch);
+const candidateBranch=branch==='main'||branch==='photon-v3/integration'||branch==='fix-1'||/^repair\/fix-1-[a-e]$/.test(branch);
 const path=resolve(root,candidateBranch?'docs/worktrees/integration/candidate-contract.json':'docs/worktrees/foundation.json');
 const foundation=JSON.parse(readFileSync(path));
 if(check) {if(foundation.contractDigest!==digest||foundation.digestFileCount!==undefined&&foundation.digestFileCount!==files.length)throw new Error('CONTRACT_DIGEST_DRIFT');}
