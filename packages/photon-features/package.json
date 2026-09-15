@@ -7,7 +7,9 @@
     "node": ">=24.13.0 <25"
   },
   "bin": {
-    "grok-photon": "dist/src/cli/main.js"
+    "grok-photon": "dist/src/cli/main.js",
+    "grok-photon-host": "dist/src/host/process.js",
+    "grok-photon-task": "dist/src/host/task-launcher.js"
   },
   "exports": {
     ".": "./dist/src/index.js",
@@ -22,8 +24,16 @@
   },
   "files": [
     "dist/src",
+    "bin",
     "schemas",
-    "src/state/migrations"
+    "src/state/migrations",
+    "SKILL.md",
+    "DEPLOYMENT.md",
+    "INSTALL.md",
+    "README.md",
+    "scripts",
+    "examples",
+    "npm-shrinkwrap.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

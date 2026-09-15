@@ -1,0 +1,76 @@
+name: Photon assembled integration
+
+on:
+  push:
+    paths:
+      - 'packages/photon-features/**'
+      - 'scripts/**'
+      - 'docs/worktrees/**'
+      - 'docs/photon-features/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/photon-*.yml'
+  pull_request:
+    paths:
+      - 'packages/photon-features/**'
+      - 'scripts/**'
+      - 'docs/worktrees/**'
+      - 'docs/photon-features/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/photon-*.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  assembled-integration:
+    name: Assembled integration (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.13.0'
+          cache: npm
+      - name: Pin npm 10.9.2
+        run: npm install --global npm@10.9.2
+      - name: Verify pinned toolchain
+        run: |
+          test "$(node --version)" = "v24.13.0"
+          test "$(npm --version)" = "10.9.2"
+      - name: Verify immutable ownership history
+        run: node scripts/verify-ownership.mjs integration --history-only
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Typecheck Photon features
+        run: npm run typecheck --workspace=@grokbot/photon-features
+      - name: Existing CLI tests
+        run: npm test
+      - name: Photon foundation tests
+        run: npm run photon:test
+      - name: Generated contract drift
+        run: npm run photon:check
+      - name: Assembled offline integration including install and rollback
+        run: npm run photon:test:integration
+      - name: Generated skill drift
+        run: node packages/photon-features/scripts/generate-skill.mjs --check
+      - name: Configuration, inventory and standalone dependency lock drift
+        run: |
+          node packages/photon-features/scripts/generate-configuration.mjs --check
+          node packages/photon-features/scripts/generate-production-inventory.mjs --check
+          node packages/photon-features/scripts/prepare-npm-lock.mjs --check
+      - name: Actual installed archive production journeys
+        run: npm run photon:test:installed
+      - name: Integration documentation
+        run: node scripts/verify-docs.mjs integration
+      - name: Exact integration ownership
+        run: node scripts/verify-ownership.mjs integration
+      - name: Package dry run
+        run: npm pack --workspace=@grokbot/photon-features --dry-run --json --ignore-scripts

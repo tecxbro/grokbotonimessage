@@ -83,7 +83,7 @@ export function createFeatureModule(dependencies: NativeDependencies): FeatureMo
         return fn();
       };
       if (action.operation === "space.create") {
-        await createSpace(action, services, binding, result, dispatch);
+        await createSpace(action, services, binding, result, dispatch, dependencies.registerCreatedSpace);
       } else {
         const ref = "space" in action.arguments ? action.arguments.space :
           { version: 1 as const, kind: "space" as const, id: services.context.scope.spaceId, scope: services.context.scope };
@@ -192,11 +192,13 @@ export function createFeatureModule(dependencies: NativeDependencies): FeatureMo
 export const createNativeModule = createFeatureModule;
 
 export interface PublicNativeDependencies extends NativeDependencies {
+  registerCreatedSpaceForExecution?: (space: import("./sdk.js").NativeSpace, services: PublicExecutionServices) => ResourceRef;
+  retainAvatarForExecution?: (image: { bytes: Uint8Array; mimeType: string }, services: PublicExecutionServices) => Promise<import("./sdk.js").StoredMedia>;
   /** Host resolvers backed by the same scoped SDK owner as `binding`. */
   resources: Pick<ResourceResolver, "space" | "message">;
 }
 
-function publicServiceAdapter(
+export function publicServiceAdapter(
   services: PublicExecutionServices,
   dependencies: PublicNativeDependencies,
   signal: AbortSignal,
@@ -244,15 +246,21 @@ function publicServiceAdapter(
 export function createPublicFeatureModule(
   dependencies: PublicNativeDependencies,
 ): PublicFeatureModule<(typeof nativeOperations)[number]> {
-  const legacy = createNativeModule(dependencies);
-  const handlers = Object.fromEntries(legacy.handlers.map(handler => [
-    handler.operation,
-    (action: Action, services: PublicExecutionServices) => services.executeChild({
-      index: 0,
-      key: `native:${action.operation}`,
-      argumentsDigest: createHash("sha256").update(canonicalJson(action)).digest("hex"),
-      dispatch: signal => handler.execute(action, publicServiceAdapter(services, dependencies, signal)),
-    }),
+  const handlers = Object.fromEntries(nativeOperations.map(operation => [
+    operation,
+    (action: Action, services: PublicExecutionServices) => {
+      const legacy = createNativeModule({ ...dependencies,
+        registerCreatedSpace: dependencies.registerCreatedSpaceForExecution
+          ? space => dependencies.registerCreatedSpaceForExecution!(space, services) : dependencies.registerCreatedSpace,
+        retainAvatar: dependencies.retainAvatarForExecution
+          ? image => dependencies.retainAvatarForExecution!(image, services) : dependencies.retainAvatar });
+      const handler = legacy.handlers.find(handler => handler.operation === operation)!;
+      return services.executeChild({
+        index: 0, key: `native:${operation}`,
+        argumentsDigest: createHash("sha256").update(canonicalJson(action)).digest("hex"),
+        dispatch: signal => handler.execute(action, publicServiceAdapter(services, dependencies, signal)),
+      });
+    },
   ])) as PublicFeatureModule<(typeof nativeOperations)[number]>["handlers"];
   return { id: "native-imessage-v1", owner: "wt-07", handlers };
 }

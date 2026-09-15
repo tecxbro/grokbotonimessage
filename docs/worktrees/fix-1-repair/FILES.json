@@ -1,0 +1,629 @@
+{
+  "version": 1,
+  "repairBase": "a3c36b3a04208a022fa7f994f1580b54223dc2c9",
+  "coordinatorWorktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1",
+  "policy": "Exact files only. Historical manifests remain evidence. No shared-file writes by workers. Request additional exact paths from coordinator. Worker handoffs may append their own A-E document only after preparation.",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "owner": "coordinator",
+      "justification": "Repair authority and exact independent worker delegations"
+    },
+    {
+      "path": "docs/worktrees/ownership.json",
+      "owner": "coordinator",
+      "justification": "Repair authority and exact independent worker delegations"
+    },
+    {
+      "path": "docs/worktrees/worktree-map.json",
+      "owner": "coordinator",
+      "justification": "Repair authority and exact independent worker delegations"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/ASSIGNMENT.md",
+      "owner": "coordinator",
+      "justification": "Repair authority and exact independent worker delegations"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/FILES.json",
+      "owner": "coordinator",
+      "justification": "Repair authority and exact independent worker delegations"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/INTERFACES.md",
+      "owner": "coordinator",
+      "justification": "Repair authority and exact independent worker delegations"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/typing-start-lifetime.md",
+      "owner": "coordinator",
+      "justification": "Deferred typing authorization evidence retained with the repair record"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/A.md",
+      "owner": "A",
+      "justification": "Coordinator prepares prompt; assigned worker appends its own evidence and handoff after preparation",
+      "preparationAuthor": "coordinator"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/B.md",
+      "owner": "B",
+      "justification": "Coordinator prepares prompt; assigned worker appends its own evidence and handoff after preparation",
+      "preparationAuthor": "coordinator"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/C.md",
+      "owner": "C",
+      "justification": "Coordinator prepares prompt; assigned worker appends its own evidence and handoff after preparation",
+      "preparationAuthor": "coordinator"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/D.md",
+      "owner": "D",
+      "justification": "Coordinator prepares prompt; assigned worker appends its own evidence and handoff after preparation",
+      "preparationAuthor": "coordinator"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/E.md",
+      "owner": "E",
+      "justification": "Coordinator prepares prompt; assigned worker appends its own evidence and handoff after preparation",
+      "preparationAuthor": "coordinator"
+    },
+    {
+      "path": "docs/worktrees/integration/ARCHITECTURE.md",
+      "owner": "coordinator",
+      "justification": "Shared preparation architecture, source provenance, generated digest and fresh evidence"
+    },
+    {
+      "path": "docs/worktrees/integration/FILES.json",
+      "owner": "coordinator",
+      "justification": "Shared preparation architecture, source provenance, generated digest and fresh evidence"
+    },
+    {
+      "path": "docs/worktrees/integration/ACCEPTANCE.md",
+      "owner": "coordinator",
+      "justification": "Shared preparation architecture, source provenance, generated digest and fresh evidence"
+    },
+    {
+      "path": "docs/worktrees/integration/WORKLOG.md",
+      "owner": "coordinator",
+      "justification": "Shared preparation architecture, source provenance, generated digest and fresh evidence"
+    },
+    {
+      "path": "docs/worktrees/integration/SOURCES.md",
+      "owner": "coordinator",
+      "justification": "Shared preparation architecture, source provenance, generated digest and fresh evidence"
+    },
+    {
+      "path": "docs/worktrees/integration/source-lock.json",
+      "owner": "coordinator",
+      "justification": "Shared preparation architecture, source provenance, generated digest and fresh evidence"
+    },
+    {
+      "path": "docs/worktrees/integration/TEST-EVIDENCE.md",
+      "owner": "coordinator",
+      "justification": "Shared preparation architecture, source provenance, generated digest and fresh evidence"
+    },
+    {
+      "path": "docs/worktrees/integration/HANDOFF.md",
+      "owner": "coordinator",
+      "justification": "Shared preparation architecture, source provenance, generated digest and fresh evidence"
+    },
+    {
+      "path": "docs/worktrees/integration/CHANGE-REQUESTS.md",
+      "owner": "coordinator",
+      "justification": "Shared preparation architecture, source provenance, generated digest and fresh evidence"
+    },
+    {
+      "path": "docs/worktrees/integration/candidate-contract.json",
+      "owner": "coordinator",
+      "justification": "Shared preparation architecture, source provenance, generated digest and fresh evidence"
+    },
+    {
+      "path": "docs/contracts/execution.md",
+      "owner": "coordinator",
+      "justification": "Document additive repair interfaces and trust boundaries"
+    },
+    {
+      "path": "docs/contracts/receipts.md",
+      "owner": "coordinator",
+      "justification": "Document additive repair interfaces and trust boundaries"
+    },
+    {
+      "path": "docs/contracts/operations.md",
+      "owner": "coordinator",
+      "justification": "Document additive repair interfaces and trust boundaries"
+    },
+    {
+      "path": "packages/photon-features/src/contracts/protocol.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/contracts/services.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/state/ports.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/host/protocol.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/host/configuration.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/host/production.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/host/capabilities.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/host/incoming-resources.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/host/poll-correlations.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/admission.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/submission.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/local-server.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/execution-services.ts",
+      "owner": "coordinator",
+      "justification": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "scripts/generate-contracts.mjs",
+      "owner": "coordinator",
+      "justification": "Generated candidate maintenance, cross-feature integration and regression evidence; final skill regeneration only after D"
+    },
+    {
+      "path": "packages/photon-features/scripts/generate-skill.mjs",
+      "owner": "coordinator",
+      "justification": "Generated candidate maintenance, cross-feature integration and regression evidence; final skill regeneration only after D"
+    },
+    {
+      "path": "packages/photon-features/src/integration/assembly.ts",
+      "owner": "coordinator",
+      "justification": "Generated candidate maintenance, cross-feature integration and regression evidence; final skill regeneration only after D"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/repair-preparation.test.ts",
+      "owner": "coordinator",
+      "justification": "Generated candidate maintenance, cross-feature integration and regression evidence; final skill regeneration only after D"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/repair-sdk-contract.test.ts",
+      "owner": "coordinator",
+      "justification": "Generated candidate maintenance, cross-feature integration and regression evidence; final skill regeneration only after D"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/production-capabilities.test.ts",
+      "owner": "coordinator",
+      "justification": "Generated candidate maintenance, cross-feature integration and regression evidence; final skill regeneration only after D"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/production-host.test.ts",
+      "owner": "coordinator",
+      "justification": "Generated candidate maintenance, cross-feature integration and regression evidence; final skill regeneration only after D"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/production-resources.test.ts",
+      "owner": "coordinator",
+      "justification": "Generated candidate maintenance, cross-feature integration and regression evidence; final skill regeneration only after D"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/repair-production-journey.test.ts",
+      "owner": "coordinator",
+      "justification": "Generated candidate maintenance, cross-feature integration and regression evidence; final skill regeneration only after D"
+    },
+    {
+      "path": "packages/photon-features/src/adapters/transport/event-source.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/adapters/transport/message-events.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/adapters/transport/snapshot.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/adapters/transport/webhook-ingress.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/adapters/state/sqlite.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/state/sqlite.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/inbound/normalize.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/inbound/router.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/inbound/recovery.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/inbound/receipt-observer.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/inbound/receipt-reconcile.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/inbound/batching.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/inbound/pump.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/typing/operations.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/typing/leases.ts",
+      "owner": "A",
+      "justification": "Failures 1,2,7,9: single receipt-aware ingress, identity extraction, typing declarations and storage-query pagination"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-02/helpers.ts",
+      "owner": "A",
+      "justification": "Focused ingress/typing/pagination regressions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-02/inbound.test.ts",
+      "owner": "A",
+      "justification": "Focused ingress/typing/pagination regressions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-02/integration.test.ts",
+      "owner": "A",
+      "justification": "Focused ingress/typing/pagination regressions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-02/regression.test.ts",
+      "owner": "A",
+      "justification": "Focused ingress/typing/pagination regressions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-02/sdk-contract.test.ts",
+      "owner": "A",
+      "justification": "Focused ingress/typing/pagination regressions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-02/transport.test.ts",
+      "owner": "A",
+      "justification": "Focused ingress/typing/pagination regressions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-02/typing.test.ts",
+      "owner": "A",
+      "justification": "Focused ingress/typing/pagination regressions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-02/unit.test.ts",
+      "owner": "A",
+      "justification": "Focused ingress/typing/pagination regressions"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/repair-ingress.test.ts",
+      "owner": "A",
+      "justification": "Focused ingress/typing/pagination regressions"
+    },
+    {
+      "path": "packages/photon-features/src/features/polls/identity.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/src/features/polls/module.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/src/features/polls/operations.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/src/features/polls/reconciliation.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/src/features/polls/reducer.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/src/features/polls/sdk.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-05/integration-contract.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-05/integration.test.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-05/operations.test.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-05/reducer.test.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-05/regression.test.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-05/sdk-contract.test.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-05/support.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-05/tsconfig.json",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-05/unit.test.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/repair-polls.test.ts",
+      "owner": "B",
+      "justification": "Failures 3,4: poll management and authoritative correlation"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/configuration.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/interaction-adapter.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/module.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/operations.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/reducer.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/sdk.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/session-codec.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/state.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/update-ordering.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-06/fixture.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-06/integration.test.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-06/interactions.test.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-06/operations.test.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-06/regression.test.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-06/sdk-contract.test.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-06/sdk.test.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-06/session-codec.test.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-06/tsconfig.json",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-06/unit.test.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/repair-cards.test.ts",
+      "owner": "C",
+      "justification": "Failures 5,6: admission-bound updates, original sessions and authenticated interactions"
+    },
+    {
+      "path": "packages/photon-features/src/cli/commands.ts",
+      "owner": "D",
+      "justification": "Failures 8,11: authenticated media.import CLI and manual messaging decision rules; generated section coordinator-only after handoff"
+    },
+    {
+      "path": "packages/photon-features/src/cli/local-client.ts",
+      "owner": "D",
+      "justification": "Failures 8,11: authenticated media.import CLI and manual messaging decision rules; generated section coordinator-only after handoff"
+    },
+    {
+      "path": "packages/photon-features/src/cli/main.ts",
+      "owner": "D",
+      "justification": "Failures 8,11: authenticated media.import CLI and manual messaging decision rules; generated section coordinator-only after handoff"
+    },
+    {
+      "path": "packages/photon-features/src/cli/output.ts",
+      "owner": "D",
+      "justification": "Failures 8,11: authenticated media.import CLI and manual messaging decision rules; generated section coordinator-only after handoff"
+    },
+    {
+      "path": "packages/photon-features/SKILL.md",
+      "owner": "D",
+      "justification": "Failures 8,11: authenticated media.import CLI and manual messaging decision rules; generated section coordinator-only after handoff"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-08/repair-media-import.test.ts",
+      "owner": "D",
+      "justification": "Failures 8,11: authenticated media.import CLI and manual messaging decision rules; generated section coordinator-only after handoff"
+    },
+    {
+      "path": ".github/workflows/photon-foundation.yml",
+      "owner": "E",
+      "justification": "Failure 10: immutable historical baseline retrieval and checkout-independent CI validation"
+    },
+    {
+      "path": ".github/workflows/photon-integration.yml",
+      "owner": "E",
+      "justification": "Failure 10: immutable historical baseline retrieval and checkout-independent CI validation"
+    },
+    {
+      "path": "scripts/verify-ownership.mjs",
+      "owner": "E",
+      "justification": "Failure 10: immutable historical baseline retrieval and checkout-independent CI validation"
+    },
+    {
+      "path": "scripts/verify-worktree.mjs",
+      "owner": "E",
+      "justification": "Failure 10: immutable historical baseline retrieval and checkout-independent CI validation"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-00/repair-ci-history.test.ts",
+      "owner": "E",
+      "justification": "Failure 10: immutable historical baseline retrieval and checkout-independent CI validation"
+    },
+    {
+      "path": "packages/photon-features/src/contracts/events.ts",
+      "owner": "coordinator",
+      "justification": "Poll-answer maintenance: internal conversational event contract"
+    },
+    {
+      "path": "packages/photon-features/schemas/event.schema.json",
+      "owner": "coordinator",
+      "justification": "Poll-answer maintenance: generated event contract"
+    },
+    {
+      "path": "packages/photon-features/src/features/polls/conversational-answer.ts",
+      "owner": "coordinator",
+      "justification": "Poll-answer maintenance: bounded public PollOption projection"
+    },
+    {
+      "path": "packages/photon-features/tests/e2e/inbound-events.test.ts",
+      "owner": "coordinator",
+      "justification": "Poll-answer maintenance: assembled inbound event regression"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/poll-answer-journey.test.ts",
+      "owner": "coordinator",
+      "justification": "Poll-answer maintenance: default production work-path acceptance"
+    }
+  ],
+  "preparationCommit": "513ede497a96bd9c30cc597faee868e201ea3456"
+}

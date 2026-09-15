@@ -8474,6 +8474,1006 @@
         },
         "type": {
           "type": "string",
+          "const": "poll-answer"
+        },
+        "senderId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+        },
+        "optionText": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "question": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selected": {
+          "type": "boolean"
+        },
+        "answerText": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1600
+        },
+        "captureId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+        },
+        "correlation": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "poll": {
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": "number",
+                      "const": 1
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                    },
+                    "scope": {
+                      "type": "object",
+                      "properties": {
+                        "projectId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "const": "imessage"
+                        },
+                        "accountId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                        },
+                        "lineId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                        },
+                        "spaceId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                        }
+                      },
+                      "required": [
+                        "projectId",
+                        "provider",
+                        "accountId",
+                        "lineId",
+                        "spaceId"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "kind": {
+                      "type": "string",
+                      "const": "poll"
+                    },
+                    "messageId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                    }
+                  },
+                  "required": [
+                    "version",
+                    "id",
+                    "scope",
+                    "kind",
+                    "messageId"
+                  ],
+                  "additionalProperties": false
+                },
+                "option": {
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": "number",
+                      "const": 1
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                    },
+                    "scope": {
+                      "type": "object",
+                      "properties": {
+                        "projectId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "const": "imessage"
+                        },
+                        "accountId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                        },
+                        "lineId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                        },
+                        "spaceId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                        }
+                      },
+                      "required": [
+                        "projectId",
+                        "provider",
+                        "accountId",
+                        "lineId",
+                        "spaceId"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "kind": {
+                      "type": "string",
+                      "const": "poll-option"
+                    },
+                    "pollId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                    }
+                  },
+                  "required": [
+                    "version",
+                    "id",
+                    "scope",
+                    "kind",
+                    "pollId"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "poll",
+                "option"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "eventId",
+        "direction",
+        "scope",
+        "occurredAt",
+        "receivedAt",
+        "ordering",
+        "targets",
+        "type",
+        "senderId",
+        "optionText",
+        "question",
+        "selected",
+        "answerText",
+        "captureId",
+        "correlation"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "number",
+          "const": 1
+        },
+        "eventId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+        },
+        "providerEventId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "inbound",
+            "outbound",
+            "system"
+          ]
+        },
+        "scope": {
+          "type": "object",
+          "properties": {
+            "projectId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+            },
+            "provider": {
+              "type": "string",
+              "const": "imessage"
+            },
+            "accountId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+            },
+            "lineId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+            },
+            "spaceId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+            }
+          },
+          "required": [
+            "projectId",
+            "provider",
+            "accountId",
+            "lineId",
+            "spaceId"
+          ],
+          "additionalProperties": false
+        },
+        "occurredAt": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "receivedAt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ordering": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+            },
+            "sequence": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "revision": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          "required": [
+            "source"
+          ],
+          "additionalProperties": false
+        },
+        "targets": {
+          "maxItems": 128,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  },
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "provider": {
+                        "type": "string",
+                        "const": "imessage"
+                      },
+                      "accountId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "lineId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "spaceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      }
+                    },
+                    "required": [
+                      "projectId",
+                      "provider",
+                      "accountId",
+                      "lineId",
+                      "spaceId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "space"
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "scope",
+                  "kind"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  },
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "provider": {
+                        "type": "string",
+                        "const": "imessage"
+                      },
+                      "accountId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "lineId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "spaceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      }
+                    },
+                    "required": [
+                      "projectId",
+                      "provider",
+                      "accountId",
+                      "lineId",
+                      "spaceId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "message"
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "scope",
+                  "kind"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  },
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "provider": {
+                        "type": "string",
+                        "const": "imessage"
+                      },
+                      "accountId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "lineId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "spaceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      }
+                    },
+                    "required": [
+                      "projectId",
+                      "provider",
+                      "accountId",
+                      "lineId",
+                      "spaceId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "attachment"
+                  },
+                  "messageId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "scope",
+                  "kind",
+                  "messageId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  },
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "provider": {
+                        "type": "string",
+                        "const": "imessage"
+                      },
+                      "accountId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "lineId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "spaceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      }
+                    },
+                    "required": [
+                      "projectId",
+                      "provider",
+                      "accountId",
+                      "lineId",
+                      "spaceId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "reaction"
+                  },
+                  "messageId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "scope",
+                  "kind",
+                  "messageId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  },
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "provider": {
+                        "type": "string",
+                        "const": "imessage"
+                      },
+                      "accountId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "lineId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "spaceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      }
+                    },
+                    "required": [
+                      "projectId",
+                      "provider",
+                      "accountId",
+                      "lineId",
+                      "spaceId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "poll"
+                  },
+                  "messageId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "scope",
+                  "kind",
+                  "messageId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  },
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "provider": {
+                        "type": "string",
+                        "const": "imessage"
+                      },
+                      "accountId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "lineId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "spaceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      }
+                    },
+                    "required": [
+                      "projectId",
+                      "provider",
+                      "accountId",
+                      "lineId",
+                      "spaceId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "poll-option"
+                  },
+                  "pollId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "scope",
+                  "kind",
+                  "pollId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  },
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "provider": {
+                        "type": "string",
+                        "const": "imessage"
+                      },
+                      "accountId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "lineId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "spaceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      }
+                    },
+                    "required": [
+                      "projectId",
+                      "provider",
+                      "accountId",
+                      "lineId",
+                      "spaceId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "card"
+                  },
+                  "messageId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "scope",
+                  "kind",
+                  "messageId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  },
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "provider": {
+                        "type": "string",
+                        "const": "imessage"
+                      },
+                      "accountId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "lineId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "spaceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      }
+                    },
+                    "required": [
+                      "projectId",
+                      "provider",
+                      "accountId",
+                      "lineId",
+                      "spaceId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "card-session"
+                  },
+                  "cardId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "scope",
+                  "kind",
+                  "cardId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                  },
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "provider": {
+                        "type": "string",
+                        "const": "imessage"
+                      },
+                      "accountId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "lineId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      },
+                      "spaceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                      }
+                    },
+                    "required": [
+                      "projectId",
+                      "provider",
+                      "accountId",
+                      "lineId",
+                      "spaceId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "stream"
+                  },
+                  "generation": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "expiresAt": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "scope",
+                  "kind",
+                  "generation",
+                  "expiresAt"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "type": {
+          "type": "string",
           "const": "group"
         },
         "change": {

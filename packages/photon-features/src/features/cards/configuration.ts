@@ -11,7 +11,11 @@ export interface CardTemplate {
   extension?: { appName: string; teamId: string; extensionBundleId: string; appStoreId?: number };
   live?: { installedExtensionVerified: boolean; evidence: string };
   /** Universal app() has no layout input. The real backend must map updates to a URL. */
-  updateUrl?: (layout: CardLayout, context: TrustedContext) => Promise<string>;
+  updateUrl?: (layout: CardLayout, context: TrustedContext,
+    media?: import('../../contracts/services.js').ExecutionServices['media'], previousUrl?: string) => Promise<string>;
+  /** Host-created link registration. No caller function or executable configuration is accepted. */
+  prepareUrl?: (url: string, sessionId: string, context: TrustedContext,
+    media: import('../../contracts/services.js').ExecutionServices['media'], layout?: CardLayout) => Promise<string>;
   interactions?: { participantIds: readonly string[]; actionIds: readonly string[]; ttlMs: number; backendContractId: string };
 }
 export interface CardOptions {

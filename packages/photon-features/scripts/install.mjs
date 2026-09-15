@@ -81,7 +81,12 @@ export async function installRelease({ archivePath, checksum, root }) {
   if (process.platform !== archive.metadata.platform || process.arch !== archive.metadata.arch) throw new Error('TARGET_PLATFORM_MISMATCH');
   if (process.versions.node !== archive.metadata.node) throw new Error('PINNED_NODE_REQUIRED');
   const names = new Set(archive.files.map(f => f.path));
-  for (const name of ['dist/src/cli/main.js', 'dist/src/index.d.ts', 'schemas/protocol.json', 'SKILL.md', 'INSTALL.md', 'package.json', 'dependency-lock.json', 'node_modules/zod/package.json']) if (!names.has(name)) throw new Error('INCOMPLETE_RELEASE');
+  for (const name of ['dist/src/cli/main.js', 'dist/src/host/process.js', 'dist/src/host/task-launcher.js', 'dist/src/index.d.ts', 'bin/grok-photon', 'bin/grok-photon-host', 'bin/grok-photon-task', 'schemas/protocol.json', 'SKILL.md', 'DEPLOYMENT.md', 'INSTALL.md', 'package.json', 'dependency-lock.json', 'node_modules/zod/package.json']) if (!names.has(name)) throw new Error('INCOMPLETE_RELEASE');
+  if (archive.metadata.completionContract === 1) for (const name of ['dist/src/host/text-producer.js', 'dist/src/host/card-backend.js',
+    'dist/src/host/card-browser.js', 'dist/src/host/authority-admin.js', 'schemas/host-configuration-v2.json',
+    'schemas/authority-transition-v1.json', 'schemas/stream.open.json', 'schemas/stream.append.json',
+    'schemas/stream.close.json', 'schemas/stream.abort.json', 'examples/production-inventory.json',
+    'scripts/generate-configuration.mjs', 'npm-shrinkwrap.json']) if (!names.has(name)) throw new Error('INCOMPLETE_RELEASE');
   await prepare(root);
   return locked(root, async () => {
     await compatible(root, archive.metadata);

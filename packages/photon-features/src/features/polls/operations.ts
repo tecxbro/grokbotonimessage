@@ -170,6 +170,7 @@ import { parseActionRequest } from "../../contracts/actions.js";
 import type { ExecutionServices as F0ExecutionServices } from "../../contracts/services.js";
 import { assertPollOwner, resolvePollIdentity, resolveOptionIdentity } from "./identity.js";
 import { mapPollOperation, type PollProviderBinding, type PollAction } from "./sdk.js";
+import { reconcileNativePollState } from "./reconciliation.js";
 
 function f0Result(s: F0ExecutionServices, requestId: string, fields: Partial<OperationResult>): OperationResult {
   return { version: 1, requestId, status: "executor-completed", revision: 0,
@@ -187,6 +188,24 @@ function assertPollActionActive(action: Action, s: F0ExecutionServices): void {
   if (action.contextId !== c.contextId || !c.permissions.includes(action.operation)) throw new Error("FORBIDDEN");
   if (c.revokedAt !== null) throw new Error("CONTEXT_REVOKED");
   if (c.issuedAt > s.clock.now() || c.expiresAt <= s.clock.now()) throw new Error("CONTEXT_EXPIRED");
+}
+
+function scopedBinding(binding: PollProviderBinding, s: F0ExecutionServices) {
+  if (!binding.binding) throw new Error("POLL_PROVIDER_BINDING_MISSING");
+  const value = binding.binding(s.context);
+  if (!sameScope(value.scope, s.context.scope) || !value.phone || !value.conversationId)
+    throw new Error("SCOPE_MISMATCH");
+  return value;
+}
+
+function reconcileManagedState(s: F0ExecutionServices,
+  poll: PollRef, conversationId: string, state: unknown) {
+  return s.transaction(unit => {
+    return reconcileNativePollState(unit, s.context, {
+      poll, conversationId,
+      state: state as Parameters<typeof reconcileNativePollState>[2]["state"],
+    });
+  });
 }
 
 /** F0 handler. The shared executor owns dispatch intent, deduplication and uncertain recovery.
@@ -218,19 +237,94 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
       if ("option" in args && "pollId" in args.option)
         resolveOptionIdentity(unit, p, args.option, s.context);
     });
-    const mapped = mapPollOperation(action as PollAction);
-    if (mapped.kind === "blocked") return f0Failure(s, requestId, "UNIMPLEMENTED", mapped.reason,
-      "blocked", mapped.blockerId);
-    if (action.operation !== "poll.create") throw new Error("INVALID_REQUEST");
+    const pollAction = action as PollAction;
+    const mapped = mapPollOperation(pollAction);
     if (!binding) return f0Failure(s, requestId, "UNAVAILABLE", "Shared owner Spectrum space binding is missing.",
       "blocked", "wt-05-provider-binding");
-    const space = checkedSpace(await binding.resolveSpace(action.arguments.space, s.context));
+    let providerBinding;
+    try { providerBinding = scopedBinding(binding, s); }
+    catch (error) {
+      if (error instanceof Error && error.message === "POLL_PROVIDER_BINDING_MISSING")
+        return f0Failure(s, requestId, "UNAVAILABLE", "Authoritative provider phone/conversation binding is missing.",
+          "blocked", "wt-05-provider-binding");
+      throw error;
+    }
+
+    if (pollAction.operation !== "poll.create") {
+      if (!binding.management) return f0Failure(s, requestId, "UNAVAILABLE",
+        "The shared Spectrum owner has no approved public native poll-management surface.",
+        "blocked", "wt-05-advanced-polls");
+      const target = s.transaction(unit => {
+        const poll = resolvePollIdentity(unit, pollAction.arguments.poll, s.context);
+        const pollOwner = referenceOwner(unit, poll.reference);
+        assertPollOwner(pollOwner, s.context);
+        const space = unit.get("references", s.context.scope.spaceId);
+        if (!space || space.reference.kind !== "space" || !sameScope(space.scope, s.context.scope) ||
+            space.providerId !== providerBinding.conversationId || space.taskId !== pollOwner.taskId ||
+            space.generation !== pollOwner.generation || space.ownedByPrincipalId !== pollOwner.ownedByPrincipalId)
+          throw new Error("SCOPE_MISMATCH");
+        const option = (pollAction.operation === "poll.vote" || pollAction.operation === "poll.unvote")
+          ? resolveOptionIdentity(unit, poll, pollAction.arguments.option, s.context) : undefined;
+        return {
+          poll: poll.reference,
+          nativePollGuid: pollOwner.providerId,
+          nativeOptionId: option ? referenceOwner(unit, option.reference).providerId : undefined,
+        };
+      });
+      let management;
+      try { management = await binding.management(s.context); }
+      catch { return f0Failure(s, requestId, "UNAVAILABLE",
+        "The shared-owner poll management binding is unavailable.", "blocked", "wt-05-provider-binding"); }
+      assertPollActionActive(action, s);
+      if (mapped.kind === "get") {
+        let state: unknown;
+        try { state = await management.get(target.nativePollGuid); }
+        catch { return f0Failure(s, requestId, "PROVIDER_FAILURE", "Authoritative poll state retrieval failed."); }
+        assertPollActionActive(action, s);
+        let reconciled;
+        try { reconciled = reconcileManagedState(s, target.poll, providerBinding.conversationId, state); }
+        catch (error) {
+          if (error instanceof Error && error.message === "SCOPE_MISMATCH") throw error;
+          return f0Failure(s, requestId, "PROVIDER_FAILURE", "Provider returned invalid or conflicting poll state.");
+        }
+        return f0Result(s, requestId, { references: reconciled.references, value: reconciled.value });
+      }
+      const childResult = await s.executeChild({ index: 0,
+        key: scopedId("child", s.context.scope, s.context.taskId, s.context.generation, requestId, pollAction.operation),
+        argumentsDigest: actionDigest(action),
+        dispatch: async signal => {
+          assertPollActionActive(action, s);
+          if (signal.aborted) throw new Error("CANCELLED");
+          possibleTransmission = true;
+          try {
+            const state = mapped.kind === "vote"
+              ? await management.vote(target.nativePollGuid, target.nativeOptionId!)
+              : mapped.kind === "unvote"
+                ? await management.unvote(target.nativePollGuid)
+                : await management.addOption(target.nativePollGuid, pollAction.operation === "poll.addOption"
+                  ? pollAction.arguments.option.label : (() => { throw new Error("INVALID_REQUEST"); })());
+            assertPollActionActive(action, s);
+            const reconciled = reconcileManagedState(s, target.poll, providerBinding.conversationId, state);
+            return f0Result(s, requestId, { status: "provider-accepted", references: reconciled.references,
+              value: reconciled.value,
+              observations: [{ kind: "accepted", source: "sdk-return", at: s.clock.now() }] });
+          } catch {
+            return f0Failure(s, requestId, "UNKNOWN_OUTCOME",
+              "Poll mutation may have been transmitted; reconcile before retry.", "unknown-outcome");
+          }
+        },
+      });
+      return { ...childResult, requestId };
+    }
+
+    if (mapped.kind !== "create") throw new Error("INVALID_REQUEST");
+    const space = checkedSpace(await binding.resolveSpace(pollAction.arguments.space, s.context));
     assertPollActionActive(action, s);
     s.transaction(unit => {
-      const owner = referenceOwner(unit, action.arguments.space);
+      const owner = referenceOwner(unit, pollAction.arguments.space);
       assertPollOwner(owner, s.context);
-      if (owner.providerId !== space.id || imessage(space).phone !== s.context.scope.lineId)
-        throw new Error("SCOPE_MISMATCH");
+      if (owner.providerId !== space.id || space.id !== providerBinding.conversationId ||
+          imessage(space).phone !== providerBinding.phone) throw new Error("SCOPE_MISMATCH");
     });
     const childResult = await s.executeChild({ index: 0,
       key: scopedId("child", s.context.scope, s.context.taskId, s.context.generation, requestId),
@@ -253,7 +347,6 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
           // Persist actual native GUID while the child remains unfinished. A failed commit is uncertain,
           // so runtime recovery must not resend. There is no feature-owned dispatch journal.
           s.transaction(unit => {
-            assertPollActionActive(action, s);
             for (const reference of [messageRef, pollRef]) {
               const prior = unit.get("references", reference.id);
               if (prior) {
@@ -265,10 +358,10 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
                 taskId: s.context.taskId, generation: s.context.generation }, null);
             }
             const prior = unit.get("polls", pollRef.id);
-            if (prior && (!isDeepStrictEqual(prior.reference, pollRef) || prior.question !== action.arguments.question))
+            if (prior && (!isDeepStrictEqual(prior.reference, pollRef) || prior.question !== pollAction.arguments.question))
               throw new Error("POLL_IDENTITY_MISMATCH");
             if (!prior) unit.put("polls", { id: pollRef.id, scope: s.context.scope, revision: 0,
-              reference: pollRef, question: action.arguments.question, options: [] }, null);
+              reference: pollRef, question: pollAction.arguments.question, options: [] }, null);
           });
           return f0Result(s, requestId, { status: "provider-accepted", references: [messageRef, pollRef],
             observations: [{ kind: "accepted", source: "sdk-return", at: s.clock.now() }] });

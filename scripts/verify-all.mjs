@@ -41,7 +41,7 @@ try {
     run("docs", process.execPath, ["scripts/verify-docs.mjs", "integration"]);
     const packed = run("package-dry-run", "npm", ["pack", "--workspace=@grokbot/photon-features", "--dry-run", "--json", "--ignore-scripts"]);
     const files = JSON.parse(packed.stdout)[0]?.files?.map(file => file.path) ?? [];
-    for (const required of ["dist/src/host/main.js", "dist/src/integration/assembly.js", "dist/src/cli/main.js", "schemas/action.schema.json", "src/state/migrations/0001-initial.sql"])
+    for (const required of ["dist/src/host/main.js", "dist/src/host/process.js", "dist/src/host/task-launcher.js", "dist/src/integration/assembly.js", "dist/src/cli/main.js", "schemas/action.schema.json", "src/state/migrations/0001-initial.sql"])
       if (!files.includes(required)) throw new Error(`PACKAGE_INCOMPLETE:${required}`);
     if (!existsSync("packages/photon-features/dist/tests/integration/assembly.test.js"))
       throw new Error("ASSEMBLY_TEST_MISSING");

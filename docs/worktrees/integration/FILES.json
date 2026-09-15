@@ -2,45 +2,1016 @@
   "version": 1,
   "lane": "integration",
   "files": [
-    {"path":"docs/worktrees/integration/AGENTS.md","purpose":"Integration-local rules"},
-    {"path":"docs/worktrees/integration/README.md","purpose":"Scope and status"},
-    {"path":"docs/worktrees/integration/ARCHITECTURE.md","purpose":"Assembled architecture and decisions"},
-    {"path":"docs/worktrees/integration/WORKLOG.md","purpose":"Chronological checkpoints"},
-    {"path":"docs/worktrees/integration/SOURCES.md","purpose":"Official, skill, SDK and Git source distinction"},
-    {"path":"docs/worktrees/integration/source-lock.json","purpose":"Required official source identities"},
-    {"path":"docs/worktrees/integration/FILES.json","purpose":"Integration-owned inventory"},
-    {"path":"docs/worktrees/integration/ACCEPTANCE.md","purpose":"Observable aggregate acceptance"},
-    {"path":"docs/worktrees/integration/TEST-EVIDENCE.md","purpose":"Candidate commands and evidence"},
-    {"path":"docs/worktrees/integration/HANDOFF.md","purpose":"Evidence-tiered final handoff"},
-    {"path":"docs/worktrees/integration/CHANGE-REQUESTS.md","purpose":"Unresolved shared and lane requests"},
-    {"path":"docs/worktrees/integration/candidate-contract.json","purpose":"Post-F0 integration contract digest without moving the foundation tag"},
-    {"path":"docs/worktrees/integration/included-commits.json","purpose":"Immutable reviewed input ledger"},
-    {"path":"docs/worktrees/integration/references/README.md","purpose":"Reference provenance index"},
-    {"path":"packages/photon-features/tests/e2e/feature-runtime.test.ts","purpose":"Integration-owned public F0 CLI-to-offline-Spectrum text round trip"},
-    {"path":"packages/photon-features/tests/e2e/local-roundtrip.test.ts","purpose":"WT-09 aggregate round trip migrated to the public F0 executor"},
-    {"path":"packages/photon-features/src/runtime/inbound/router.ts","purpose":"Cross-lane reducer continuation adoption and inbox fence ownership"},
-    {"path":"packages/photon-features/src/features/polls/reducer.ts","purpose":"Expose the atomically created poll continuation to shared ingress"}
-    ,{"path":"package.json","purpose":"Root assembled integration and verification command wiring"}
-    ,{"path":"packages/photon-features/INSTALL.md","purpose":"Approval-bound assembled candidate installation and rollback instructions"}
-    ,{"path":"packages/photon-features/README.md","purpose":"Assembled package commands and evidence boundary"}
-    ,{"path":"packages/photon-features/package.json","purpose":"grok-photon bin and integration export wiring"}
-    ,{"path":"packages/photon-features/src/index.ts","purpose":"Public integration composition export"}
-    ,{"path":"packages/photon-features/src/features/native/module.ts","purpose":"Public durable-child adapter for scoped WT-07 native operations"}
-    ,{"path":"packages/photon-features/src/integration/assembly.ts","purpose":"Fail-closed 44-operation and compiler surface assembly"}
-    ,{"path":"packages/photon-features/src/integration/index.ts","purpose":"Integration composition entry point"}
-    ,{"path":"packages/photon-features/tests/integration/assembly.test.ts","purpose":"Actual lane factory registration and compiler completeness tests"}
-    ,{"path":"packages/photon-features/tests/lanes/wt-08/distribution.test.mjs","purpose":"Deterministic clean-candidate release-boundary regression fixture"}
-    ,{"path":"packages/photon-features/scripts/package.mjs","purpose":"Checksummed release payload collector including the required SQLite migration"}
-    ,{"path":"packages/photon-features/src/adapters/state/sqlite.ts","purpose":"Production SQLite adapter with package-relative migration resolution"}
-    ,{"path":"scripts/run-integration-tests.mjs","purpose":"No-skip assembled local test runner excluding only the live authorization boundary"}
-    ,{"path":"scripts/generate-contracts.mjs","purpose":"Branch-aware immutable F0 and post-F0 candidate digest validation"}
-    ,{"path":"scripts/verify-all.mjs","purpose":"Integration-aware aggregate verification entry point"}
-    ,{"path":"scripts/verify-docs.mjs","purpose":"Integration documentation and evidence validation"}
-    ,{"path":"scripts/verify-lane.mjs","purpose":"No-skip result validation for TAP and Node spec reporters"}
-    ,{"path":"scripts/verify-ownership.mjs","purpose":"Reviewed-SHA plus exact integration ownership validation"}
-    ,{"path":"scripts/verify-worktree.mjs","purpose":"Relocated registered integration worktree identity validation"}
-    ,{"path":"docs/worktrees/ownership.json","purpose":"Exact integration ownership assignments"}
-    ,{"path":"docs/worktrees/worktree-map.json","purpose":"Authoritative relocated worktree registry map"}
+    {
+      "path": ".github/workflows/photon-integration.yml",
+      "purpose": "Pinned Linux and macOS assembled component gate"
+    },
+    {
+      "path": "docs/worktrees/integration/AGENTS.md",
+      "purpose": "Integration-local rules"
+    },
+    {
+      "path": "docs/worktrees/integration/README.md",
+      "purpose": "Scope and status"
+    },
+    {
+      "path": "docs/worktrees/integration/ARCHITECTURE.md",
+      "purpose": "Assembled architecture and decisions"
+    },
+    {
+      "path": "docs/worktrees/integration/WORKLOG.md",
+      "purpose": "Chronological checkpoints"
+    },
+    {
+      "path": "docs/worktrees/integration/SOURCES.md",
+      "purpose": "Official, skill, SDK and Git source distinction"
+    },
+    {
+      "path": "docs/worktrees/integration/source-lock.json",
+      "purpose": "Required official source identities"
+    },
+    {
+      "path": "docs/worktrees/integration/FILES.json",
+      "purpose": "Integration-owned inventory"
+    },
+    {
+      "path": "docs/worktrees/integration/ACCEPTANCE.md",
+      "purpose": "Observable aggregate acceptance"
+    },
+    {
+      "path": "docs/worktrees/integration/TEST-EVIDENCE.md",
+      "purpose": "Candidate commands and evidence"
+    },
+    {
+      "path": "docs/worktrees/integration/HANDOFF.md",
+      "purpose": "Evidence-tiered final handoff"
+    },
+    {
+      "path": "docs/worktrees/integration/CHANGE-REQUESTS.md",
+      "purpose": "Unresolved shared and lane requests"
+    },
+    {
+      "path": "docs/worktrees/integration/candidate-contract.json",
+      "purpose": "Post-F0 integration contract digest without moving the foundation tag"
+    },
+    {
+      "path": "docs/worktrees/integration/included-commits.json",
+      "purpose": "Immutable reviewed input ledger"
+    },
+    {
+      "path": "docs/worktrees/integration/references/README.md",
+      "purpose": "Reference provenance index"
+    },
+    {
+      "path": "packages/photon-features/tests/e2e/feature-runtime.test.ts",
+      "purpose": "Integration-owned public F0 CLI-to-offline-Spectrum text round trip"
+    },
+    {
+      "path": "packages/photon-features/tests/e2e/local-roundtrip.test.ts",
+      "purpose": "WT-09 aggregate round trip migrated to the public F0 executor"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/inbound/router.ts",
+      "purpose": "Cross-lane reducer continuation adoption and inbox fence ownership"
+    },
+    {
+      "path": "packages/photon-features/src/features/polls/reducer.ts",
+      "purpose": "Expose the atomically created poll continuation to shared ingress"
+    },
+    {
+      "path": "package.json",
+      "purpose": "Root assembled integration and verification command wiring"
+    },
+    {
+      "path": "packages/photon-features/DEPLOYMENT.md",
+      "purpose": "Sole current deployment runbook with concrete configuration host Grok and systemd lifecycle"
+    },
+    {
+      "path": "packages/photon-features/INSTALL.md",
+      "purpose": "Preserved historical inactive-install checkpoint"
+    },
+    {
+      "path": "packages/photon-features/README.md",
+      "purpose": "Assembled package commands and evidence boundary"
+    },
+    {
+      "path": "packages/photon-features/package.json",
+      "purpose": "grok-photon bin and integration export wiring"
+    },
+    {
+      "path": "packages/photon-features/src/index.ts",
+      "purpose": "Public integration composition export"
+    },
+    {
+      "path": "packages/photon-features/src/host/authority.ts",
+      "purpose": "Transactional fresh bootstrap and durable authority validation"
+    },
+    {
+      "path": "packages/photon-features/src/host/capabilities.ts",
+      "purpose": "Shared production dependency inventory for reporting and execution preflight"
+    },
+    {
+      "path": "packages/photon-features/src/host/configuration.ts",
+      "purpose": "Strict owner-only version-2 production configuration and activation writer"
+    },
+    {
+      "path": "packages/photon-features/src/host/grok-wake.ts",
+      "purpose": "Pointer-only existing Grok gateway wake binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/index.ts",
+      "purpose": "Public production host composition exports"
+    },
+    {
+      "path": "packages/photon-features/src/host/owner-lock.ts",
+      "purpose": "Conservative exclusive host ownership lifecycle"
+    },
+    {
+      "path": "packages/photon-features/src/host/process.ts",
+      "purpose": "Release-owned validate enable run disable process entrypoint"
+    },
+    {
+      "path": "packages/photon-features/src/host/production.ts",
+      "purpose": "Single-route production Spectrum SQLite ingress outbox and feature composition"
+    },
+    {
+      "path": "packages/photon-features/src/host/resource-ports.ts",
+      "purpose": "Request-fence-local guarded media and trusted import bindings"
+    },
+    {
+      "path": "packages/photon-features/src/host/selected-release.ts",
+      "purpose": "Immutable selected release and operating skill verification"
+    },
+    {
+      "path": "packages/photon-features/src/host/task-launcher.ts",
+      "purpose": "Release-pinned Grok task authority and local client binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/stream-registry.ts",
+      "purpose": "Trusted scoped single-use production stream registry"
+    },
+    {
+      "path": "packages/photon-features/src/host/typing-binding.ts",
+      "purpose": "Host-owned bounded authorization for transient production typing leases"
+    },
+    {
+      "path": "packages/photon-features/src/features/native/module.ts",
+      "purpose": "Public durable-child adapter for scoped WT-07 native operations"
+    },
+    {
+      "path": "packages/photon-features/src/integration/assembly.ts",
+      "purpose": "Fail-closed 44-operation and compiler surface assembly"
+    },
+    {
+      "path": "packages/photon-features/src/integration/index.ts",
+      "purpose": "Integration composition entry point"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/execution-services.ts",
+      "purpose": "Lazy request-fence resource binding and combined cancellation facade"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/assembly.test.ts",
+      "purpose": "Actual lane factory registration and compiler completeness tests"
+    },
+    {
+      "path": "packages/photon-features/tests/helpers/private-temp.ts",
+      "purpose": "Canonical private portable temporary fixture with Unix socket length guard"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/production-authority.test.ts",
+      "purpose": "Production SQLite restart authority regression coverage"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/production-capabilities.test.ts",
+      "purpose": "Action-aware production dependency capability coverage"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/production-host.test.ts",
+      "purpose": "Concrete one-owner host IPC offline Spectrum and pointer-only Grok path tests"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/production-lifecycle.test.ts",
+      "purpose": "Selected release strict activation and exclusive ownership lifecycle tests"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/production-resources.test.ts",
+      "purpose": "Real production media stream cancellation restart and SDK-owner integration coverage"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/poll-answer-journey.test.ts",
+      "purpose": "Default production poll creation and conversational answer work-path acceptance"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/typing-start-lifetime.test.ts",
+      "purpose": "Production typing lease lifetime diagnostics cleanup reply independence and restart regressions"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-08/distribution.test.mjs",
+      "purpose": "Deterministic clean-candidate release-boundary regression fixture"
+    },
+    {
+      "path": "packages/photon-features/scripts/package.mjs",
+      "purpose": "Checksummed release payload collector including the required SQLite migration"
+    },
+    {
+      "path": "packages/photon-features/src/adapters/state/sqlite.ts",
+      "purpose": "Production SQLite adapter with package-relative migration resolution"
+    },
+    {
+      "path": "scripts/run-integration-tests.mjs",
+      "purpose": "No-skip assembled local test runner excluding only the live authorization boundary"
+    },
+    {
+      "path": "scripts/generate-contracts.mjs",
+      "purpose": "Branch-aware immutable F0 and post-F0 candidate digest validation"
+    },
+    {
+      "path": "scripts/verify-all.mjs",
+      "purpose": "Integration-aware aggregate verification entry point"
+    },
+    {
+      "path": "scripts/verify-docs.mjs",
+      "purpose": "Integration documentation and evidence validation"
+    },
+    {
+      "path": "scripts/verify-lane.mjs",
+      "purpose": "No-skip result validation for TAP and Node spec reporters"
+    },
+    {
+      "path": "scripts/verify-ownership.mjs",
+      "purpose": "Reviewed-SHA plus exact integration ownership validation"
+    },
+    {
+      "path": "scripts/verify-worktree.mjs",
+      "purpose": "Relocated registered integration worktree identity validation"
+    },
+    {
+      "path": "docs/worktrees/ownership.json",
+      "purpose": "Exact integration ownership assignments"
+    },
+    {
+      "path": "docs/worktrees/worktree-map.json",
+      "purpose": "Authoritative relocated worktree registry map"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/ASSIGNMENT.md",
+      "purpose": "Repair authority and exact independent worker delegations"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/FILES.json",
+      "purpose": "Repair authority and exact independent worker delegations"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/INTERFACES.md",
+      "purpose": "Repair authority and exact independent worker delegations"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/A.md",
+      "purpose": "Coordinator prepares prompt; assigned worker appends its own evidence and handoff after preparation"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/B.md",
+      "purpose": "Coordinator prepares prompt; assigned worker appends its own evidence and handoff after preparation"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/C.md",
+      "purpose": "Coordinator prepares prompt; assigned worker appends its own evidence and handoff after preparation"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/D.md",
+      "purpose": "Coordinator prepares prompt; assigned worker appends its own evidence and handoff after preparation"
+    },
+    {
+      "path": "docs/worktrees/fix-1-repair/E.md",
+      "purpose": "Coordinator prepares prompt; assigned worker appends its own evidence and handoff after preparation"
+    },
+    {
+      "path": "packages/photon-features/src/contracts/protocol.ts",
+      "purpose": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/state/ports.ts",
+      "purpose": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/host/protocol.ts",
+      "purpose": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/host/incoming-resources.ts",
+      "purpose": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/src/host/poll-correlations.ts",
+      "purpose": "Shared admission metadata, authenticated media import, durable ingress identities and capability semantics"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/repair-preparation.test.ts",
+      "purpose": "Generated candidate maintenance, cross-feature integration and regression evidence; final skill regeneration only after D"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/repair-sdk-contract.test.ts",
+      "purpose": "Generated candidate maintenance, cross-feature integration and regression evidence; final skill regeneration only after D"
+    },
+    {
+      "path": "docs/worktrees/integration/completion-preflight.json",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/completion-results.json",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/01-f2dfc2e2a0f4.txt",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/02-2129ff09a539.txt",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/03-b40704f7bd9b.txt",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/04-65b871cc10fb.txt",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/05-2213bca04346.txt",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/06-f7348964259a.txt",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/07-ca0aa2274407.txt",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/08-8f2e40c42187.txt",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/09-eb1a871718db.txt",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/10-0d3d03e9c431.txt",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/11-4a6527efce8d.txt",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/README.md",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "packages/photon-features/SKILL.md",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "packages/photon-features/bin/grok-photon",
+      "purpose": "Installed executable launcher used by existing Grok wake and owner lifecycle"
+    },
+    {
+      "path": "packages/photon-features/bin/grok-photon-host",
+      "purpose": "Installed executable launcher used by existing Grok wake and owner lifecycle"
+    },
+    {
+      "path": "packages/photon-features/bin/grok-photon-task",
+      "purpose": "Installed executable launcher used by existing Grok wake and owner lifecycle"
+    },
+    {
+      "path": "packages/photon-features/examples/configuration-input.json",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/examples/minimal-text.configuration.json",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/examples/production-inventory.json",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/examples/profiles/administrative.json",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/examples/profiles/messaging.json",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/examples/profiles/minimal-text.json",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/npm-shrinkwrap.json",
+      "purpose": "Standalone production-only installation from exact committed dependency lock"
+    },
+    {
+      "path": "packages/photon-features/schemas/authority-transition-v1.json",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/host-configuration-v2.json",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/protocol.json",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/stream.abort.json",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/stream.append.json",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/stream.close.json",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/stream.open.json",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/scripts/generate-configuration.mjs",
+      "purpose": "Reproducible generation, packaging, validation or installation gate"
+    },
+    {
+      "path": "packages/photon-features/scripts/generate-production-inventory.mjs",
+      "purpose": "Reproducible generation, packaging, validation or installation gate"
+    },
+    {
+      "path": "packages/photon-features/scripts/prepare-npm-lock.mjs",
+      "purpose": "Reproducible generation, packaging, validation or installation gate"
+    },
+    {
+      "path": "packages/photon-features/src/host/authority-admin.ts",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/card-backend-configuration.ts",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/card-backend.ts",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/card-browser.ts",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/configuration-inventory.ts",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/text-producer.ts",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/tests/artifact/completion-installed.test.mjs",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/helpers/completion-boundary.mjs",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/helpers/completion-installed-runner.mjs",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/helpers/completion-stream-runner.mjs",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-authority.test.ts",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-backend.test.ts",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-browser.test.mjs",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-configuration.test.mjs",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-sdk.test.mjs",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-08/repair-media-import.test.ts",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    }
   ],
-  "sharedOwnership": "Integration owns public F0 roundtrip migration, the WT-02/WT-05 continuation composition contract, and assembled handler-status projection; lane-internal behavior is otherwise preserved."
+  "sharedOwnership": "Integration owns public F0 roundtrip migration, the WT-02/WT-05 continuation composition contract, assembled handler-status projection, and the concrete production host/launcher. Exact cross-lane lifecycle and release-tool changes are listed as integration maintenance; other lane-internal behavior is preserved.",
+  "completionBase": "55b1821216cefe341e611518e1b125552346a115",
+  "completionAuthorization": "User completion assignment permits necessary exact cross-lane completion on the existing fix-1 checkout; historical owners remain recorded. No push, activation, provisioning or live messages.",
+  "completionFiles": [
+    {
+      "path": ".github/workflows/photon-integration.yml",
+      "historicalOwner": "integration",
+      "purpose": "Pinned package and Linux/macOS component/installed test wiring"
+    },
+    {
+      "path": "docs/worktrees/integration/ACCEPTANCE.md",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/ARCHITECTURE.md",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/CHANGE-REQUESTS.md",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/FILES.json",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/HANDOFF.md",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/SOURCES.md",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/TEST-EVIDENCE.md",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/WORKLOG.md",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/candidate-contract.json",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/completion-preflight.json",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/completion-results.json",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/01-f2dfc2e2a0f4.txt",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/02-2129ff09a539.txt",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/03-b40704f7bd9b.txt",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/04-65b871cc10fb.txt",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/05-2213bca04346.txt",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/06-f7348964259a.txt",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/07-ca0aa2274407.txt",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/08-8f2e40c42187.txt",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/09-eb1a871718db.txt",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/10-0d3d03e9c431.txt",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/11-4a6527efce8d.txt",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/references/completion/README.md",
+      "historicalOwner": "integration",
+      "purpose": "Exact completion reference snapshot and retrieval provenance"
+    },
+    {
+      "path": "docs/worktrees/integration/source-lock.json",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "docs/worktrees/ownership.json",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "package.json",
+      "historicalOwner": "integration",
+      "purpose": "Pinned package and Linux/macOS component/installed test wiring"
+    },
+    {
+      "path": "packages/photon-features/DEPLOYMENT.md",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "packages/photon-features/INSTALL.md",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "packages/photon-features/README.md",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "packages/photon-features/SKILL.md",
+      "historicalOwner": "integration",
+      "purpose": "Completion architecture, operating instructions, exact paths or evidence record"
+    },
+    {
+      "path": "packages/photon-features/bin/grok-photon",
+      "historicalOwner": "integration",
+      "purpose": "Installed executable launcher used by existing Grok wake and owner lifecycle"
+    },
+    {
+      "path": "packages/photon-features/bin/grok-photon-host",
+      "historicalOwner": "integration",
+      "purpose": "Installed executable launcher used by existing Grok wake and owner lifecycle"
+    },
+    {
+      "path": "packages/photon-features/bin/grok-photon-task",
+      "historicalOwner": "integration",
+      "purpose": "Installed executable launcher used by existing Grok wake and owner lifecycle"
+    },
+    {
+      "path": "packages/photon-features/examples/configuration-input.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/examples/minimal-text.configuration.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/examples/production-inventory.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/examples/profiles/administrative.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/examples/profiles/messaging.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/examples/profiles/minimal-text.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated operation inventory or explicit owner permission profile/input"
+    },
+    {
+      "path": "packages/photon-features/npm-shrinkwrap.json",
+      "historicalOwner": "integration",
+      "purpose": "Standalone production-only installation from exact committed dependency lock"
+    },
+    {
+      "path": "packages/photon-features/package.json",
+      "historicalOwner": "integration",
+      "purpose": "Pinned package and Linux/macOS component/installed test wiring"
+    },
+    {
+      "path": "packages/photon-features/schemas/authority-transition-v1.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/host-configuration-v2.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/protocol.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/stream.abort.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/stream.append.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/stream.close.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/schemas/stream.open.json",
+      "historicalOwner": "integration",
+      "purpose": "Generated strict versioned local protocol or owner configuration schema"
+    },
+    {
+      "path": "packages/photon-features/scripts/generate-configuration.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Reproducible generation, packaging, validation or installation gate"
+    },
+    {
+      "path": "packages/photon-features/scripts/generate-production-inventory.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Reproducible generation, packaging, validation or installation gate"
+    },
+    {
+      "path": "packages/photon-features/scripts/generate-skill.mjs",
+      "historicalOwner": "wt-08",
+      "purpose": "Reproducible generation, packaging, validation or installation gate"
+    },
+    {
+      "path": "packages/photon-features/scripts/install.mjs",
+      "historicalOwner": "wt-08",
+      "purpose": "Reproducible generation, packaging, validation or installation gate"
+    },
+    {
+      "path": "packages/photon-features/scripts/package.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Reproducible generation, packaging, validation or installation gate"
+    },
+    {
+      "path": "packages/photon-features/scripts/prepare-npm-lock.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Reproducible generation, packaging, validation or installation gate"
+    },
+    {
+      "path": "packages/photon-features/src/adapters/transport/spectrum-owner.ts",
+      "historicalOwner": "wt-02",
+      "purpose": "Authenticated protocol, state, resource or assembly compatibility wiring"
+    },
+    {
+      "path": "packages/photon-features/src/cli/commands.ts",
+      "historicalOwner": "wt-08",
+      "purpose": "Authenticated protocol, state, resource or assembly compatibility wiring"
+    },
+    {
+      "path": "packages/photon-features/src/cli/local-client.ts",
+      "historicalOwner": "wt-08",
+      "purpose": "Authenticated protocol, state, resource or assembly compatibility wiring"
+    },
+    {
+      "path": "packages/photon-features/src/cli/main.ts",
+      "historicalOwner": "wt-08",
+      "purpose": "Authenticated protocol, state, resource or assembly compatibility wiring"
+    },
+    {
+      "path": "packages/photon-features/src/contracts/protocol.ts",
+      "historicalOwner": "integration",
+      "purpose": "Authenticated protocol, state, resource or assembly compatibility wiring"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/configuration.ts",
+      "historicalOwner": "wt-06",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/interaction-adapter.ts",
+      "historicalOwner": "wt-06",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/operations.ts",
+      "historicalOwner": "wt-06",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/features/cards/reducer.ts",
+      "historicalOwner": "wt-06",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/features/media/staging.ts",
+      "historicalOwner": "wt-04",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/features/native/module.ts",
+      "historicalOwner": "integration",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/features/native/sdk.ts",
+      "historicalOwner": "wt-07",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/features/native/spaces.ts",
+      "historicalOwner": "wt-07",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/features/text-messages/module.ts",
+      "historicalOwner": "wt-03",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/features/text-messages/sdk.ts",
+      "historicalOwner": "wt-03",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/features/text-messages/streaming.ts",
+      "historicalOwner": "wt-03",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/features/text-messages/voice-policy.ts",
+      "historicalOwner": "wt-03",
+      "purpose": "Shared-owner feature adapter completion preserving resource and execution contracts"
+    },
+    {
+      "path": "packages/photon-features/src/host/authority-admin.ts",
+      "historicalOwner": "integration",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/card-backend-configuration.ts",
+      "historicalOwner": "integration",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/card-backend.ts",
+      "historicalOwner": "integration",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/card-browser.ts",
+      "historicalOwner": "integration",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/configuration-inventory.ts",
+      "historicalOwner": "integration",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/configuration.ts",
+      "historicalOwner": "integration",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/process.ts",
+      "historicalOwner": "integration",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/production.ts",
+      "historicalOwner": "integration",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/protocol.ts",
+      "historicalOwner": "integration",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/stream-registry.ts",
+      "historicalOwner": "integration",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/host/text-producer.ts",
+      "historicalOwner": "integration",
+      "purpose": "Concrete production startup, authority, backend or stream binding"
+    },
+    {
+      "path": "packages/photon-features/src/integration/assembly.ts",
+      "historicalOwner": "integration",
+      "purpose": "Authenticated protocol, state, resource or assembly compatibility wiring"
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/local-server.ts",
+      "historicalOwner": "wt-01",
+      "purpose": "Authenticated protocol, state, resource or assembly compatibility wiring"
+    },
+    {
+      "path": "packages/photon-features/src/state/ports.ts",
+      "historicalOwner": "integration",
+      "purpose": "Authenticated protocol, state, resource or assembly compatibility wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/artifact/completion-installed.test.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/helpers/completion-boundary.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/helpers/completion-installed-runner.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/helpers/completion-stream-runner.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-authority.test.ts",
+      "historicalOwner": "integration",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-backend.test.ts",
+      "historicalOwner": "integration",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-browser.test.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-configuration.test.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-sdk.test.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/integration/production-resources.test.ts",
+      "historicalOwner": "integration",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-08/repair-media-import.test.ts",
+      "historicalOwner": "integration",
+      "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "scripts/verify-docs.mjs",
+      "historicalOwner": "integration",
+      "purpose": "Reproducible generation, packaging, validation or installation gate"
+    }
+  ]
 }

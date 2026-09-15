@@ -27,9 +27,15 @@ const metadata = {
 };
 const releaseFiles = {
   "dist/src/cli/main.js": "console.log('fixture')",
+  "dist/src/host/process.js": "export async function processMain() { return 2; }",
+  "dist/src/host/task-launcher.js": "export async function taskLauncherMain() { return 2; }",
   "dist/src/index.d.ts": "export {};",
+  "bin/grok-photon": { content: "#!/usr/bin/env node\n", mode: 0o700 },
+  "bin/grok-photon-host": { content: "#!/usr/bin/env node\n", mode: 0o700 },
+  "bin/grok-photon-task": { content: "#!/usr/bin/env node\n", mode: 0o700 },
   "schemas/protocol.json": "{}",
   "SKILL.md": "full policy stays versioned",
+  "DEPLOYMENT.md": "production runbook",
   "INSTALL.md": "inactive",
   "package.json": '{"type":"module"}',
   "dependency-lock.json": "{}",
@@ -44,6 +50,9 @@ test("generated examples stay registry-valid including the four assigned names",
 });
 
 test("release contract requires exact runtime dependencies and all lifecycle tools", () => {
+  assert.ok(packageSupportFiles.includes("DEPLOYMENT.md"));
+  for (const name of ["grok-photon", "grok-photon-host", "grok-photon-task"])
+    assert.ok(`bin/${name}` in releaseFiles);
   for (const name of ["scripts/generate-skill.mjs", "scripts/install.mjs", "scripts/package.mjs", "scripts/rollback.mjs", "scripts/smoke-test.mjs"]) {
     assert.ok(packageSupportFiles.includes(name));
   }

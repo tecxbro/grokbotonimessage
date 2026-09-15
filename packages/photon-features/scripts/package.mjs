@@ -5,15 +5,23 @@ import { resolve, join, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+export const completionChecks = Object.freeze([
+  'npm run typecheck --workspace=@grokbot/photon-features',
+  'npm run photon:test:installed',
+  'node scripts/generate-configuration.mjs --check',
+  'node scripts/generate-production-inventory.mjs --check',
+  'node scripts/prepare-npm-lock.mjs --check',
+]);
 export const packageSupportFiles = Object.freeze([
-  'package.json', 'SKILL.md', 'INSTALL.md', 'README.md',
+  'package.json', 'SKILL.md', 'DEPLOYMENT.md', 'INSTALL.md', 'README.md',
   'scripts/generate-skill.mjs', 'scripts/install.mjs', 'scripts/package.mjs',
-  'scripts/rollback.mjs', 'scripts/smoke-test.mjs',
+  'scripts/rollback.mjs', 'scripts/smoke-test.mjs', 'scripts/generate-configuration.mjs',
+  'scripts/prepare-npm-lock.mjs', 'scripts/generate-production-inventory.mjs', 'npm-shrinkwrap.json',
 ]);
 export const packagePayloadDirectories = Object.freeze([
   Object.freeze({ source: 'dist/src', archive: 'dist/src/' }),
   Object.freeze({ source: 'schemas', archive: 'schemas/' }),
-  Object.freeze({ source: 'examples/wt-08', archive: 'examples/wt-08/' }),
+  Object.freeze({ source: 'examples', archive: 'examples/' }),
   Object.freeze({ source: 'src/state/migrations', archive: 'src/state/migrations/' }),
 ]);
 const safePath = name => typeof name === 'string' && name.length < 500 && !isAbsolute(name) && !name.includes('\\') && name.split('/').every(p => p && p !== '.' && p !== '..') && !/(^|\/)(\.env(?:\..*)?|\.npmrc|\.git|credentials?|.*\.(sqlite|db|pem|key)|runtime\.sock)(\/|$)/i.test(name);
@@ -21,7 +29,7 @@ export function encodeArchive(files, metadata) {
   const entries = Object.entries(files).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([path, value]) => {
     if (!safePath(path)) throw new Error('UNSAFE_ARCHIVE_PATH');
     const bytes = Buffer.from(value.content ?? value);
-    const mode = value.mode ?? (path === 'dist/src/cli/main.js' ? 0o700 : 0o600);
+    const mode = value.mode ?? (['dist/src/cli/main.js', 'dist/src/host/process.js', 'dist/src/host/task-launcher.js'].includes(path) ? 0o700 : 0o600);
     if (![0o600, 0o700].includes(mode)) throw new Error('UNSAFE_ARCHIVE_MODE');
     return { path, mode, bytes: bytes.length, sha256: sha256(bytes), content: bytes.toString('base64') };
   });
@@ -45,6 +53,8 @@ export function validateMetadata(m) {
   const required = ['npm test', 'npm run photon:test', 'npm run photon:check', 'npm run photon:test:integration', 'node scripts/generate-skill.mjs --check'];
   if (!m || m.kind !== 'assembled-tested-candidate' || !/^[a-f0-9]{40}$/.test(m.commit) || !/^[a-f0-9]{64}$/.test(m.f0Digest) || m.node !== '24.13.0' || m.npm !== '10.9.2' || !Number.isSafeInteger(m.stateSchemaVersion) || m.stateSchemaVersion !== 1 || !Array.isArray(m.compatibleStateSchemas) || m.compatibleStateSchemas.join() !== '1' || !Array.isArray(m.tests) || !m.tests.length || m.tests.some(t => t.exitCode !== 0) || required.some(command => !m.tests.some(t => t.command === command)) || !['darwin', 'linux'].includes(m.platform) || !['arm64', 'x64'].includes(m.arch)) throw new Error('UNTESTED_OR_INCOMPATIBLE_ARTIFACT');
   if (m.releaseContract !== undefined && m.releaseContract !== 2) throw new Error('UNTESTED_OR_INCOMPATIBLE_ARTIFACT');
+  if (m.completionContract !== undefined && (m.completionContract !== 1 || m.releaseContract !== 2 ||
+    completionChecks.some(command => !m.tests.some(t => t.command === command)))) throw new Error('UNTESTED_OR_INCOMPATIBLE_ARTIFACT');
   if (m.releaseContract === 2 && (!/^\d+\.\d+\.\d+(?:[-+].+)?$/.test(m.version) || m.dependencies?.['spectrum-ts'] !== '12.8.0' || m.dependencies?.zod !== '4.5.4' || Object.keys(m.dependencies).sort().join() !== 'spectrum-ts,zod')) throw new Error('UNTESTED_OR_INCOMPATIBLE_ARTIFACT');
 }
 export async function packageCandidate({ candidate, approval, output }) {
@@ -63,17 +73,27 @@ export async function packageCandidate({ candidate, approval, output }) {
   if (process.versions.node !== legacyFoundation.runtime.node || execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim() !== legacyFoundation.runtime.npm) throw new Error('PINNED_TOOLCHAIN_REQUIRED');
   const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
   const aggregate = JSON.parse(await readFile(join(candidate, 'package.json'), 'utf8'));
-  if (pkg.bin?.['grok-photon'] !== 'dist/src/cli/main.js' || !aggregate.scripts?.['photon:test:integration']) throw new Error('WT00_INTEGRATION_REQUIRED');
+  if (pkg.bin?.['grok-photon'] !== 'dist/src/cli/main.js' ||
+    pkg.bin?.['grok-photon-host'] !== 'dist/src/host/process.js' ||
+    pkg.bin?.['grok-photon-task'] !== 'dist/src/host/task-launcher.js' ||
+    !aggregate.scripts?.['photon:test:integration']) throw new Error('WT00_INTEGRATION_REQUIRED');
   // Fresh dependency tree prevents including arbitrary files from a developer node_modules.
-  execFileSync('npm', ['ci', '--ignore-scripts'], { cwd: candidate, stdio: 'pipe' });
+  execFileSync('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund'], { cwd: candidate, stdio: 'pipe' });
   await rm(join(root, 'dist'), { recursive: true, force: true });
   const tests = [];
-  for (const args of [['test'], ['run', 'photon:test'], ['run', 'photon:check'], ['run', 'photon:test:integration']]) {
+  for (const args of [['run', 'typecheck', '--workspace=@grokbot/photon-features'], ['test'], ['run', 'photon:test'], ['run', 'photon:check'], ['run', 'photon:test:integration'], ['run', 'photon:test:installed']]) {
     const log = execFileSync('npm', args, { cwd: candidate });
     tests.push({ command: 'npm ' + args.join(' '), exitCode: 0, logSha256: sha256(log) });
   }
   const docLog = execFileSync(process.execPath, ['scripts/generate-skill.mjs', '--check'], { cwd: root });
   tests.push({ command: 'node scripts/generate-skill.mjs --check', exitCode: 0, logSha256: sha256(docLog) });
+  for (const name of ['generate-configuration', 'generate-production-inventory', 'prepare-npm-lock']) {
+    const log = execFileSync(process.execPath, ['scripts/' + name + '.mjs', '--check'], { cwd: root });
+    tests.push({ command: 'node scripts/' + name + '.mjs --check', exitCode: 0, logSha256: sha256(log) });
+  }
+  // Release runtime contains only production dependencies. No source checkout or
+  // development compiler is required by the installed program.
+  execFileSync('npm', ['ci', '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund'], { cwd: candidate, stdio: 'pipe' });
   if (git('status', '--porcelain', '--untracked-files=all') || git('rev-parse', 'HEAD') !== commit) throw new Error('CANDIDATE_CHANGED');
   const files = {};
   async function collect(directory, prefix, dependency = false) {
@@ -94,6 +114,8 @@ export async function packageCandidate({ candidate, approval, output }) {
   await collect(join(candidate, 'node_modules'), 'node_modules/', true);
   for (const name of packageSupportFiles) files[name] = await readFile(join(root, name));
   files['bin/grok-photon'] = { content: Buffer.from("#!/usr/bin/env node\nimport { run } from '../dist/src/cli/main.js';\nprocess.exitCode = await run(process.argv.slice(2));\n"), mode: 0o700 };
+  files['bin/grok-photon-host'] = { content: Buffer.from("#!/usr/bin/env node\nimport { processMain } from '../dist/src/host/process.js';\nprocess.exitCode = await processMain(process.argv.slice(2));\n"), mode: 0o700 };
+  files['bin/grok-photon-task'] = { content: Buffer.from("#!/usr/bin/env node\nimport { taskLauncherMain } from '../dist/src/host/task-launcher.js';\nprocess.exitCode = await taskLauncherMain(process.argv.slice(2));\n"), mode: 0o700 };
   files['dependency-lock.json'] = await readFile(join(candidate, 'package-lock.json'));
   const lock = JSON.parse(files['dependency-lock.json'].toString('utf8'));
   for (const [name, record] of Object.entries(lock.packages)) {
@@ -101,7 +123,7 @@ export async function packageCandidate({ candidate, approval, output }) {
     if (name.startsWith('packages/photon-features/node_modules/') && !record.dev) throw new Error('NESTED_RUNTIME_DEPENDENCY_REQUIRES_INTEGRATION');
   }
   files['foundation.json'] = await readFile(join(candidate, 'docs/worktrees/foundation.json'));
-  const metadata = { kind: 'assembled-tested-candidate', releaseContract: 2, commit, f0Digest: foundation.contractDigest, node: legacyFoundation.runtime.node, npm: legacyFoundation.runtime.npm,
+  const metadata = { kind: 'assembled-tested-candidate', releaseContract: 2, completionContract: 1, commit, f0Digest: foundation.contractDigest, node: legacyFoundation.runtime.node, npm: legacyFoundation.runtime.npm,
     platform: process.platform, arch: process.arch, version: pkg.version, dependencies: pkg.dependencies, stateSchemaVersion: 1, compatibleStateSchemas: [1], workflowRun: authorization.workflowRun, tests: tests.map(({ command, exitCode }) => ({ command, exitCode })) };
   validateMetadata(metadata);
   const archive = encodeArchive(files, metadata);

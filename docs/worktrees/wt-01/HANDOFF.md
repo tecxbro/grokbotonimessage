@@ -13,3 +13,7 @@ Starting F0: `ee2f8576b55973eee312bca5cad0549b6f959a88` (`f0-services-2`, contra
 The shared aggregate gate is unresolved: `verify-lane` returns `LANE_NOT_ASSEMBLED`; ownership returns `UNOWNED_PATH:.gitignore`; documentation returns `FILE_INVENTORY_DRIFT`; assembled E2E has three out-of-lane failures. `CHANGE-REQUESTS.md` preserves exact causes and required shared corrections. No owned failure is classified as a shared blocker.
 
 Protected relocation-only edits remain unstaged and must not be included in a WT-01 commit: root `AGENTS.md`, `docs/photon-features/rollout.md`, `docs/worktrees/worktree-map.json`, and `docs/worktrees/wt-00/HANDOFF.md`.
+
+## Finding 6 follow-up
+
+The Finding 6 WT-01 change narrows ordinary predecessor ordering from account/line to full conversation scope, retains all same-conversation `unknown-outcome` protection, and gives `space.create` a separate line-scoped creation dependency. It does not implement or change provider rate limiting, retry unresolved effects, install the package, activate a host, or establish provider/device evidence. Source/test patch digest: `0b3f37ff87e4a697e46087ede224e7e28afbcebb385692301bc6e56ef74c59ba` at pre-existing HEAD `15aa038084451f930e6fead1831f908fbe00e56c`. The owned 48-test suite, typecheck, build, and contract check pass; shared lane/docs/ownership gates remain blocked with exact current outputs in `CHANGE-REQUESTS.md`.

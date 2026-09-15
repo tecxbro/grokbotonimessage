@@ -13,15 +13,15 @@
   "lanes": [
     {
       "lane": "wt-01",
-      "reviewedCommits": ["08d9ed396e1b18b0bd5edfcc866c7dde0518c006", "15aa038084451f930e6fead1831f908fbe00e56c"],
+      "reviewedCommits": ["08d9ed396e1b18b0bd5edfcc866c7dde0518c006", "15aa038084451f930e6fead1831f908fbe00e56c", "141a05a8710166c5b38c3d864ce7be8cdada3eea"],
       "earlierPartialCommits": ["08d9ed396e1b18b0bd5edfcc866c7dde0518c006"],
-      "changedPathCount": 30,
-      "changedPaths": "git diff --name-only photon-v3-f0..15aa038084451f930e6fead1831f908fbe00e56c; exact responsibilities in docs/worktrees/wt-01/FILES.json",
-      "tests": "15/15 required focused; 46/46 lane; 125 foundation; 45 security; 31 CLI; local/offline",
+      "changedPathCount": 31,
+      "changedPaths": "git diff --name-only photon-v3-f0..141a05a8710166c5b38c3d864ce7be8cdada3eea; exact responsibilities in docs/worktrees/wt-01/FILES.json",
+      "tests": "15/15 required focused; 48/48 lane after Finding 6; 125 foundation; 45 security; 31 CLI; local/offline",
       "approvedSharedRequests": ["public durable executor/service binding", "receipt writer/correlation", "lane-aware verification", "F0-relative ownership"],
       "limitations": ["three assembled E2E failures at lane handoff", "not activated", "no provider or device evidence"],
       "integrationStatus": "integrated",
-      "integrationCommits": ["3f080d9c6c09d3bf9827fd60dbffe3c33a7a68f3", "a30044a74649a9fa1d7c636a68a68c96af773ae2"]
+      "integrationCommits": ["3f080d9c6c09d3bf9827fd60dbffe3c33a7a68f3", "a30044a74649a9fa1d7c636a68a68c96af773ae2", "0d531bab55bc41333860c2b5984ab8f7a87dd3d7"]
     },
     {
       "lane": "wt-02",

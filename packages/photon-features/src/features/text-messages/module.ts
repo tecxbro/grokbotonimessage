@@ -32,10 +32,10 @@ export const ownedOperations = [
   "message.unsend",
   "message.markRead",
 ] as const;
-export function textCapabilities(): Capability[] {
+export function textCapabilities(streamDelivery: "buffered" | "progressive" = "buffered"): Capability[] {
   return ownedOperations.map((operation) => ({
     operation,
-    providerSupport: operation === "text.stream" ? "fallback" : "native",
+    providerSupport: operation === "text.stream" && streamDelivery === "buffered" ? "fallback" : "native",
     availability: {
       account: "unknown",
       conversation: "unknown",
@@ -54,7 +54,7 @@ export function textCapabilities(): Capability[] {
       "Host registration, authoritative bindings and resource adapters require integration.",
       ...(operation === "text.stream"
         ? [
-            "This implementation buffers validated text before one send; it does not progressively deliver.",
+            streamDelivery === "progressive" ? "Progressive remote text edits one original message; only the final SDK receipt is exposed." : "This implementation buffers validated text before one send; it does not progressively deliver.",
           ]
         : []),
       ...(operation === "link.send"
@@ -384,7 +384,7 @@ export function createFeatureModule(
             "Operation is not owned by WT-03.",
           );
       }
-      const capability = textCapabilities().find(
+      const capability = textCapabilities(options.streamDelivery).find(
         (c) => c.operation === action.operation,
       )!;
       return {
@@ -396,9 +396,9 @@ export function createFeatureModule(
             "docs/worktrees/wt-03/source-lock.json",
           ],
           blockers: [
-            "Public host registration and authoritative compiler/handle adapters require integration; no activation or live evidence.",
+            "Host authorization and authoritative resource bindings apply; no activation or live evidence.",
             ...(action.operation === "text.stream"
-              ? ["Buffered single-send fallback; no progressive delivery."]
+              ? [options.streamDelivery === "progressive" ? "Progressive remote text edits one original message; only the final SDK receipt is exposed." : "Buffered single-send fallback; no progressive delivery."]
               : []),
             ...(action.operation === "content.group"
               ? [

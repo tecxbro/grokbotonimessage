@@ -14,7 +14,7 @@ A continuation and its referenced durable inbox events are committed with the do
 
 ## Claims, cancellation, and child effects
 
-An execution claim binds owner, monotonically changing fence, task generation, and lease. `acquireClaim`, `renewClaim`, and `validateClaim` serialize account/line work and reject stale owners. `checkCancellation` validates the durable cancellation state and abort signal. Mutable authority is rechecked before dispatch.
+An execution claim binds owner, monotonically changing fence, task generation, and lease. `acquireClaim`, `renewClaim`, and `validateClaim` serialize work by the resource that needs ordering: ordinary operations use full project/provider/account/line/space scope, while `space.create` operations share a project/account/line creation key because no destination space exists yet. Earlier `queued`, `blocked`, and `unknown-outcome` requests remain predecessors within that dependency boundary; terminal results do not. An unresolved request in one space therefore cannot fence ordinary work in another space on the same line. This dependency rule is separate from provider line-rate limiting. Claim validation still rejects stale owners. `checkCancellation` validates the durable cancellation state and abort signal. Mutable authority is rechecked before dispatch.
 
 Every consequential provider effect uses `executeChild`. Its identity is parent request plus child index; the caller-supplied stable key and canonical arguments digest must match on every replay. The runtime commits a prepared record and then a dispatching intent before invoking trusted program code. A completed child returns its durable result and earlier successful children are not replayed.
 

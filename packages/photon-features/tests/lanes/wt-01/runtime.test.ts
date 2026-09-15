@@ -229,7 +229,7 @@ test("capability unavailability blocks before a provider call", async (t) => {
   assert.equal(calls, 0);
   assert.equal(f.store.scan("attempts").length, 0);
 });
-test("per-line FIFO prevents overtaking; bounded concurrency does not duplicate a running request", async (t) => {
+test("per-conversation FIFO prevents overtaking; bounded concurrency does not duplicate a running request", async (t) => {
   const f = fixture(t, 1),
     first = await f.submission.submit(action(), context),
     second = await f.submission.submit(action("next"), context),
@@ -253,6 +253,124 @@ test("per-line FIFO prevents overtaking; bounded concurrency does not duplicate 
     (await f.executor.execute(second.requestId, binding()))?.status,
     "executor-completed",
   );
+});
+test("unresolved predecessors block only their conversation on a shared line", async (t) => {
+  const blocking = ["queued", "blocked", "unknown-outcome"] as const;
+  for (const status of [...blocking, "provider-accepted"] as const) {
+    const f = fixture(t);
+    const otherContext = {
+      ...context,
+      contextId: `context-${status}`,
+      taskId: `task-${status}`,
+      scope: { ...context.scope, spaceId: `space-${status}` },
+    };
+    seed(f.store, otherContext);
+    const first = await f.submission.submit(action(`first-${status}`), context);
+    f.store.transaction((tx) => {
+      const row = tx.get("outbox", first.requestId)!;
+      const revision = row.revision;
+      row.result.status = status;
+      row.revision++;
+      row.result.revision = row.revision;
+      tx.put("outbox", row, revision);
+    });
+    const sameConversation = await f.submission.submit(
+      action(`same-${status}`),
+      context,
+    );
+    const otherConversationAction = action(`other-${status}`);
+    otherConversationAction.contextId = otherContext.contextId;
+    if (otherConversationAction.operation !== "text.send") throw Error();
+    otherConversationAction.arguments.space = {
+      ...otherConversationAction.arguments.space,
+      id: otherContext.scope.spaceId,
+      scope: otherContext.scope,
+    };
+    const otherConversation = await f.submission.submit(
+      otherConversationAction,
+      otherContext,
+    );
+    assert.equal(
+      f.store.predecessors(sameConversation.requestId, context.scope),
+      blocking.includes(status as (typeof blocking)[number]),
+      `${status} predecessor in the same conversation`,
+    );
+    assert.equal(
+      f.store.predecessors(otherConversation.requestId, otherContext.scope),
+      false,
+      `${status} predecessor in another conversation`,
+    );
+    assert.ok(
+      f.claims.acquire(otherConversation.requestId, `owner-${status}`, 1000),
+      `${status} predecessor does not prevent a cross-conversation claim`,
+    );
+  }
+});
+test("space creation uses a line-scoped dependency without fencing ordinary conversations", async (t) => {
+  const f = fixture(t);
+  const createContext = {
+    ...context,
+    contextId: "context-create",
+    taskId: "task-create",
+    scope: { ...context.scope, spaceId: "space-create" },
+  };
+  const independentContext = {
+    ...context,
+    contextId: "context-independent",
+    taskId: "task-independent",
+    scope: { ...context.scope, spaceId: "space-independent" },
+  };
+  seed(f.store, createContext);
+  seed(f.store, independentContext);
+  const first = await f.submission.submit(action("create-first"), context);
+  const secondAction = action("create-second");
+  secondAction.contextId = createContext.contextId;
+  if (secondAction.operation !== "text.send") throw Error();
+  secondAction.arguments.space = {
+    ...secondAction.arguments.space,
+    id: createContext.scope.spaceId,
+    scope: createContext.scope,
+  };
+  const second = await f.submission.submit(
+    secondAction,
+    createContext,
+  );
+  const independentAction = action("independent-text");
+  independentAction.contextId = independentContext.contextId;
+  if (independentAction.operation !== "text.send") throw Error();
+  independentAction.arguments.space = {
+    ...independentAction.arguments.space,
+    id: independentContext.scope.spaceId,
+    scope: independentContext.scope,
+  };
+  const independent = await f.submission.submit(
+    independentAction,
+    independentContext,
+  );
+  f.store.transaction((tx) => {
+    for (const request of [first, second]) {
+      const row = tx.get("outbox", request.requestId)!;
+      const revision = row.revision;
+      row.action = {
+        version: 1,
+        contextId: row.action.contextId,
+        idempotencyKey: row.action.idempotencyKey,
+        operation: "space.create",
+        arguments: { members: ["+15555550100"] },
+      };
+      if (request.requestId === first.requestId)
+        row.result.status = "unknown-outcome";
+      row.revision++;
+      row.result.revision = row.revision;
+      tx.put("outbox", row, revision);
+    }
+  });
+  assert.equal(f.store.predecessors(second.requestId, createContext.scope), true);
+  assert.equal(
+    f.store.predecessors(independent.requestId, independentContext.scope),
+    false,
+  );
+  assert.ok(f.claims.acquire(independent.requestId, "owner-independent", 1000));
 });
 test("heartbeat preserves the fence; expired owners cannot write or heartbeat after reclaim", async (t) => {
   const f = fixture(t),

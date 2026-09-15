@@ -12,55 +12,55 @@
       "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-01",
       "branch": "photon-v3/wt-01",
       "base": "photon-v3-f0",
-      "created": false
+      "created": true
     },
     "wt-02": {
       "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-02",
       "branch": "photon-v3/wt-02",
       "base": "photon-v3-f0",
-      "created": false
+      "created": true
     },
     "wt-03": {
       "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-03",
       "branch": "photon-v3/wt-03",
       "base": "photon-v3-f0",
-      "created": false
+      "created": true
     },
     "wt-04": {
       "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-04",
       "branch": "photon-v3/wt-04",
       "base": "photon-v3-f0",
-      "created": false
+      "created": true
     },
     "wt-05": {
       "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-05",
       "branch": "photon-v3/wt-05",
       "base": "photon-v3-f0",
-      "created": false
+      "created": true
     },
     "wt-06": {
       "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-06",
       "branch": "photon-v3/wt-06",
       "base": "photon-v3-f0",
-      "created": false
+      "created": true
     },
     "wt-07": {
       "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-07",
       "branch": "photon-v3/wt-07",
       "base": "photon-v3-f0",
-      "created": false
+      "created": true
     },
     "wt-08": {
       "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-08",
       "branch": "photon-v3/wt-08",
       "base": "photon-v3-f0",
-      "created": false
+      "created": true
     },
     "wt-09": {
       "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-09",
       "branch": "photon-v3/wt-09",
       "base": "photon-v3-f0",
-      "created": false
+      "created": true
     },
     "integration": {
       "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-integration",
@@ -74,5 +74,47 @@
     "branch": "photon-v3/integration",
     "base": "photon-v3-f0",
     "created": true
+  },
+  "maintenance": {
+    "fix-1-repair": {
+      "coordinator": {
+        "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1",
+        "branch": "fix-1",
+        "reviewedBase": "a3c36b3a04208a022fa7f994f1580b54223dc2c9",
+        "preparationCommit": "513ede497a96bd9c30cc597faee868e201ea3456"
+      },
+      "workers": {
+        "A": {
+          "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1-a",
+          "branch": "repair/fix-1-a",
+          "created": true,
+          "preparationCommit": "513ede497a96bd9c30cc597faee868e201ea3456"
+        },
+        "B": {
+          "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1-b",
+          "branch": "repair/fix-1-b",
+          "created": true,
+          "preparationCommit": "513ede497a96bd9c30cc597faee868e201ea3456"
+        },
+        "C": {
+          "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1-c",
+          "branch": "repair/fix-1-c",
+          "created": true,
+          "preparationCommit": "513ede497a96bd9c30cc597faee868e201ea3456"
+        },
+        "D": {
+          "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1-d",
+          "branch": "repair/fix-1-d",
+          "created": true,
+          "preparationCommit": "513ede497a96bd9c30cc597faee868e201ea3456"
+        },
+        "E": {
+          "path": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/fix-1-e",
+          "branch": "repair/fix-1-e",
+          "created": true,
+          "preparationCommit": "513ede497a96bd9c30cc597faee868e201ea3456"
+        }
+      }
+    }
   }
 }

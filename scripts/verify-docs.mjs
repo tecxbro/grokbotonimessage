@@ -47,11 +47,18 @@ export function verifyDocs(root=process.cwd(),lane='wt-00') {
   }
   if (lane === 'integration') {
     const lock=JSON.parse(read('docs/worktrees/integration/source-lock.json'));
-    if(lock.version!==1||lock.sources.length!==7)throw new Error('INVALID_INTEGRATION_SOURCE_LOCK');
+    const requiredPhoton=Array.from({length:11},(_,index)=>`D${index}`);
+    if(lock.version!==2||!Array.isArray(lock.sources)||!requiredPhoton.every(id=>lock.sources.some(source=>source.id===id))||
+      !['NODE_OS','NODE_FS','NODE_NET','GITHUB_MATRIX'].every(id=>lock.sources.some(source=>source.id===id))||
+      !lock.skills?.some(skill=>skill.name==='spectrum'&&skill.version==='3.1.0')||
+      !lock.skills?.some(skill=>skill.name==='imessage'&&skill.version==='9.1.0')||
+      !lock.installedContracts?.length||lock.installedContracts.some(contract=>contract.version!=='12.8.0'||!/^[a-f0-9]{64}$/.test(contract.sha256)))
+      throw new Error('INVALID_INTEGRATION_SOURCE_LOCK');
     for(const source of lock.sources) {
-      if(source.classification!=='official'||!source.url.startsWith('https://photon.codes/docs/')||
-        !source.snapshot.startsWith('docs/photon/reference/')||
-        createHash('sha256').update(read(source.snapshot)).digest('hex')!==source.sha256)
+      if(source.status!==200||source.failure!==null||!Number.isFinite(Date.parse(source.retrievedAt))||
+        !/^[a-f0-9]{64}$/.test(source.sha256)||
+        (source.snapshot!==null&&(!source.snapshot.startsWith('docs/photon/reference/')||
+          createHash('sha256').update(read(source.snapshot)).digest('hex')!==source.sha256)))
         throw new Error(`INTEGRATION_SOURCE_DRIFT:${source.url}`);
     }
     const ledger=JSON.parse(read('docs/worktrees/integration/included-commits.json'));
@@ -60,10 +67,23 @@ export function verifyDocs(root=process.cwd(),lane='wt-00') {
       ledger.lanes.length!==9||ledger.lanes.some(entry=>entry.integrationStatus!=='integrated'||!entry.reviewedCommits.length||!entry.integrationCommits.length))
       throw new Error('INCOMPLETE_INTEGRATION_LEDGER');
     const evidence=read('docs/worktrees/integration/TEST-EVIDENCE.md');
-    for(const marker of ['75 passed','757','live test','not prove installation'])
+    for(const marker of ['75 passed','757','live test','788 tests','82 files','live suite','not prove installation'])
       if(!evidence.includes(marker))throw new Error(`MISSING_INTEGRATION_EVIDENCE:${marker}`);
+    const deployment=read('packages/photon-features/DEPLOYMENT.md');
+    for(const marker of ['Grok Photon deployment and owner operations','grok-photon-host','grok-photon-task','version-2','signed-card-v1','authority.apply','stream.open','Handoff remains blocked'])
+      if(!deployment.includes(marker))throw new Error(`MISSING_DEPLOYMENT_BOUNDARY:${marker}`);
+    const handoff=read('docs/worktrees/integration/HANDOFF.md');
+    for(const marker of ['Concrete deployment path','Grok skill and task binding','grok-photon-host','grok-photon-task','GROK_PHOTON_CONTEXT_ID','GROK_PHOTON_SOCKET','GROK_PHOTON_CREDENTIAL_FILE','controlled external'])
+      if(!handoff.includes(marker))throw new Error(`MISSING_BINDING_HANDOFF:${marker}`);
+    for(const [path,markers] of Object.entries({
+      'docs/photon-features/rollout.md':['Historical F0 checkpoint','current deployment runbook'],
+      'packages/photon-features/INSTALL.md':['earlier inactive-install checkpoint','DEPLOYMENT.md'],
+      'AGENTS.md':['development-time tests','originating conversation'],
+      'packages/photon-features/SKILL.md':['real incoming work','originating conversation','unsolicited development test'],
+    })) for(const marker of markers) if(!read(path).includes(marker))
+      throw new Error(`MISSING_INSTRUCTION_ROLE:${path}:${marker}`);
     return {lane,structural:'passed',sources:lock.sources.length,lanes:ledger.lanes.length,
-      semanticReview:'Integration evidence remains local/offline; installation, activation and live behavior are separate.'};
+      semanticReview:'Development, deployment, and operation are separated; the production lifecycle and release-pinned Grok task binding are concrete while install, activation, and external proof remain separate.'};
   }
   const official=JSON.parse(read('docs/photon/source-lock.json'));
   checkSourceLock(official,read);

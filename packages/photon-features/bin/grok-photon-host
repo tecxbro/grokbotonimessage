@@ -1,0 +1,3 @@
+#!/usr/bin/env node
+import { processMain } from '../dist/src/host/process.js';
+process.exitCode = await processMain(process.argv.slice(2));

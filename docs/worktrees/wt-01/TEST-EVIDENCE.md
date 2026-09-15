@@ -39,3 +39,22 @@ The package typecheck, build, contract check, required focused suite, and comple
 An earlier focused invocation had 14 pass / 1 fail because the SDK test computed the repository root one directory too shallow and attempted to read `packages/node_modules`. This was an owned test defect, not a shared blocker; it was fixed and the entire focused command passed on rerun.
 
 The root-level command `npm run typecheck` was also attempted and exited 1 because the root package defines no such script. This is not an implementation result. The package-owned command `npm run typecheck --workspace=@grokbot/photon-features` passed and is the recorded typecheck evidence.
+
+## Finding 6 conversation-ordering correction
+
+This correction was verified against pre-existing HEAD `15aa038084451f930e6fead1831f908fbe00e56c`. The code-and-test patch digest is `0b3f37ff87e4a697e46087ede224e7e28afbcebb385692301bc6e56ef74c59ba`; protected relocation edits are excluded from that digest.
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Package typecheck | PASS | `npm run typecheck --workspace=@grokbot/photon-features`. |
+| Package build | PASS | `npm run build --workspace=@grokbot/photon-features`. |
+| Focused compiled runtime suite | PASS | 22 tests, 22 pass, 0 fail/skipped/todo. The matrix covers `queued`, `blocked`, `unknown-outcome`, and `provider-accepted` predecessors across same and different conversations on one line. |
+| All WT-01 tests | PASS | `node --test packages/photon-features/dist/tests/lanes/wt-01/*.test.js`: 48 tests, 48 pass, 0 fail/skipped/todo. |
+| Contract generation | PASS | `npm run check --workspace=@grokbot/photon-features`: 3 schemas, 36 files, unchanged digest `d95caace5f188fd13b6d4d26250be1c77aafa1f42447263e5e3e7982e7e1a60f`. |
+| Red/green regression proof | PASS | With the original account/line query temporarily restored, the compiled suite failed 2 of 22 tests on cross-conversation blocking. After restoring the resource-scoped query, all 22 passed. |
+| Aggregate lane verifier | BLOCKED | Exact Node 24.13.0 invocation exits 1 with `LANE_NOT_ASSEMBLED`. |
+| Ownership verifier | BLOCKED | Exits 1 with `UNOWNED_PATH:.gitignore`. |
+| Documentation verifier | BLOCKED | Exits 1 because `.photon-local/verification.json` does not exist after the lane verifier refuses to assemble WT-01. |
+| Scoped whitespace check | PASS | `git diff --check` over all eight Finding 6 source, test, and WT-01 documentation files. |
+
+The first attempted typecheck/build failed before emitting the new test because a test fixture was constructed from an unnarrowed `Action` union. The fixture was corrected, then typecheck and build passed before the compiled suite ran; the intervening stale-dist result is intentionally excluded.

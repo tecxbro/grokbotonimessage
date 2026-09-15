@@ -22,6 +22,7 @@ interface Lease {
   expiresAt: number;
   detach?: () => void;
   validate?: () => void;
+  disposeAuthorization?: () => void;
 }
 interface Conversation {
   scope: Scope;
@@ -37,6 +38,15 @@ export interface TypingTicket {
   scope: Scope;
   generation: number;
   token: number;
+}
+export interface TypingLeaseDescriptor extends TypingTicket {
+  issuedAt: number;
+  ttlMs: number;
+  expiresAt: number;
+}
+export interface TypingLeaseAuthorization {
+  validate(): void;
+  dispose(): void;
 }
 /** Control calls have their own per-conversation queue, independent of uploads
  * and reply sends. No persistent start jobs: a restarted manager starts idle. */
@@ -60,6 +70,9 @@ export class TypingLeases {
       delayMs?: number;
       signal?: AbortSignal;
       validate?: () => void;
+      authorize?: (
+        lease: Readonly<TypingLeaseDescriptor>,
+      ) => TypingLeaseAuthorization;
     } = {},
   ): TypingTicket | undefined {
     if (this.stopped || !this.connected || options.signal?.aborted) return;
@@ -86,16 +99,27 @@ export class TypingLeases {
       this.conversations.set(key, state);
     }
     if (generation < state.highestGeneration) return;
+    const ticket = { scope, generation, token: ++this.token };
+    const issuedAt = this.clock.now();
+    const descriptor = Object.freeze({
+      ...ticket,
+      issuedAt,
+      ttlMs,
+      expiresAt: issuedAt + ttlMs,
+    });
+    const authorization = options.authorize?.(descriptor);
     state.highestGeneration = generation;
     this.clearLease(state);
-    const ticket = { scope, generation, token: ++this.token };
     const lease: Lease = {
       generation,
       token: ticket.token,
-      startAt: this.clock.now() + (options.delayMs ?? 0),
-      expiresAt: this.clock.now() + ttlMs,
+      startAt: issuedAt + (options.delayMs ?? 0),
+      expiresAt: descriptor.expiresAt,
     };
-    lease.validate = options.validate;
+    lease.validate = authorization?.validate ?? options.validate;
+    lease.disposeAuthorization = authorization
+      ? () => authorization.dispose()
+      : undefined;
     state.lease = lease;
     if (options.signal) {
       const abort = () => this.end(ticket);
@@ -119,8 +143,10 @@ export class TypingLeases {
     this.dispatch(state);
   }
   private clearLease(state: Conversation) {
-    state.lease?.detach?.();
+    const lease = state.lease;
     state.lease = undefined;
+    lease?.detach?.();
+    lease?.disposeAuthorization?.();
   }
   private desired(state: Conversation): boolean {
     if (state.lease && this.clock.now() >= state.lease.expiresAt)
@@ -197,9 +223,23 @@ export class TypingLeases {
         const active = this.desired(state);
         if (active === state.observed) continue;
         const dispatchedLease = state.lease;
+        if (active) {
+          try {
+            dispatchedLease?.validate?.();
+          } catch {
+            this.report("TYPING_AUTHORIZATION_REJECTED");
+            if (state.lease === dispatchedLease) this.clearLease(state);
+            if (
+              state.lease &&
+              state.lease !== dispatchedLease &&
+              this.desired(state)
+            )
+              continue;
+            return;
+          }
+        }
         try {
           if (active) {
-            state.lease?.validate?.();
             await state.space.startTyping();
           } else await state.space.stopTyping();
           state.observed = active; // SDK completion only, never a visibility claim.

@@ -1,3 +1,4 @@
+import { canonical } from '../../runtime/core/idempotency.js';
 import { isDeepStrictEqual } from 'node:util';
 import { sameScope, type Transaction, type EventReducer } from '../../index.js';
 import type { AuthenticatedInteraction } from './interaction-adapter.js';
@@ -13,7 +14,7 @@ export function reduceAuthenticatedInteraction(tx: Transaction, input: Authentic
   { status: 'unresolved' | 'replayed' } | { status: 'committed'; pointer: { handoffId: string; taskId: string; generation: number } } {
   const eventId = key('callback-event', backendId + ':' + input.eventId);
   const nonceId = key('callback-nonce', backendId + ':' + data.session.id + ':' + input.nonce);
-  if (tx.get('inbox', eventId) || tx.get('inbox', nonceId)) return { status: 'replayed' };
+
   const task = tx.get('tasks', data.taskId), card = tx.get('cards', data.card.id), session = tx.get('sessions', data.session.id);
   const refs = [data.card, data.session, data.message].map(ref => tx.get('references', ref.id));
   const event = { version: 1 as const, type: 'app-interaction' as const, eventId,
@@ -33,6 +34,19 @@ export function reduceAuthenticatedInteraction(tx: Transaction, input: Authentic
       ref.taskId === data.taskId && ref.generation === data.generation && ref.ownedByPrincipalId === data.principalId &&
       isDeepStrictEqual(ref.reference, [data.card, data.session, data.message][index])),
     'FORBIDDEN', 'Authoritative callback resources differ.');
+  const proofId = key('callback-proof', nonceId);
+  const assertionJson = canonical({ ...input, eventId: undefined });
+  if (tx.get('inbox', eventId) || tx.get('inbox', nonceId)) {
+    const proof = tx.get('interactionClaims', proofId);
+    requireCard(proof && proof.backendId === backendId && proof.assertionJson === assertionJson,
+      'FORBIDDEN', 'Callback replay identity differs or its durable proof is unavailable.');
+    const priorEvent = tx.get('inbox', eventId);
+    requireCard(!priorEvent || (priorEvent.event.type === 'app-interaction' &&
+      isDeepStrictEqual(priorEvent.event.session, data.session)), 'FORBIDDEN', 'Callback event ID belongs to another session.');
+    return { status: 'replayed' };
+  }
+  tx.put('interactionClaims', { id: proofId, scope: data.card.scope, revision: 0,
+    assertionJson, eventId: input.eventId, backendId }, null);
   // Single-use nonce. To permit another interaction the backend/host must register a new session binding.
   tx.put('inbox', { id: eventId, scope: event.scope, revision: 0, event, state: 'reduced' }, null);
   tx.put('inbox', { id: nonceId, scope: event.scope, revision: 0, event: { ...event, eventId: nonceId }, state: 'reduced' }, null);
@@ -86,7 +100,6 @@ export async function applyCardInteraction(input: AuthenticatedInteraction, snap
   requireCard(captured, 'UNAVAILABLE', 'Authenticated event capture is unavailable.', 'app_backend_capture_required');
   const continuationId = key('continuation', binding.backendContractId + ':' + input.eventId);
   return services.transaction(unit => {
-    services.assertActiveClaim();
     requireCard(binding.expiresAt > services.clock.now(), 'FORBIDDEN', 'Callback expired during durable capture.');
     const card = unit.get('cards', data.card.id), session = unit.get('sessions', data.session.id);
     if (!card || !session) return { status: 'unresolved' as const };

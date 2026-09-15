@@ -1,5 +1,5 @@
 import { createServer, type Socket } from "node:net";
-import { lstat, chmod } from "node:fs/promises";
+import { lstat, chmod, unlink } from "node:fs/promises";
 import { dirname, isAbsolute } from "node:path";
 import { timingSafeEqual, randomUUID } from "node:crypto";
 import { TextDecoder } from "node:util";
@@ -19,6 +19,9 @@ import { DurableWork } from "./work-handoff.js";
 import { admitRequest } from "./admission.js";
 import { publicError, RuntimeFault } from "./errors.js";
 export interface RuntimeProtocolServices {
+  streamProducer?: (principal: AuthenticatedPrincipal, request: Extract<import("../../contracts/protocol.js").LocalRequest,
+    { method: "stream.open" | "stream.append" | "stream.close" | "stream.abort" }>) => Promise<unknown>;
+  importMedia?: import("../../host/protocol.js").MediaImportPort;
   contexts: DurableContexts;
   submission: SubmissionPort;
   work: DurableWork;
@@ -49,6 +52,14 @@ export class DurableLocalProtocol {
         );
       let result: unknown;
       switch (request.method) {
+        case "stream.open": case "stream.append": case "stream.close": case "stream.abort":
+          if (!s.streamProducer || !c.permissions.includes("text.stream")) throw new RuntimeFault("FORBIDDEN");
+          result = await s.streamProducer(principal, request);
+          break;
+        case "media.import":
+          if (!s.importMedia) throw new RuntimeFault("UNAVAILABLE");
+          result = await s.importMedia(principal, c.contextId, { filename: request.filename, metadata: request.metadata });
+          break;
         case "submit":
           result = await s.submission.submit(admitRequest(request.action), c);
           break;
@@ -115,6 +126,9 @@ export interface LocalCredential {
   token: string;
   principal: AuthenticatedPrincipal;
 }
+export interface LocalDispatcher {
+  dispatch(input: unknown, principal: AuthenticatedPrincipal): Promise<unknown>;
+}
 /** Build the frozen local protocol over one authenticated private Unix-domain socket. */
 export function createLocalServer(options: {
   path: string;
@@ -131,7 +145,7 @@ export function createLocalServer(options: {
 export async function listenDurableLocal(
   path: string,
   inputCredentials: readonly LocalCredential[],
-  protocol: DurableLocalProtocol,
+  protocol: LocalDispatcher,
 ): Promise<{ close(): Promise<void> }> {
   if (!isAbsolute(path)) throw new Error("ABSOLUTE_SOCKET_PATH_REQUIRED");
   const dir = await lstat(dirname(path));
@@ -250,11 +264,27 @@ export async function listenDurableLocal(
       resolve();
     });
   });
+  let bound: Awaited<ReturnType<typeof lstat>>;
+  try {
+    bound = await lstat(path);
+    if (!bound.isSocket()) throw new Error("BOUND_PATH_NOT_SOCKET");
+  } catch (error) {
+    for (const socket of sockets) socket.destroy();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    throw error;
+  }
   try {
     await chmod(path, 0o600);
   } catch (e) {
     for (const socket of sockets) socket.destroy();
     await new Promise<void>((resolve) => server.close(() => resolve()));
+    try {
+      const current = await lstat(path);
+      if (current.isSocket() && current.dev === bound.dev && current.ino === bound.ino)
+        await unlink(path);
+    } catch (cleanup) {
+      if ((cleanup as NodeJS.ErrnoException).code !== "ENOENT") throw new AggregateError([e, cleanup]);
+    }
     throw e;
   }
   let closed = false;
@@ -266,6 +296,14 @@ export async function listenDurableLocal(
       await new Promise<void>((resolve, reject) =>
         server.close((e) => (e ? reject(e) : resolve())),
       );
+      try {
+        const current = await lstat(path);
+        if (!current.isSocket() || current.dev !== bound.dev || current.ino !== bound.ino)
+          throw new Error("SOCKET_PATH_CHANGED");
+        await unlink(path);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
     },
   };
 }

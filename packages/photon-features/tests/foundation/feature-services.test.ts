@@ -66,5 +66,5 @@ test('host registers injected features and shuts all components down after faile
  store:{persistence:'sqlite',assertActiveClaim(){throw new Error('not used');},recordReceipt(){throw new Error('not used');},transaction(){throw new Error('not used');},close(){calls.push('store-close');}},
  executor:{contractVersion:'f0-services-2',registerFeatures(m){assert.equal(m.length,44);calls.push('register');},ready:()=>false,async dispatch(){throw new Error('not used');},async recover(){calls.push('recover');},async startOutbox(){calls.push('outbox');throw new Error('startup failure');},async stopOutbox(){calls.push('outbox-stop');},async capture(){throw new Error('not used');}},
  });
- assert.deepEqual(calls,[]);await assert.rejects(host.start(),/HOST_START_FAILED/);assert.deepEqual(calls,['register','provider','recover','ingress','outbox','ingress-stop','outbox-stop','provider-stop','store-close']);assert.equal(host.doctor().ready,false);await host.stop();assert.equal(calls.length,9);
+ assert.deepEqual(calls,[]);await assert.rejects(host.start(),/HOST_START_FAILED/);assert.deepEqual(calls,['register','provider','recover','ingress','outbox','outbox-stop','ingress-stop','provider-stop','store-close']);assert.equal(host.doctor().ready,false);await host.stop();assert.equal(calls.length,9);
 });

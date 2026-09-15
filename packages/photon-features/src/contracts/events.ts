@@ -58,6 +58,22 @@ export const incomingEventSchema = z.discriminatedUnion("type", [
   }),
   z.strictObject({
     ...base,
+    type: z.literal("poll-answer"),
+    senderId: idSchema,
+    optionText: z.string().min(1).max(1000),
+    question: z.string().min(1).max(300).nullable(),
+    selected: z.boolean(),
+    answerText: z.string().min(1).max(1600),
+    captureId: idSchema,
+    correlation: z
+      .strictObject({
+        poll: pollRefSchema,
+        option: optionRefSchema,
+      })
+      .nullable(),
+  }),
+  z.strictObject({
+    ...base,
     type: z.literal("group"),
     change: z.enum([
       "created",

@@ -8,6 +8,425 @@
           "type": "number",
           "const": 1
         },
+        "ttlMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 30000
+        },
+        "method": {
+          "type": "string",
+          "const": "stream.open"
+        },
+        "contextId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+        }
+      },
+      "required": [
+        "version",
+        "ttlMs",
+        "method",
+        "contextId"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "number",
+          "const": 1
+        },
+        "stream": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "number",
+              "const": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+            },
+            "scope": {
+              "type": "object",
+              "properties": {
+                "projectId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                },
+                "provider": {
+                  "type": "string",
+                  "const": "imessage"
+                },
+                "accountId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                },
+                "lineId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                },
+                "spaceId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                }
+              },
+              "required": [
+                "projectId",
+                "provider",
+                "accountId",
+                "lineId",
+                "spaceId"
+              ],
+              "additionalProperties": false
+            },
+            "kind": {
+              "type": "string",
+              "const": "stream"
+            },
+            "generation": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "expiresAt": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "version",
+            "id",
+            "scope",
+            "kind",
+            "generation",
+            "expiresAt"
+          ],
+          "additionalProperties": false
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "method": {
+          "type": "string",
+          "const": "stream.append"
+        },
+        "contextId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+        }
+      },
+      "required": [
+        "version",
+        "stream",
+        "sequence",
+        "text",
+        "method",
+        "contextId"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "number",
+          "const": 1
+        },
+        "stream": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "number",
+              "const": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+            },
+            "scope": {
+              "type": "object",
+              "properties": {
+                "projectId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                },
+                "provider": {
+                  "type": "string",
+                  "const": "imessage"
+                },
+                "accountId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                },
+                "lineId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                },
+                "spaceId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                }
+              },
+              "required": [
+                "projectId",
+                "provider",
+                "accountId",
+                "lineId",
+                "spaceId"
+              ],
+              "additionalProperties": false
+            },
+            "kind": {
+              "type": "string",
+              "const": "stream"
+            },
+            "generation": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "expiresAt": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "version",
+            "id",
+            "scope",
+            "kind",
+            "generation",
+            "expiresAt"
+          ],
+          "additionalProperties": false
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096
+        },
+        "method": {
+          "type": "string",
+          "const": "stream.close"
+        },
+        "contextId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+        }
+      },
+      "required": [
+        "version",
+        "stream",
+        "sequence",
+        "method",
+        "contextId"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "number",
+          "const": 1
+        },
+        "stream": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "number",
+              "const": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+            },
+            "scope": {
+              "type": "object",
+              "properties": {
+                "projectId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                },
+                "provider": {
+                  "type": "string",
+                  "const": "imessage"
+                },
+                "accountId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                },
+                "lineId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                },
+                "spaceId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+                }
+              },
+              "required": [
+                "projectId",
+                "provider",
+                "accountId",
+                "lineId",
+                "spaceId"
+              ],
+              "additionalProperties": false
+            },
+            "kind": {
+              "type": "string",
+              "const": "stream"
+            },
+            "generation": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "expiresAt": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "version",
+            "id",
+            "scope",
+            "kind",
+            "generation",
+            "expiresAt"
+          ],
+          "additionalProperties": false
+        },
+        "method": {
+          "type": "string",
+          "const": "stream.abort"
+        },
+        "contextId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+        }
+      },
+      "required": [
+        "version",
+        "stream",
+        "method",
+        "contextId"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "number",
+          "const": 1
+        },
+        "method": {
+          "type": "string",
+          "const": "media.import"
+        },
+        "contextId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_:+.@/-]+$"
+        },
+        "filename": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_. -]{1,200}$"
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "mimeType": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[a-z0-9.+-]+\\/[a-z0-9.+-]+$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "duration": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "mimeType"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "version",
+        "method",
+        "contextId",
+        "filename",
+        "metadata"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "number",
+          "const": 1
+        },
         "method": {
           "type": "string",
           "const": "submit"

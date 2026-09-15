@@ -12,7 +12,18 @@ import { generateSkill } from '../../../scripts/generate-skill.mjs';
 import { smoke } from '../../../scripts/smoke-test.mjs';
 // Synthetic in-memory release metadata for installer tests, not an integration attestation.
 const metadata = { kind: 'assembled-tested-candidate', commit: 'a'.repeat(40), f0Digest: 'b'.repeat(64), node: '24.13.0', npm: '10.9.2', stateSchemaVersion: 1, compatibleStateSchemas: [1], platform: process.platform, arch: process.arch, tests: ['npm test', 'npm run photon:test', 'npm run photon:check', 'npm run photon:test:integration', 'node scripts/generate-skill.mjs --check'].map(command => ({ command, exitCode: 0 })) };
-const files = { 'dist/src/cli/main.js': 'console.log("fixture only")', 'dist/src/index.d.ts': 'export {};', 'schemas/protocol.json': '{}', 'SKILL.md': 'baseline', 'INSTALL.md': 'inactive', 'package.json': '{"type":"module"}', 'dependency-lock.json': '{}', 'node_modules/zod/package.json': '{}' };
+const files = {
+  'dist/src/cli/main.js': 'console.log("fixture only")',
+  'dist/src/host/process.js': 'export async function processMain() { return 2; }',
+  'dist/src/host/task-launcher.js': 'export async function taskLauncherMain() { return 2; }',
+  'dist/src/index.d.ts': 'export {};',
+  'bin/grok-photon': { content: '#!/usr/bin/env node\n', mode: 0o700 },
+  'bin/grok-photon-host': { content: '#!/usr/bin/env node\n', mode: 0o700 },
+  'bin/grok-photon-task': { content: '#!/usr/bin/env node\n', mode: 0o700 },
+  'schemas/protocol.json': '{}', 'SKILL.md': 'baseline', 'DEPLOYMENT.md': 'production runbook',
+  'INSTALL.md': 'inactive', 'package.json': '{"type":"module"}', 'dependency-lock.json': '{}',
+  'node_modules/zod/package.json': '{}',
+};
 async function fixture() {
   const dir = await mkdtemp(join(tmpdir(), 'wt08-install-'));
   const bytes = encodeArchive(files, metadata), checksum = sha256(bytes), archivePath = join(dir, 'fixture.gpf.gz');

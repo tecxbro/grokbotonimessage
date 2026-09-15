@@ -173,7 +173,7 @@ test("delivery timestamps do not create a new event; stable provider identity de
     f.store.transaction(tx => {
       reducer.reduce(e, tx);
       reducer.reduce({ ...e, receivedAt: 9999 }, tx);
-      reducer.reduce({ ...e, eventId: "router-alias", receivedAt: 20000 }, tx);
+      reducer.reduce({ ...e, eventId: "router-alias", providerEventId: "provider-alias", receivedAt: 20000 }, tx);
     });
     assert.equal(f.store.transaction(tx => tx.list("handoffs", scope, 100).length), 1);
     assert.equal(f.store.transaction(tx => tx.list("votes", scope, 100)[0]?.revision), 0);

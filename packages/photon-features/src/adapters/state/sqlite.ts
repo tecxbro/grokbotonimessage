@@ -119,13 +119,47 @@ export class DurableSQLiteStore extends SQLiteStore implements StateStore {
       .all(after, limit)
       .map((r) => JSON.parse(String(r.body)) as StateTables[K]);
   }
-  /** Conservative account/line FIFO also serializes cross-conversation admin operations. */
+  /** Bounded production inbox page. Filtering occurs in SQLite so arbitrarily
+   * large reduced history cannot consume the page. When both classes exist,
+   * each receives half the page: unresolved retries cannot starve fresh input,
+   * and a sustained input stream cannot starve reconciliation work. */
+  pendingInbox(scope: Scope, limit = 1000): StateTables["inbox"][] {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 1000)
+      throw new Error("INVALID_SCAN");
+    const read = (state: "pending" | "unresolved") => this.reader
+      .prepare(
+        `SELECT body FROM inbox WHERE scope=? AND json_extract(body,'$.state')=? ORDER BY json_extract(body,'$.event.receivedAt'), id LIMIT ?`,
+      )
+      .all(scopeKey(scope), state, limit)
+      .map((row) => JSON.parse(String(row.body)) as StateTables["inbox"])
+      .filter((row) => sameScope(row.scope, scope) && row.state === state);
+    const pending = read("pending"), unresolved = read("unresolved");
+    if (!pending.length) return unresolved;
+    if (!unresolved.length) return pending;
+    const pendingLimit = Math.ceil(limit / 2);
+    return [
+      ...pending.slice(0, pendingLimit),
+      ...unresolved.slice(0, limit - pendingLimit),
+    ];
+  }
+  /**
+   * Preserve FIFO within one conversation. Unresolved work, including an
+   * unknown provider outcome, fences only later work that targets that same
+   * space. Space creation has no existing conversation resource, so creations
+   * share a line-scoped dependency key; line rate limiting remains separate.
+   */
   predecessors(id: string, scope: Scope): boolean {
     return !!this.reader
       .prepare(
-        `SELECT 1 FROM outbox WHERE rowid < (SELECT rowid FROM outbox WHERE id=?) AND json_extract(body,'$.scope.projectId')=? AND json_extract(body,'$.scope.accountId')=? AND json_extract(body,'$.scope.lineId')=? AND json_extract(body,'$.result.status') IN ('queued','blocked','unknown-outcome') LIMIT 1`,
+        `WITH current AS (SELECT rowid, json_extract(body,'$.action.operation') AS operation FROM outbox WHERE id=?) SELECT 1 FROM outbox AS predecessor, current WHERE predecessor.rowid < current.rowid AND json_extract(predecessor.body,'$.scope.projectId')=? AND json_extract(predecessor.body,'$.scope.accountId')=? AND json_extract(predecessor.body,'$.scope.lineId')=? AND (json_extract(predecessor.body,'$.scope.spaceId')=? OR (current.operation='space.create' AND json_extract(predecessor.body,'$.action.operation')='space.create')) AND json_extract(predecessor.body,'$.result.status') IN ('queued','blocked','unknown-outcome') LIMIT 1`,
       )
-      .get(id, scope.projectId, scope.accountId, scope.lineId);
+      .get(
+        id,
+        scope.projectId,
+        scope.accountId,
+        scope.lineId,
+        scope.spaceId,
+      );
   }
   /** Public StateStore claim check; runtime execution additionally checks the exact request row. */
   assertActiveClaim(context: TrustedContext, claim: ExecutionClaim): void {

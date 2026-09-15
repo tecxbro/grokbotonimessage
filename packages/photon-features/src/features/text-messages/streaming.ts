@@ -2,7 +2,7 @@ import { equivalent } from "./identity.js";
 import { text, type ContentInput } from "spectrum-ts";
 import { assertScope, sameScope, type ResourceRef } from "../../index.js";
 import { requireThat, FeatureError } from "./errors.js";
-import { oneBubble } from "./voice-policy.js";
+import { oneBubble, countProseQuestions } from "./voice-policy.js";
 import type { Journal } from "./journal.js";
 export const streamBounds = Object.freeze({
   characters: 16000,
@@ -129,10 +129,10 @@ import {
   type PublicTextMessageOptions,
 } from "./sdk.js";
 /** Claim a registered stream in the shared domain before opening it; crashes never reopen consumed input. */
-async function consumeRegisteredStream(
+async function* iterateRegisteredStream(
   ref: Extract<ResourceRef, { kind: "stream" }>,
   s: PublicServices,
-): Promise<ContentInput> {
+): AsyncGenerator<string> {
   s.assertActiveClaim();
   assertScope(ref, s.context.scope);
   requireThat(
@@ -159,11 +159,9 @@ async function consumeRegisteredStream(
       "UNAVAILABLE",
       "Stream is unavailable or already consumed.",
     );
-    unit.put(
-      "streams",
-      { ...record, revision: record.revision + 1, state: "closed" },
-      record.revision,
-    );
+    // Reserve before opening. The execution facade attaches the exact request
+    // and fence, and both layers leave a terminal record after failure/crash.
+    unit.put("streams", { ...record, revision: record.revision + 1, state: "reserved" }, record.revision);
   });
   const controller = new AbortController();
   const onAbort = () => controller.abort();
@@ -203,6 +201,7 @@ async function consumeRegisteredStream(
       chunks = 0;
     while (true) {
       const next = await race(() => iterator!.next());
+      s.assertActiveClaim();
       if (next.done) break;
       requireThat(
         typeof next.value === "string" &&
@@ -218,13 +217,14 @@ async function consumeRegisteredStream(
       );
       s.assertActiveClaim();
       value += next.value;
+      yield next.value;
     }
-    return text(oneBubble(value));
+
   } catch (error) {
     if (error instanceof FeatureError) throw error;
     throw new FeatureError(
       "UNAVAILABLE",
-      "Registered stream failed before provider dispatch; it cannot be reopened.",
+      "Registered stream terminated; consumed input cannot be reopened.",
     );
   } finally {
     clearTimeout(timer);
@@ -235,9 +235,33 @@ async function consumeRegisteredStream(
       void Promise.resolve()
         .then(() => iterator!.return!())
         .catch(() => {});
+    s.transaction((unit) => {
+      const record = unit.get("streams", ref.id);
+      if (record?.state === "reserved")
+        unit.put("streams", { ...record, revision: record.revision + 1, state: "closed" }, record.revision);
+    });
   }
 }
-/** Buffered fallback, not progressive delivery. Replay consults shared children before opening the stream. */
+/** Progressive input consists of complete prose thoughts supplied by an authorized
+ * producer. Format each thought before yielding; never buffer the whole answer.
+ * The SDK owns edit throttling and exposes only the final receipt, not per-edit receipts. */
+async function* progressiveThoughts(ref: Extract<ResourceRef, { kind: "stream" }>, s: PublicServices) {
+  let first = true;
+  let questions = 0, characters = 0;
+  for await (const thought of iterateRegisteredStream(ref, s)) {
+    const formatted = oneBubble(thought);
+    // Count prose questions using the same structured-content masking as the policy.
+    questions += countProseQuestions(formatted);
+    requireThat(questions <= 1, "INVALID_REQUEST", "Use one short question per turn.");
+    const delta = (first ? "" : " ") + formatted;
+    characters += delta.length;
+    requireThat(characters <= streamBounds.characters, "INVALID_REQUEST", "Formatted stream exceeded its character bound.");
+    yield delta;
+    first = false;
+  }
+}
+/** Replay consults shared children before opening input. A native failure leaves
+ * unknown outcome evidence; neither this handler nor the SDK sends a replacement. */
 export async function executeTextStream(
   action: ActionFor<"text.stream">,
   s: PublicServices,
@@ -249,6 +273,30 @@ export async function executeTextStream(
     key: `${textResult(action, s).requestId}:0`,
     argumentsDigest: digestTextInput([action.operation, action.arguments]),
     dispatch: async (signal) => {
+      const scoped = { ...s, signal: AbortSignal.any([s.signal, signal]) };
+      if (o.streamDelivery === "progressive") {
+        const chunks = progressiveThoughts(action.arguments.stream, scoped);
+        let first: IteratorResult<string>;
+        try {
+          first = await chunks.next();
+          requireThat(!first.done, "INVALID_REQUEST", "Stream produced no text.");
+          s.assertActiveClaim();
+        } catch (error) {
+          void chunks.return(undefined).catch(() => {});
+          const cancelled = scoped.signal.aborted;
+          return { ...textResult(action, s), status: cancelled ? "cancelled" : "failed",
+            error: { code: cancelled ? "CANCELLED" : error instanceof FeatureError ? error.code : "UNAVAILABLE",
+              message: "Stream failed before provider dispatch; consumed input cannot be reopened.", retry: "never" } };
+        }
+        try {
+          // Prefetch only the first thought. A rejected/empty source is known not
+          // to have transmitted; errors after entering send retain uncertainty.
+          return mapTextMessageOperation(action, s, o, await space.send(text((async function* () {
+            yield first.value as string;
+            yield* chunks;
+          })())));
+        } finally { void chunks.return(undefined).catch(() => {}); }
+      }
       let content: ContentInput;
       try {
         if (signal.aborted)
@@ -256,10 +304,9 @@ export async function executeTextStream(
             "CANCELLED",
             "Stream execution was cancelled.",
           );
-        content = await consumeRegisteredStream(action.arguments.stream, {
-          ...s,
-          signal: AbortSignal.any([s.signal, signal]),
-        });
+        let buffered = "";
+        for await (const chunk of iterateRegisteredStream(action.arguments.stream, scoped)) buffered += chunk;
+        content = text(oneBubble(buffered));
         s.assertActiveClaim();
       } catch (error) {
         // This block precedes the SDK send, so it cannot conceal an ambiguous provider outcome.

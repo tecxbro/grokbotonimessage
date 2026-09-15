@@ -6,10 +6,15 @@ import type {
 import type { CaptureStore } from "./capture.js";
 import type { SpectrumOwner } from "./spectrum-owner.js";
 import { snapshotMessage } from "./snapshot.js";
+import type { Message } from "spectrum-ts";
 import {
-  normalizeCaptured,
   type Correlations,
 } from "../../runtime/inbound/normalize.js";
+import {
+  processCapturedMessage,
+  UnresolvedCapturedMessage,
+  type CaptureProcessing,
+} from "./message-events.js";
 
 export interface IngressDiagnostic {
   code: "RECEIVE_FAILED" | "UNRESOLVED_ROUTE" | "RESTART_GAP";
@@ -24,6 +29,8 @@ export class SpectrumEventSource implements IngressAdapter {
     private readonly clock: Clock,
     private readonly report: (diagnostic: IngressDiagnostic) => void,
     private readonly correlations: Correlations = {},
+    private readonly processing?: Omit<CaptureProcessing, "correlations">,
+    private readonly snapshot: (message: Message) => Record<string, unknown> = snapshotMessage,
   ) {}
   async start(accept: (event: IncomingEvent) => Promise<void>): Promise<void> {
     if (this.running || this.stopped)
@@ -33,26 +40,29 @@ export class SpectrumEventSource implements IngressAdapter {
     this.running = (async () => {
       for await (const [, message] of stream) {
         // Once read, finish durable acceptance even when stop/cancellation arrives.
-        const snapshot = snapshotMessage(message),
+        const snapshot = this.snapshot(message),
+          capturedAt = this.clock.now(),
           captureId = this.captures.put({
-            capturedAt: this.clock.now(),
+            capturedAt,
             message: snapshot,
           });
-        let event: IncomingEvent;
         try {
-          event = normalizeCaptured(
+          if (!this.processing)
+            throw new Error("INGRESS_PROCESSING_NOT_CONFIGURED");
+          await processCapturedMessage({
             snapshot,
             captureId,
-            this.owner.routes,
-            this.clock.now(),
-            this.correlations,
-          );
-        } catch {
+            owner: this.owner,
+            capturedAt,
+            accept,
+            processing: {...this.processing, correlations: this.correlations},
+          });
+        } catch (error) {
+          if (!(error instanceof UnresolvedCapturedMessage)) throw error;
           this.report({ code: "UNRESOLVED_ROUTE", captureId });
           if (this.stopped) break;
           continue;
         }
-        await accept(event);
         if (this.stopped) break;
       }
       if (!this.stopped) throw new Error("UNEXPECTED_STREAM_END");

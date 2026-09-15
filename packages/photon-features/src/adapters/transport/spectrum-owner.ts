@@ -1,4 +1,4 @@
-import { Spectrum, type Message, type Space } from "spectrum-ts";
+import { Spectrum, type Message, type Platform, type PlatformInstance, type Space } from "spectrum-ts";
 import { imessage } from "spectrum-ts/providers/imessage";
 import type { ClientOwner, Scope } from "../../contracts/index.js";
 import { ProviderContext } from "./provider-context.js";
@@ -8,9 +8,12 @@ export interface TransportDimensions {
   outbound: "imessage";
   wake: "existing-grok-task-handoff";
 }
+type IMessageDefinition = typeof imessage extends Platform<infer Definition> ? Definition : never;
+export type OwnedProvider = PlatformInstance<IMessageDefinition>;
 export interface OwnedSdk {
   messages(): AsyncIterable<[Space, Message]>;
   space(id: string, route: { phone: string }): Promise<Space>;
+  provider?(): OwnedProvider;
   stop(): Promise<void>;
 }
 export type SdkFactory = () => Promise<OwnedSdk>;
@@ -20,11 +23,22 @@ export function cloudSdkFactory(config: {
   projectSecret: string;
 }): SdkFactory {
   return async () => {
+    // Spectrum 12.8.0 installs process-exiting SIGINT/SIGTERM listeners. This
+    // executable owns shutdown so it can drain work, close SQLite and release
+    // its lock before exit. Use Node's public listener API around the sole SDK
+    // construction; retain every listener that was present before construction.
+    const signals = ["SIGINT", "SIGTERM"] as const;
+    const before = new Map(signals.map(signal => [signal, new Set(process.listeners(signal))]));
     const app = await Spectrum({ ...config, providers: [imessage.config()] });
+    for (const signal of signals)
+      for (const listener of process.listeners(signal))
+        if (!before.get(signal)!.has(listener)) process.removeListener(signal, listener);
+
     const provider = imessage(app);
     return {
       messages: () => app.messages,
       space: (id, route) => provider.space.get(id, route),
+      provider: () => provider,
       stop: () => app.stop(),
     };
   };
@@ -86,6 +100,13 @@ export class SpectrumOwner implements ClientOwner {
       conversationId,
       this.routes.outbound(scope, conversationId),
     );
+  }
+  /** Return the already-owned narrowed provider. This never creates a client. */
+  provider(): OwnedProvider {
+    if (!this.ready()) throw new Error("OWNER_NOT_READY");
+    const provider = this.sdk!.provider;
+    if (!provider) throw new Error("PROVIDER_BINDING_UNAVAILABLE");
+    return provider();
   }
   receiveFailed() {
     this.failed = true;

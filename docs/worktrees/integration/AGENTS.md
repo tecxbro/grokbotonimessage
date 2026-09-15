@@ -1,5 +1,9 @@
 # Integration lane rules
 
+This file is development guidance only. The current deployment runbook is
+`packages/photon-features/DEPLOYMENT.md`, and post-activation handling of real
+incoming work is governed by `packages/photon-features/SKILL.md`.
+
 This directory and the shared composition, registry, host, package, contract,
 migration, verification, and aggregate documentation changes required to assemble
 reviewed lanes are owned by `photon-v3/integration` only.
@@ -15,6 +19,11 @@ Use one Spectrum credential/connection owner, one durable inbox/outbox, the
 writes. Verify webhook signatures over raw bytes before parsing and persist inbound
 work before acknowledgment. Do not activate, provision, send live messages, or
 claim provider/device evidence in this lane.
+
+That development restriction prohibits unsolicited development tests. It does
+not become an operating instruction to ignore a real incoming user request after
+authorized deployment; the installed skill handles that work in its originating
+conversation and scoped context.
 
 Before every integration commit, inspect staged, unstaged, and untracked paths.
 Stage only integration-owned paths and the exact reviewed lane commits being

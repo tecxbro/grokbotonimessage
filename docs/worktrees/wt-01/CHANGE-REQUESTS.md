@@ -71,3 +71,11 @@ These are assembled/integration checks, not failures in the owned focused suite.
 - Aggregate lane verifier: BLOCKED by CR-01.
 - Ownership checker: BLOCKED by CR-02 (`UNOWNED_PATH:.gitignore`).
 - Documentation checker: BLOCKED by CR-03 (`FILE_INVENTORY_DRIFT`).
+
+## Finding 6 aggregate-gate rerun — 2026-09-10
+
+- `npx -y -p node@24.13.0 node scripts/verify-lane.mjs wt-01`: exit 1; exact output `LANE_NOT_ASSEMBLED`.
+- `node scripts/verify-ownership.mjs wt-01`: exit 1; exact output `UNOWNED_PATH:.gitignore`.
+- `node scripts/verify-docs.mjs`: exit 1; exact output `ENOENT: no such file or directory, open '/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/wt-01/.photon-local/verification.json'`. The preceding lane gate did not create the required report.
+
+These are unchanged shared verification limitations, not evidence against the independently passing Finding 6 source and tests. No verifier, ownership map, shared contract, or sibling lane was changed to obtain a pass.
