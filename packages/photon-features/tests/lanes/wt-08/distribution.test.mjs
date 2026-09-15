@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, writeFile, rm, mkdir, chmod, symlink } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, rm, mkdir, chmod, symlink, readdir, lstat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { execFileSync } from 'node:child_process';
-import { encodeArchive, decodeArchive, sha256, packageCandidate } from '../../../scripts/package.mjs';
+import { encodeArchive, decodeArchive, sha256, packageCandidate, packagePayloadDirectories } from '../../../scripts/package.mjs';
 import { installRelease, rollbackRelease } from '../../../scripts/install.mjs';
 import { generateSkill } from '../../../scripts/generate-skill.mjs';
 import { smoke } from '../../../scripts/smoke-test.mjs';
@@ -37,6 +38,39 @@ test('archive is deterministic, complete, checksummed and traversal/secret safe'
   for (const name of ['../escape', '/tmp/escape', 'nested/../../escape', '.env', 'credentials', 'runtime/state.sqlite']) assert.throws(() => encodeArchive({ [name]: 'secret' }, metadata), /UNSAFE_ARCHIVE_PATH/);
   const collision = encodeArchive({ x: 'file', 'x/y': 'child' }, metadata);
   assert.throws(() => decodeArchive(collision, sha256(collision)), /COLLISION/);
+});
+test('installed release uses its checksummed migration and reopens outside the checkout', async () => {
+  assert.ok(packagePayloadDirectories.some(({ source, archive }) => source === 'src/state/migrations' && archive === 'src/state/migrations/'));
+  const f = await fixture();
+  try {
+    const releaseFiles = { ...files };
+    async function collect(source, prefix) {
+      for (const entry of await readdir(source, { withFileTypes: true })) {
+        const path = join(source, entry.name);
+        if (entry.isDirectory()) await collect(path, `${prefix}${entry.name}/`);
+        else if (entry.isFile()) releaseFiles[`${prefix}${entry.name}`] = { content: await readFile(path), mode: ((await lstat(path)).mode & 0o111) ? 0o700 : 0o600 };
+      }
+    }
+    const packageRoot = fileURLToPath(new URL('../../../', import.meta.url));
+    const workspaceRoot = fileURLToPath(new URL('../../../../../', import.meta.url));
+    await collect(join(packageRoot, 'dist/src'), 'dist/src/');
+    await collect(join(workspaceRoot, 'node_modules/zod'), 'node_modules/zod/');
+    releaseFiles['src/state/migrations/0001-initial.sql'] = await readFile(join(packageRoot, 'src/state/migrations/0001-initial.sql'));
+    const archive = encodeArchive(releaseFiles, metadata);
+    const archivePath = join(f.dir, 'release-layout.gpf.gz');
+    await writeFile(archivePath, archive);
+    const installed = await installRelease({ archivePath, checksum: sha256(archive), root: f.root });
+    const module = await import(pathToFileURL(join(installed.path, 'dist/src/adapters/state/sqlite.js')).href);
+    const state = join(f.root, 'runtime/state.sqlite');
+    new module.DurableSQLiteStore(state).close();
+    new module.DurableSQLiteStore(state).close();
+    const installedMigration = join(installed.path, 'src/state/migrations/0001-initial.sql');
+    const unrelatedMigration = join(f.dir, 'src/state/migrations/0001-initial.sql');
+    await mkdir(join(f.dir, 'src/state/migrations'), { recursive: true });
+    await writeFile(unrelatedMigration, await readFile(installedMigration));
+    await rm(installedMigration);
+    assert.throws(() => new module.DurableSQLiteStore(join(f.root, 'runtime/unrelated-fallback.sqlite')), /F0_MIGRATION_NOT_FOUND/);
+  } finally { await f.close(); }
 });
 test('clean and repeat installation is inactive, preserves fuller skill and unrelated files', async () => {
   const f = await fixture();

@@ -36,6 +36,9 @@
   release-pinned launcher verifies the skill/release/task generation and injects
   the three local client bindings. External Grok task acceptance remains a
   deployment evidence gate.
+- CR-I-019: **closed locally.** The custom archive collector includes the F0 SQL
+  migration as a checksummed payload entry, and the production SQLite adapter
+  resolves only the exact installed-package path rather than searching ancestors.
 
 ## Follow-up gates
 

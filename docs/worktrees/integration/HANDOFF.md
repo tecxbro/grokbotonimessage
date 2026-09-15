@@ -8,6 +8,11 @@ through WT-09 input in `included-commits.json`. The existing lane factories
 assemble all 44 public handlers and 12 compiler families. The fresh exact Node
 24.13.0 non-live aggregate passes 759/759 across 79 files with no failures or
 skips; the live suite remains explicitly excluded.
+The earlier release-local migration checkpoint also recorded 757/757 non-live
+tests across 77 files, including an archive-layout regression for the checksummed
+F0 migration. The later concrete production-path checkpoint superseded that
+candidate with 759/759 across 79 files; both remain local/synthetic evidence, not
+production approval.
 
 ## Concrete deployment path
 
@@ -52,3 +57,14 @@ Grok credential was configured, and no process was activated. A controlled exter
 non-message task observation is still required before claiming task binding for
 a deployment. Provider acceptance/delivery/read, extension rendering, human
 interaction, and physical-device behavior also remain independently unproven.
+
+The source-confirmed migration packaging mismatch is also closed locally. The
+real collector produced a full 14,526-file archive from a clean ephemeral
+candidate; the SQL file was checksummed into it, installed outside the checkout,
+and used by installed code to open/close/reopen a real `DurableSQLiteStore`.
+Ancestor fallback is rejected. The acceptance approval was local scaffolding
+only, so production archive generation remains pending a clean repository commit
+and genuine workflow approval. Inactive repeat install, rollback, and state
+preservation still have synthetic fixture evidence only. Activation configuration,
+credentials, account/line state, provider lifecycle, and live/device evidence
+were not authorized or changed.

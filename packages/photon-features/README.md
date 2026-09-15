@@ -8,7 +8,8 @@ startup, shutdown, skill-binding, and rollback procedure. Read
 response to real incoming work. [INSTALL.md](INSTALL.md) is preserved historical
 inactive-install evidence, not a current deployment runbook. The `grok-photon`
 commands belong to this package; they are separate from the Photon
-account-management CLI.
+account-management CLI. The root workspace is private and no longer contains the
+legacy `gbot`/`grok-bot` CLI.
 
 From the repository root with Node **24.13.0** and npm **10.9.2** on PATH:
 

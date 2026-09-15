@@ -63,7 +63,6 @@
       "docs/worktrees/wt-00/CHANGE-REQUESTS.md"
     ],
     "wt-01": [
-      "packages/photon-features/src/adapters/state/sqlite.ts",
       "packages/photon-features/src/adapters/state/unit-of-work.ts",
       "packages/photon-features/src/runtime/core/admission.ts",
       "packages/photon-features/src/runtime/core/authorization.ts",
@@ -297,7 +296,6 @@
       "packages/photon-features/scripts/generate-contracts.mjs",
       "packages/photon-features/scripts/generate-skill.mjs",
       "packages/photon-features/scripts/install.mjs",
-      "packages/photon-features/scripts/package.mjs",
       "packages/photon-features/scripts/smoke-test.mjs",
       "packages/photon-features/src/cli/commands.ts",
       "packages/photon-features/src/cli/local-client.ts",
@@ -378,6 +376,8 @@
       "packages/photon-features/tests/integration/production-host.test.ts",
       "packages/photon-features/tests/integration/production-lifecycle.test.ts",
       "packages/photon-features/tests/lanes/wt-08/distribution.test.mjs",
+      "packages/photon-features/scripts/package.mjs",
+      "packages/photon-features/src/adapters/state/sqlite.ts",
       "scripts/run-integration-tests.mjs",
       "scripts/generate-contracts.mjs",
       "scripts/verify-all.mjs",
