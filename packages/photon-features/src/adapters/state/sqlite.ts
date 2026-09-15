@@ -119,6 +119,29 @@ export class DurableSQLiteStore extends SQLiteStore implements StateStore {
       .all(after, limit)
       .map((r) => JSON.parse(String(r.body)) as StateTables[K]);
   }
+  /** Bounded production inbox page. Filtering occurs in SQLite so arbitrarily
+   * large reduced history cannot consume the page. When both classes exist,
+   * each receives half the page: unresolved retries cannot starve fresh input,
+   * and a sustained input stream cannot starve reconciliation work. */
+  pendingInbox(scope: Scope, limit = 1000): StateTables["inbox"][] {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 1000)
+      throw new Error("INVALID_SCAN");
+    const read = (state: "pending" | "unresolved") => this.reader
+      .prepare(
+        `SELECT body FROM inbox WHERE scope=? AND json_extract(body,'$.state')=? ORDER BY json_extract(body,'$.event.receivedAt'), id LIMIT ?`,
+      )
+      .all(scopeKey(scope), state, limit)
+      .map((row) => JSON.parse(String(row.body)) as StateTables["inbox"])
+      .filter((row) => sameScope(row.scope, scope) && row.state === state);
+    const pending = read("pending"), unresolved = read("unresolved");
+    if (!pending.length) return unresolved;
+    if (!unresolved.length) return pending;
+    const pendingLimit = Math.ceil(limit / 2);
+    return [
+      ...pending.slice(0, pendingLimit),
+      ...unresolved.slice(0, limit - pendingLimit),
+    ];
+  }
   /**
    * Preserve FIFO within one conversation. Unresolved work, including an
    * unknown provider outcome, fences only later work that targets that same

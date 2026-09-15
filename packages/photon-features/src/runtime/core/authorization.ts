@@ -11,6 +11,7 @@ import type {
   Transaction,
   TransactionStore,
   OutboxRecord,
+  Claim,
 } from "../../state/index.js";
 import { references, walk } from "./admission.js";
 import { canonical } from "./idempotency.js";
@@ -106,6 +107,7 @@ export class DurableContexts implements ContextResolver {
     tx: Transaction,
     supplied: TrustedContext,
     action: Action,
+    execution?: { requestId: string; claim: Claim },
   ): TrustedContext {
     const c = this.refresh(tx, supplied);
     if (
@@ -123,7 +125,7 @@ export class DurableContexts implements ContextResolver {
       !this.policy?.recipientsAllowed(c, action.arguments.members)
     )
       fault("FORBIDDEN");
-    for (const ref of references(action)) this.reference(tx, c, ref);
+    for (const ref of references(action)) this.reference(tx, c, ref, execution);
     walk(action.arguments, (v) => {
       if ("stagingId" in v) {
         const m = tx.get("stagedMedia", String(v.stagingId));
@@ -143,8 +145,33 @@ export class DurableContexts implements ContextResolver {
     });
     return c;
   }
-  reference(tx: Transaction, c: TrustedContext, ref: ResourceRef): void {
+  reference(tx: Transaction, c: TrustedContext, ref: ResourceRef,
+    execution?: { requestId: string; claim: Claim }): void {
     if (!sameScope(ref.scope, c.scope)) fault("SCOPE_MISMATCH");
+    if (ref.kind === "stream") {
+      const s = tx.get("streams", ref.id);
+      if (
+        !s ||
+        !(
+          s.state === "registered" ||
+          execution && (s.state === "reserved" || s.state === "closed") &&
+          (!s.reservation || (
+            s.reservation.requestId === execution.requestId &&
+            s.reservation.owner === execution.claim.owner &&
+            s.reservation.fence === execution.claim.fence &&
+            s.reservation.generation === execution.claim.generation
+          ))
+        ) ||
+        s.principalId !== c.principalId ||
+        s.taskId !== c.taskId ||
+        canonical(s.reference) !== canonical(ref) ||
+        ref.generation !== c.generation ||
+        ref.expiresAt <= this.clock.now()
+      ) fault("STALE_GENERATION");
+      // A host-local stream is authorized by its durable stream registration;
+      // it deliberately has no provider reference or invented provider ID.
+      return;
+    }
     const row = tx.get("references", ref.id);
     if (
       !row ||
@@ -157,19 +184,6 @@ export class DurableContexts implements ContextResolver {
       fault("RESOURCE_NOT_FOUND");
     if (ref.kind === "space" && ref.id !== c.scope.spaceId)
       fault("SCOPE_MISMATCH");
-    if (ref.kind === "stream") {
-      const s = tx.get("streams", ref.id);
-      if (
-        !s ||
-        s.state !== "registered" ||
-        s.principalId !== c.principalId ||
-        s.taskId !== c.taskId ||
-        canonical(s.reference) !== canonical(ref) ||
-        ref.generation !== c.generation ||
-        ref.expiresAt <= this.clock.now()
-      )
-        fault("STALE_GENERATION");
-    }
     if (ref.kind === "card-session") {
       const s = tx.get("sessions", ref.id);
       if (

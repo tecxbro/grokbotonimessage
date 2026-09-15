@@ -68,6 +68,7 @@ function snapshotContent(c: Content, depth: number): unknown {
     case "voice":
       return {
         type: c.type,
+        ...("id" in c && typeof c.id === "string" ? { id: c.id } : {}),
         name: c.name,
         mimeType: c.mimeType,
         size: c.size,

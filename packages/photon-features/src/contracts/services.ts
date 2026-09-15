@@ -11,12 +11,18 @@ export interface ChildExecution {
   argumentsDigest: string;
   dispatch(signal: AbortSignal): Promise<OperationResult>;
 }
+/** Runtime-captured facts, never fields accepted from an action or recomputed on recovery. */
+export interface AdmissionMetadata {
+  readonly cardUpdate?: Readonly<{ cardId: string; sessionId: string; expectedRevision: number }>;
+}
 /** The only feature execution boundary. Implementations recheck authority after every await. */
 export interface ExecutionServices {
   readonly context: Readonly<TrustedContext>;
   readonly claim: Readonly<ExecutionClaim>;
   readonly signal: AbortSignal;
   readonly clock: Clock;
+  /** Absent for legacy queued requests: fail closed, never read the latest revision. */
+  readonly admission?: Readonly<AdmissionMetadata>;
   assertActiveClaim(): void;
   resolveResource(ref: ResourceRef): Promise<ResourceRef>;
   transaction<T>(run: (unit: UnitOfWork) => T extends PromiseLike<unknown> ? never : T): T;

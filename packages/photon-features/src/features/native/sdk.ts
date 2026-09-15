@@ -50,6 +50,8 @@ export interface NativeBinding {
 }
 
 export interface NativeDependencies {
+  /** Host domain binding for a newly created conversation; it grants no follow-up context. */
+  registerCreatedSpace?: (space: NativeSpace, services: ExecutionServices) => import("../../contracts/resources.js").ResourceRef;
   /** Return the existing, authenticated provider. Must not configure/start a client. */
   binding(context: TrustedContext): Promise<NativeBinding>;
   /** Validate trusted user intent for this exact action, including recipient sets,

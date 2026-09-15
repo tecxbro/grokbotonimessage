@@ -1,16 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { acquireHostOwnership } from "../../src/host/owner-lock.js";
 import { loadProductionHostConfiguration, writeActivation } from "../../src/host/configuration.js";
-import { validateProductionInstallation } from "../../src/host/process.js";
+import { changeProductionActivation, validateProductionInstallation } from "../../src/host/process.js";
+import { taskLauncherMain } from "../../src/host/task-launcher.js";
 import { assertSelectedRelease } from "../../src/host/selected-release.js";
+import { privateTestRoot } from "../helpers/private-temp.js";
+import { DurableSQLiteStore } from "../../src/adapters/state/sqlite.js";
 
-async function fixture() {
-  const root = await mkdtemp("/private/tmp/grok-photon-lifecycle-");
-  await chmod(root, 0o700);
+async function fixture(t: Parameters<typeof privateTestRoot>[0]) {
+  const root = await privateTestRoot(t, "gpl-");
   const runtime = join(root, "runtime"), releases = join(root, "releases");
   await mkdir(runtime, { mode: 0o700 });
   await mkdir(releases, { mode: 0o700 });
@@ -42,12 +44,11 @@ async function fixture() {
     cards: [], runtime: { statePath: join(runtime, "state.sqlite"),
       captureDirectory: join(runtime, "captures"), stagingDirectory: join(runtime, "staging") } }) + "\n",
   { mode: 0o600 });
-  return { root, runtime, release, releaseRoot, close: () => rm(root, { recursive: true, force: true }) };
+  return { root, runtime, release, releaseRoot };
 }
 
-test("selected release, strict configuration, explicit activation and exclusive host ownership fail closed", async () => {
-  const f = await fixture();
-  try {
+test("selected release, strict configuration, explicit activation and exclusive host ownership fail closed", async (t) => {
+  const f = await fixture(t);
     const selected = await assertSelectedRelease(f.root, f.releaseRoot);
     assert.equal(selected.release, f.release);
     assert.equal((await validateProductionInstallation(f.root, f.releaseRoot)).activation, "disabled");
@@ -60,7 +61,48 @@ test("selected release, strict configuration, explicit activation and exclusive 
     await replacement.release();
     await writeFile(join(f.releaseRoot, "SKILL.md"), "modified\n", { mode: 0o600 });
     await assert.rejects(assertSelectedRelease(f.root, f.releaseRoot), /INSTALLED_SKILL_MODIFIED/);
-  } finally {
-    await f.close();
-  }
+});
+
+test("private temporary helper rejects an unsuitable long Unix socket path", async (t) => {
+  const base = await privateTestRoot(t, "base-");
+  const long = join(base, "x".repeat(90));
+  await mkdir(long, { mode: 0o700 });
+  await assert.rejects(privateTestRoot(t, "gp-", long), /TEST_SOCKET_PATH_TOO_LONG/);
+});
+
+test("installation validation and activation reject cancelled durable authority", async (t) => {
+  const f = await fixture(t);
+  await validateProductionInstallation(f.root, f.releaseRoot);
+  const store = new DurableSQLiteStore(join(f.runtime, "state.sqlite"));
+  store.transaction(tx => {
+    const task = tx.get("tasks", "task-1")!;
+    tx.put("tasks", { ...task, revision: task.revision + 1, cancelledAt: Date.now() }, task.revision);
+  });
+  store.close();
+  await assert.rejects(validateProductionInstallation(f.root, f.releaseRoot), /AUTHORITY_CANCELLED/);
+  await assert.rejects(changeProductionActivation(f.root, f.releaseRoot, "enabled"), /AUTHORITY_CANCELLED/);
+  assert.equal((await loadProductionHostConfiguration(f.root)).activation, "disabled");
+});
+
+test("task launcher rejects cancelled durable authority before invoking the local client", async (t) => {
+  const f = await fixture(t);
+  await validateProductionInstallation(f.root, f.releaseRoot);
+  await writeActivation(f.root, "enabled");
+  const store = new DurableSQLiteStore(join(f.runtime, "state.sqlite"));
+  store.transaction(tx => {
+    const task = tx.get("tasks", "task-1")!;
+    tx.put("tasks", { ...task, revision: task.revision + 1, cancelledAt: Date.now() }, task.revision);
+  });
+  store.close();
+  let stdout = "", stderr = "";
+  const code = await taskLauncherMain([
+    "--installation-root", f.root,
+    "--task-id", "task-1",
+    "--generation", "1",
+    "doctor", "--json",
+  ], {}, process.stdin, { write: value => { stdout += String(value); return true; } },
+  { write: value => { stderr += String(value); return true; } }, f.releaseRoot);
+  assert.equal(code, 2);
+  assert.match(stdout, /INVALID_CONFIGURATION/);
+  assert.match(stderr, /INVALID_CONFIGURATION/);
 });

@@ -179,3 +179,175 @@ adapter opened/closed/reopened a schema-version-1 database with 19 tables. The
 acceptance approval object was explicitly local test scaffolding, not a genuine
 workflow approval. Production approval, publication, activation, provider
 behavior, and device evidence remain separate and pending.
+
+## 2026-09-10 — all-finding aggregation and conversation ordering
+
+Created `fix-1` from the integrated production-host checkpoint, retaining the
+committed fixes for Findings 1, 2, 3, and 5. Added the release-local migration
+fix for Finding 4 and the WT-01 predecessor fix for Finding 6. Documentation
+conflicts were resolved additively so the newer host/task evidence and the
+release-migration acceptance remain distinct.
+
+Ordinary predecessor matching now includes `spaceId`; unresolved `queued`,
+`blocked`, and `unknown-outcome` states still fence the same conversation.
+Independent conversations on one line no longer depend on each other, and
+`space.create` retains a line-scoped creation dependency. The exact Node 24.13.0
+combined non-live suite passes 762/762 tests across 79 files with no failures or
+skips. No provider retry, installation, activation, live send, or device action
+occurred.
+
+## 2026-09-11 — fix-1 production integration closure
+
+Recorded the registered `fix-1` checkout at the exact reviewed baseline with a
+clean index/worktree and no remote divergence. Retrieved D0-D10 plus the Node
+temporary-filesystem/IPC and GitHub matrix references, loaded the requested
+Spectrum/iMessage skills, and checked the locked 12.8.0 public declarations.
+
+Replaced startup grant rewriting with atomic fresh bootstrap or read-only durable
+validation. Wired the validated context through production, activation, task
+launch, routing, preflight, and execution. Added request/fence-local guarded
+media, single-owner native retrieval, an owner-only trusted import producer, and
+a scoped single-use stream registry with honest restart/cancellation semantics.
+Unified production capability reporting and execution preflight around the same
+action-aware dependency inventory.
+
+Moved production fixtures to a canonical private short temporary root and added
+the fail-fast-disabled Ubuntu/macOS matrix pinned to Node 24.13.0/npm 10.9.2.
+The exact local macOS assembled suite passes 788/788 across 82 non-live files
+with no failures or skips, including the real offline installer/rollback and
+distribution cases. Generated contracts/skill, docs, exact ownership, and the
+workspace package dry-run pass. Remote CI, branch-protection enforcement,
+production-approved installation/activation, provider behavior, and device
+evidence were not authorized or observed.
+
+## 2026-09-11 — new fix-1 repair preparation
+
+User explicitly designated fix-1 as coordinator, assigned thirteen failures and authorized shared preparation plus A-E worktrees. Rechecked clean a3c36b3a04208a022fa7f994f1580b54223dc2c9; primary and historical worktrees remain untouched. Recorded exact maintenance ownership before code edits. Reproduced three shared failures (missing declaration incorrectly implemented, missing import protocol, absent admission revision) with successful compilation and three assertion failures. A test-fixture permission error was corrected before counting the card reproduction.
+
+Implemented shared admission, import, capability and resource/correlation primitives and narrow production bindings. Kept final receiving-loop and feature implementations delegated. Inspected installed public SDK types and retrieved official Markdown pages; narrowed provider has no management/native vote identity API at 12.8.0. Existing card backend seam is generic and no actual authenticated backend configuration was found. These are documented dependencies, not permissions for a second SDK or invented callback protocol.
+
+Shared preparation verification: 28 focused tests, typecheck, generated contracts, 31 root CLI tests, 60 foundation tests, documentation/ownership and skill drift checks passed. Full aggregate initially hit a concurrent-build import race; the serialized rerun passed 800/800 across 84 files with zero skips. Raw logs and hashes are recorded in TEST-EVIDENCE.md.
+
+Committed shared preparation as `513ede497a96bd9c30cc597faee868e201ea3456`, then created five previously unoccupied A-E worktrees/branches at that SHA. Finalized exact-SHA prompts and registration metadata in a separate documentation-only handoff. Primary and historical working trees remain untouched; no agents were launched or branches pushed.
+
+## 2026-09-11 — merged repair lanes A-E and coordinator production verification
+
+Revalidated the registered `fix-1` worktree, fetched origin without changing the
+checkout, and confirmed each repair branch was a clean descendant of prepared
+base `513ede497a96bd9c30cc597faee868e201ea3456`. Merged A through E with explicit
+no-fast-forward commits: `d33593c`, `e760b61`, `3ac6e07`, `2d5e815`, and
+`0b2282a`. There were no merge conflicts and no lane-to-lane source overlap.
+
+Connected the common capture processor to both live production ingress and replay,
+including trusted incoming reference registration and receipt target correlation.
+Connected the scoped poll management/correlation ports and original-owner route,
+while leaving them explicitly unavailable when the pinned public provider cannot
+supply native management, identity, and ordering. Connected card admission,
+durable production session projection, and the authenticated callback adapter;
+the real backend remains a deployment-supplied dependency. Rebuilt the generated
+skill inventory from explicit capability declarations after preserving D's manual
+sections.
+
+Added the automated production-path journey over real temporary SQLite, one provider
+owner/stream, the authenticated Unix socket, compiled CLI, durable work claim,
+heartbeat, stale-fence rejection and acknowledgment, captured message and attachment
+references, generated media import, voice-formatted text, targeted reply, correlated
+read evidence, unresolved poll evidence, and restart/no-duplicate behavior. A
+test-double backend case uses a session created by the actual production card send.
+The regression mutation removing ingress processing failed with `runner timeout`;
+restoration passed.
+
+The first aggregate exposed a merged-fixture hang: `security/webhook-auth.test.ts`
+still constructed lane A's now-fail-closed webhook ingress without receipt/reference
+ports. Supplying inert offline test ports made that fixture pass 2/2 without changing
+production behavior. The final source-derived non-live runner selected 90 files and
+passed 826/826. No push, archive installation, activation, real Grok/provider action,
+or device test occurred.
+
+## 2026-09-12 — optional poll creation with conversational answers
+
+Revalidated the registered `fix-1` checkout at reviewed commit
+`8d2a158e161873d3123241c7507d4d8f9d3bc69f`, fetched `origin/fix-1`, and found
+zero divergence and a clean starting tree. Inspected the pinned Spectrum 12.8.0
+public declarations and provider conversion plus the requested official Photon
+poll, message, inbound-pipeline, and recovery documentation.
+
+Added a bounded internal `poll-answer` projection over public `poll_option`
+fields and connected it through the shared live/replay capture processor,
+authorized durable inbox, pointer-only wake, and existing work claim interface.
+Uncorrelated public answers route only to the active authorized conversation;
+supplied native identity must resolve to the persisted original poll owner or
+remain unresolved. No native identity, ordering, source question, option index,
+message reference, second SDK owner, mirrored Grok poll, terminal action, or
+automatic text-to-poll decision is invented.
+
+The production acceptance fixture exercises an explicit idempotent poll send,
+realistic selection through scripted external boundaries, authenticated claim,
+ordinary text response, acknowledgment, duplicate delivery, restart, selection
+deltas, duplicate labels, ambiguity, foreign input, denied authority, and the
+single owner/listener invariant. During this work the test exposed a nested
+SQLite transaction after successful `poll.create`; removing redundant feature-
+level transaction assertions left the shared transaction facade's existing
+claim/fence checks in force. It also exposed that inactive authority needed to
+be rejected before reference registration so invalid input could not stop the
+receiver.
+
+No push, deployment, activation, approval change, provider send, live Grok task,
+iMessage tap, or device test occurred.
+
+## 2026-09-12 — typing diagnostics and CI history follow-up
+
+Started from the clean registered `fix-1` checkout at
+`9daae7b02a30b2e27e55e4f869e026593b012734`, equal to `origin/fix-1`. Kept the
+current conversational poll implementation and `HostTypingBinding`. The only
+runtime change passes the existing production `report` callback into
+`TypingLeases`; `process.ts` already renders those diagnostic codes on stderr.
+
+Extended the real production-composition regression with success and rejected
+typing-start variants. Before the constructor change, the new variant failed
+because the host callback received no `TYPING_PROVIDER_FAILURE`. After the change,
+both variants pass while retaining delayed lookup, independent replies, provider
+failure cleanup, ordered shutdown, and restart/no-replay coverage.
+
+Regenerated the branch-sensitive candidate contract under the exact pinned
+toolchain. The foundation manifest remained byte-identical, all three schemas
+remained unchanged, and the candidate digest advanced to `2d861374...d36c2` over
+50 files. Published the 12 exact reviewed commits as atomic namespaced historical
+tags, fetched them back, and passed the history-only verifier. Closed the older
+draft PR #1 without merging it or deleting its head branch.
+
+The first full ownership run then correctly rejected the previously unrecorded
+`packages/photon-features/src/host/typing-binding.ts`. Added only that exact host
+helper and its production regression to the integration ownership/inventory; the
+verifier then passed without wildcard or history-check changes. Fresh detailed
+command results and evidence boundaries are recorded in `TEST-EVIDENCE.md`.
+
+## Completion pass 2026-09-13
+
+Completion pass started on the clean registered fix-1 checkout at reviewed baseline 55b1821216cefe341e611518e1b125552346a115. Origin, registration, baseline, remote and immutable F0 recorded in completion-preflight.json. User authorizes necessary cross-lane completion on this existing checkout; no branch/worktree changes, push, activation or live sends. Exact toolchain remains Node 24.13.0/npm 10.9.2 and Spectrum 12.8.0.
+
+## 2026-09-13 — concrete completion paths and preserved blockers
+
+Implemented the bounded installed stream producer and actual SDK streaming;
+serialized universal-card backend, browser participant signer and authenticated
+transactional callback path; stopped-host owner inspect/apply renewal and
+replacement; shared avatar/chat/reaction resource wiring; host signal shutdown;
+profile/schema/inventory/shrinkwrap generators and release executable wrappers.
+The user explicitly permits these cross-lane changes. Existing orchestrator,
+shared credential owner, durable inbox/outbox, executeChild, voice policy,
+typing and conversational poll-answer behavior are retained.
+
+Installed execution exposed and closed real adapter/startup gaps: missing stream
+response schema, backend configuration import cycle, early SDK signal exit,
+missing release bin launcher, stale captured-event reassignment on authority
+renewal, and rejected reaction resource references. Fixture corrections were
+kept separate from application fixes. Failure fixtures use independent durable
+stores because unknown/blocked predecessors correctly fence later work in the
+same conversation; no retry bypass was introduced.
+
+Actual public SDK probes establish U-01/U-02/U-03, recorded as release blockers.
+No second native SDK client, fabricated session or hidden capability was added.
+The new installed matrix uses seven isolated failure modes, a real npm archive,
+production-only dependencies, real authenticated CLI/socket/SQLite and actual
+SDK modules with controlled external transport. No production credentials or
+messages were used. Final commands and artifact evidence are in TEST-EVIDENCE.md.

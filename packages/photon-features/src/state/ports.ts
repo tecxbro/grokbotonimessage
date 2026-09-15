@@ -42,7 +42,14 @@ export interface StreamRecord extends StoredRecord {
   codecId: string;
   codecVersion: number;
   checkpointId: string | null;
-  state: "registered" | "closed" | "expired";
+  state: "registered" | "reserved" | "closed" | "expired";
+  reservation?: {
+    requestId: string;
+    owner: string;
+    fence: number;
+    generation: number;
+    reservedAt: number;
+  };
 }
 export interface InboxRecord extends StoredRecord {
   event: IncomingEvent;
@@ -64,6 +71,8 @@ export interface HandoffRecord extends StoredRecord {
 }
 export interface OutboxRecord extends StoredRecord {
   action: Action;
+  /** Additive JSON field; existing stored rows remain readable. */
+  admission?: import("../contracts/services.js").AdmissionMetadata;
   principalId: string;
   taskId: string;
   generation: number;
@@ -128,7 +137,22 @@ export interface CheckpointRecord extends StoredRecord {
   nextChildIndex: number;
   claim: Claim;
 }
+/** Owner administration audit; additive table ignored by older schema-1 readers. */
+export interface AuthorityAuditRecord extends StoredRecord {
+  requestJson: string;
+  previous: TrustedContext;
+  next: TrustedContext;
+  ownerId: string;
+  occurredAt: number;
+}
+export interface InteractionClaimRecord extends StoredRecord {
+  assertionJson: string;
+  eventId: string;
+  backendId: string;
+}
 export interface StateTables {
+  interactionClaims: InteractionClaimRecord;
+  authorityAudits: AuthorityAuditRecord;
   contexts: ContextRecord;
   tasks: TaskRecord;
   stagedMedia: StagedMediaRecord;
@@ -148,6 +172,8 @@ export interface StateTables {
 }
 export type Table = keyof StateTables;
 export const tables: readonly Table[] = [
+  "interactionClaims",
+  "authorityAudits",
   "contexts",
   "tasks",
   "stagedMedia",

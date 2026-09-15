@@ -86,7 +86,8 @@ test("F0 identity commit failure after provider return records unknown child and
   }}));
   const action={version:1 as const,contextId:f0Context.contextId,idempotencyKey:"create",operation:"poll.create" as const,
     arguments:{space:ref,question:"Pick?",options:[{key:"a",label:"A"},{key:"b",label:"B"}]}};
-  const binding={resolveSpace:async()=>space};
+  const binding={resolveSpace:async()=>space,
+    binding:()=>({scope:f0Scope,phone:f0Scope.lineId,conversationId:"chat"})};
   assert.equal((await executePollOperation(action,f.services,binding)).status,"unknown-outcome");
   assert.equal((await executePollOperation(action,f.services,binding)).status,"unknown-outcome");
   assert.equal(calls,1);

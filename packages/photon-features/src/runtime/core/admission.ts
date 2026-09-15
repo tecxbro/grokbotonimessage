@@ -6,6 +6,10 @@ import {
   type Action,
   type ResourceRef,
 } from "../../contracts/index.js";
+import { isDeepStrictEqual } from "node:util";
+import { sameScope, type TrustedContext } from "../../contracts/index.js";
+import type { Transaction } from "../../state/ports.js";
+import type { AdmissionMetadata } from "../../contracts/services.js";
 import { fault } from "./errors.js";
 export function admit(input: unknown): Action {
   try {
@@ -49,4 +53,21 @@ export function references(action: Action): ResourceRef[] {
       refs.push(resourceRefSchema.parse(value));
   });
   return refs;
+}
+
+/** Called after authorization, inside the transaction that inserts the first outbox row.
+ * Idempotent submissions return the prior row before this function is reached. */
+export function captureAdmission(tx: Transaction, action: Action, context: TrustedContext, now: number): AdmissionMetadata {
+  if (action.operation !== "app.update") return {};
+  const card = tx.get("cards", action.arguments.card.id);
+  const session = tx.get("sessions", action.arguments.session.id);
+  if (!card || !session || !isDeepStrictEqual(card.reference, action.arguments.card) ||
+      !isDeepStrictEqual(session.reference, action.arguments.session) ||
+      !sameScope(card.scope, context.scope) || !sameScope(session.scope, context.scope) ||
+      session.reference.cardId !== card.id) fault("RESOURCE_NOT_FOUND");
+  if (session.generation !== context.generation) fault("STALE_GENERATION");
+  if (session.expiresAt <= now) fault("CONTEXT_EXPIRED");
+  if (!Number.isSafeInteger(card.revision) || card.revision < 0 ||
+      card.revision > Number.MAX_SAFE_INTEGER - 2 || card.revision % 2 !== 0) fault("UNAVAILABLE");
+  return { cardUpdate: { cardId: card.id, sessionId: session.id, expectedRevision: card.revision } };
 }

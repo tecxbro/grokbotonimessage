@@ -1,3 +1,5 @@
+import { administrativeOperations } from "./configuration-inventory.js";
+import { cardBackendConfigurationSchema } from "./card-backend-configuration.js";
 import { constants } from "node:fs";
 import { open, lstat, realpath, rename } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
@@ -20,12 +22,23 @@ const unique = <T extends z.ZodTypeAny>(item: T, maximum: number) =>
 const cardTemplate = z.strictObject({
   id: idSchema,
   kind: z.enum(["universal", "customized"]),
+  backendId: idSchema.optional(),
   origins: unique(z.string().url().refine(value => new URL(value).protocol === "https:" && new URL(value).origin === value), 32).min(1),
   extension: z.strictObject({
     appName: z.string().min(1).max(200),
     teamId: z.string().regex(/^[A-Z0-9]{10}$/),
     extensionBundleId: z.string().min(3).max(200).regex(/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/),
     appStoreId: z.number().int().positive().optional(),
+  }).optional(),
+  live: z.strictObject({
+    installedExtensionVerified: z.literal(true),
+    evidence: z.string().min(1).max(1000),
+  }).optional(),
+  interactions: z.strictObject({
+    participantIds: unique(idSchema, 32).min(1),
+    actionIds: unique(idSchema, 32).min(1),
+    ttlMs: z.number().int().positive().max(86_400_000),
+    backendContractId: idSchema,
   }).optional(),
 }).superRefine((value, context) => {
   if (value.kind === "customized" && !value.extension)
@@ -70,20 +83,34 @@ export const productionHostConfigurationSchema = z.strictObject({
     allowedRecipients: unique(recipient, 64),
     allowNativeContent: z.boolean(),
   }),
+  cardBackend: cardBackendConfigurationSchema.optional(),
   cards: z.array(cardTemplate).max(64).refine(values => new Set(values.map(value => value.id)).size === values.length, "duplicate card template"),
+  ownerAdministration: z.strictObject({ principalId: idSchema, credentialFile: absolutePath }).optional(),
+  textStreaming: z.strictObject({ delivery: z.enum(["progressive", "buffered"]) }).optional(),
   runtime: z.strictObject({
     statePath: absolutePath,
     captureDirectory: absolutePath,
     stagingDirectory: absolutePath,
+    importDirectory: absolutePath.optional(),
   }),
 }).superRefine((value, context) => {
   if (value.task.expiresAt <= value.task.issuedAt)
     context.addIssue({ code: "custom", path: ["task", "expiresAt"], message: "context expiry must follow issue time" });
+  for (const template of value.cards) {
+    if (template.backendId && (!value.cardBackend || template.backendId !== value.cardBackend.id || !template.origins.includes(value.cardBackend.origin)))
+      context.addIssue({ code: "custom", path: ["cards", template.id], message: "matching cardBackend and origin required" });
+    if (template.interactions && (!value.cardBackend || template.backendId !== value.cardBackend.id || template.interactions.backendContractId !== value.cardBackend.id ||
+      template.interactions.participantIds.some(id => !value.cardBackend!.participants.some(p => p.id === id))))
+      context.addIssue({ code: "custom", path: ["cards", template.id, "interactions"], message: "matching backend and verified participant key enrollment required" });
+  }
+  if (value.ownerAdministration?.credentialFile === value.local.credentialFile)
+    context.addIssue({ code: "custom", path: ["ownerAdministration", "credentialFile"], message: "a separate owner credential file is required" });
   const permissions = new Set(value.task.permissions);
   for (const item of value.provider.availableOperations)
     if (!permissions.has(item)) context.addIssue({ code: "custom", path: ["provider", "availableOperations"], message: "available operation requires task permission" });
   for (const item of value.authorization.administrativeOperations)
-    if (!permissions.has(item)) context.addIssue({ code: "custom", path: ["authorization", "administrativeOperations"], message: "administrative operation requires task permission" });
+    if (!permissions.has(item) || !administrativeOperations.includes(item))
+      context.addIssue({ code: "custom", path: ["authorization", "administrativeOperations"], message: "a recognized administrative operation and its task permission are required" });
 });
 
 export type ProductionHostConfiguration = z.infer<typeof productionHostConfigurationSchema>;
@@ -122,8 +149,9 @@ export async function loadProductionHostConfiguration(root: string): Promise<Pro
   const runtime = join(root, "runtime");
   await assertPrivateDirectory(runtime);
   const config = productionHostConfigurationSchema.parse(JSON.parse(await readPrivateFile(join(runtime, "configuration.json"), 128 * 1024)));
-  for (const path of [config.provider.projectSecretFile, config.local.socketPath, config.local.credentialFile,
-    config.runtime.statePath, config.runtime.captureDirectory, config.runtime.stagingDirectory])
+  for (const path of [...(config.ownerAdministration ? [config.ownerAdministration.credentialFile] : []), config.provider.projectSecretFile, config.local.socketPath, config.local.credentialFile,
+    config.runtime.statePath, config.runtime.captureDirectory, config.runtime.stagingDirectory,
+    config.runtime.importDirectory ?? join(runtime, "imports")])
     if (!beneath(runtime, resolve(path))) throw new Error("RUNTIME_PATH_OUTSIDE_INSTALLATION");
   if (config.local.socketPath !== join(runtime, "runtime.sock") || config.runtime.statePath !== join(runtime, "state.sqlite"))
     throw new Error("CANONICAL_RUNTIME_PATH_REQUIRED");

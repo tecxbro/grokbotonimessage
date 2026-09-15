@@ -11,17 +11,18 @@ test('attachment, vote/unvote, edit and read identities survive repeated message
   const scope = routes.inbound('offline-line','chat');
   const poll = {version:1 as const,kind:'poll' as const,id:'poll-1',messageId:'message-1',scope};
   const option = {version:1 as const,kind:'poll-option' as const,id:'option-1',pollId:poll.id,scope};
-  const contents = [{type:'attachment',id:'attachment-1'}, {type:'poll_option',title:'Same',selected:true},
-    {type:'poll_option',title:'Same',selected:false}, {type:'edit',target:{id:'message-1'},content:{type:'text',text:'edited'}},
+  const pollContent = {type:'poll_option',title:'Same',option:{title:'Same'},poll:{type:'poll',title:'Pick?',options:[{title:'Same'}]}};
+  const contents = [{type:'attachment',id:'attachment-1'}, {...pollContent,selected:true},
+    {...pollContent,selected:false}, {type:'edit',target:{id:'message-1'},content:{type:'text',text:'edited'}},
     {type:'read',target:{id:'message-1'}}];
   const events = contents.map(content => normalizeCaptured({...raw,content},'capture-1',routes,10000,{poll:()=>({poll,option})}));
-  assert.deepEqual(events.map(e=>e.type),['message','poll','poll','message','receipt']);
+  assert.deepEqual(events.map(e=>e.type),['message','poll-answer','poll-answer','message','receipt']);
   assert.equal(new Set(events.map(e=>e.eventId)).size,5);
   const attachment = events[0]!; assert.ok(attachment.type === 'message'); assert.equal(attachment.content.type,'attachment');
   const replay = normalizeCaptured({...raw,content:contents[0]},'capture-2',routes,99999);
   assert.equal(replay.eventId,attachment.eventId);
-  const unknown = normalizeCaptured({...raw,content:contents[1]},'capture-1',routes,10000);
-  assert.equal(unknown.type,'unresolved');
+  const uncorrelated = normalizeCaptured({...raw,content:contents[1]},'capture-1',routes,10000);
+  assert.equal(uncorrelated.type,'poll-answer');
 });
 
 test('router retains unknown events, suppresses echoes/receipt loops and deduplicates replay', async t => {

@@ -314,7 +314,7 @@ test("dispatch revalidates the fence after a delayed resolver", async () => {
   valid = false;
   resolve.resolve(space);
   await settle();
-  assert.ok(!calls.includes("start"));
+  assert.deepEqual(calls, [], "pre-dispatch rejection must not issue start or stop");
 });
 test("old start rejection cannot cancel a newer generation", async () => {
   const { leases, space, calls } = setup(),

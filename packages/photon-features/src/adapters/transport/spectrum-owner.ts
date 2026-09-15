@@ -23,7 +23,17 @@ export function cloudSdkFactory(config: {
   projectSecret: string;
 }): SdkFactory {
   return async () => {
+    // Spectrum 12.8.0 installs process-exiting SIGINT/SIGTERM listeners. This
+    // executable owns shutdown so it can drain work, close SQLite and release
+    // its lock before exit. Use Node's public listener API around the sole SDK
+    // construction; retain every listener that was present before construction.
+    const signals = ["SIGINT", "SIGTERM"] as const;
+    const before = new Map(signals.map(signal => [signal, new Set(process.listeners(signal))]));
     const app = await Spectrum({ ...config, providers: [imessage.config()] });
+    for (const signal of signals)
+      for (const listener of process.listeners(signal))
+        if (!before.get(signal)!.has(listener)) process.removeListener(signal, listener);
+
     const provider = imessage(app);
     return {
       messages: () => app.messages,

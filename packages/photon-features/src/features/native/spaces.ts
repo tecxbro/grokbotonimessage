@@ -37,6 +37,7 @@ export async function createSpace(
   binding: NativeBinding,
   result: OperationResult,
   dispatch: NativeDispatch,
+  register?: import("./sdk.js").NativeDependencies["registerCreatedSpace"],
 ): Promise<void> {
   const members = validatedMembers(action.arguments.members);
   if (members.length > 1)
@@ -52,7 +53,7 @@ export async function createSpace(
     { phone: binding.phone },
   )), binding);
   requireNative(created.type === (members.length > 1 ? "group" : "dm"), "SCOPE_MISMATCH", "Created conversation type mismatch.");
-  result.references.push(remember("space", created.id, services, true));
+  result.references.push(register ? register(created, services) : remember("space", created.id, services, true));
   if (action.arguments.name !== undefined)
     await dispatch(() => created.rename(action.arguments.name!));
 }

@@ -89,6 +89,8 @@ const body = () =>
     space: snapshot().space,
     message: snapshot(),
   });
+const registerReferences = async () => {};
+const noReceipts = { writer: { recordReceipt() {} } };
 test("single SDK lifecycle and explicit multi-line routing; feature calls never create listeners", async () => {
   const f = fakeSdk(),
     owner = new SpectrumOwner(
@@ -172,6 +174,9 @@ test("webhook acknowledges only after awaited durable acceptance and rejects per
       f.captures,
       f.clock,
       "test-only-secret",
+      {},
+      noReceipts,
+      registerReferences,
     );
     const router = new InboundRouter(
         f.store,
@@ -212,6 +217,9 @@ test("webhook acknowledges only after awaited durable acceptance and rejects per
       f.captures,
       f.clock,
       "test-only-secret",
+      {},
+      noReceipts,
+      registerReferences,
     );
     await broken.start(async () => {
       throw new Error("disk-full");
@@ -246,6 +254,9 @@ test("invalid signatures, raw-byte tampering, stale/future timestamps and altern
       f.captures,
       f.clock,
       "test-only-secret",
+      {},
+      noReceipts,
+      registerReferences,
     );
     let accepted = 0;
     await ingress.start(async () => {

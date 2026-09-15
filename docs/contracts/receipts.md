@@ -17,3 +17,7 @@ Group read identity is nullable. A group-level event cannot establish every memb
 The additive migration creates receipt_observations keyed by scope/evidence_id plus an index on native target/part. It preserves the baseline generic inbox/outbox/domain record layout and adds an execution_claims table. The selected fresh path is `.photon-local/runtime/photon.sqlite`; no production database is migrated by F0. Receipt restart tests create an isolated SQLite file, apply the migration twice, preserve an inherited inbox record, persist unresolved read evidence, close/reopen and correlate it.
 
 Actual provider ingestion, transactional receipt insertion/reconciliation and request-result rollups belong to the runtime/inbound lanes. No second production outbox or receipt consumer is instantiated here. See [execution](execution.md) for cancellation and durable child invariants.
+
+## fix-1 maintenance preparation (2026-09-11)
+
+Worker A must connect the existing receipt-aware acquisition to the active receiver and capture replay. Both paths use one writer and exact target resolution; no additional receipt subscription is permitted. The prepared trusted incoming-reference registrar validates grant/task/parent identity before exposing actionable work. Preparation tests its durable behavior; live/replay receiver wiring and full production receipt-journey proof remain pending A and coordinator integration.

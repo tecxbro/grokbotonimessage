@@ -1,6 +1,10 @@
 import { voicePolicy } from "../../index.js";
 import { requireThat } from "./errors.js";
 export { voicePolicy };
+const protectedContent = /```[\s\S]*?```|`[^`\n]*`|https?:\/\/[^\s]+|(?:\/[\w.~+-]+)+[^\s]*|^\s*(?:\$ |> ).*$/gm;
+export function countProseQuestions(input: string): number {
+  return (input.replace(protectedContent, "").match(/\?/g) ?? []).length;
+}
 /** Conservative prose changes only: unknown proper nouns are never guessed. */
 export function formatProse(input: string): {
   bubbles: string[];
@@ -13,7 +17,7 @@ export function formatProse(input: string): {
   );
   const protectedParts: string[] = [];
   const masked = input.replace(
-    /```[\s\S]*?```|`[^`\n]*`|https?:\/\/[^\s]+|(?:\/[\w.~+-]+)+[^\s]*|^\s*(?:\$ |> ).*$/gm,
+    protectedContent,
     (part) => {
       protectedParts.push(part);
       return `\u0000${protectedParts.length - 1}\u0000`;

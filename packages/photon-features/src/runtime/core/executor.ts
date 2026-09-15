@@ -27,7 +27,7 @@ import {
 } from "./outcomes.js";
 import { ChildExecution } from "./children.js";
 import { withDeadline } from "./cancellation.js";
-import { createExecutionServices } from "./execution-services.js";
+import { createExecutionServices, type CreateExecutionServicesOptions } from "./execution-services.js";
 export type { ExecutionBinding } from "./outcomes.js";
 export interface ExecuteOperationOptions {
   claims: ExecutionClaims;
@@ -36,12 +36,15 @@ export interface ExecuteOperationOptions {
     action: Action,
     services: PublicExecutionServices,
   ): Promise<OperationResult>;
-  capability(context: PublicExecutionServices["context"]): Capability;
+  capability(context: PublicExecutionServices["context"], action?: Action): Capability;
   resources: ResourceResolver;
-  media: MediaStager;
-  streams: RegisteredStreams;
+  media?: MediaStager;
+  streams?: RegisteredStreams;
+  bindResources?: CreateExecutionServicesOptions["bindResources"];
   leaseMs?: number;
   deadlineMs?: number;
+  /** Let the owning host abort an in-flight request immediately after durable cancellation. */
+  onRunning?(requestId: string, abort: () => void): () => void;
   afterCommit?(pointer: {
     handoffId: string;
     taskId: string;
@@ -62,6 +65,7 @@ export async function executeOperation(
   );
   if (!claim) return null;
   const controller = new AbortController();
+  const unregister = options.onRunning?.(options.requestId, () => controller.abort());
   let heartbeat: ReturnType<typeof setInterval> | undefined;
   try {
     const start = options.claims.store.transaction((tx) => {
@@ -70,7 +74,7 @@ export async function executeOperation(
         options.requestId,
         claim,
       );
-      const capability = capabilitySchema.parse(options.capability(context));
+      const capability = capabilitySchema.parse(options.capability(context, row.action));
       if (
         capability.operation !== row.action.operation ||
         capability.implementation !== "implemented"
@@ -105,6 +109,7 @@ export async function executeOperation(
       resources: options.resources,
       media: options.media,
       streams: options.streams,
+      bindResources: options.bindResources,
       afterCommit: options.afterCommit,
     });
     const result = cleanResult(await options.handler(start.action, services));
@@ -218,6 +223,7 @@ export async function executeOperation(
     });
   } finally {
     if (heartbeat) clearInterval(heartbeat);
+    unregister?.();
   }
 }
 export class DurableExecutor {

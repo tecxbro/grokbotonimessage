@@ -24,8 +24,16 @@
   },
   "files": [
     "dist/src",
+    "bin",
     "schemas",
-    "src/state/migrations"
+    "src/state/migrations",
+    "SKILL.md",
+    "DEPLOYMENT.md",
+    "INSTALL.md",
+    "README.md",
+    "scripts",
+    "examples",
+    "npm-shrinkwrap.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

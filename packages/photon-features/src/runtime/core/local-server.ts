@@ -19,6 +19,9 @@ import { DurableWork } from "./work-handoff.js";
 import { admitRequest } from "./admission.js";
 import { publicError, RuntimeFault } from "./errors.js";
 export interface RuntimeProtocolServices {
+  streamProducer?: (principal: AuthenticatedPrincipal, request: Extract<import("../../contracts/protocol.js").LocalRequest,
+    { method: "stream.open" | "stream.append" | "stream.close" | "stream.abort" }>) => Promise<unknown>;
+  importMedia?: import("../../host/protocol.js").MediaImportPort;
   contexts: DurableContexts;
   submission: SubmissionPort;
   work: DurableWork;
@@ -49,6 +52,14 @@ export class DurableLocalProtocol {
         );
       let result: unknown;
       switch (request.method) {
+        case "stream.open": case "stream.append": case "stream.close": case "stream.abort":
+          if (!s.streamProducer || !c.permissions.includes("text.stream")) throw new RuntimeFault("FORBIDDEN");
+          result = await s.streamProducer(principal, request);
+          break;
+        case "media.import":
+          if (!s.importMedia) throw new RuntimeFault("UNAVAILABLE");
+          result = await s.importMedia(principal, c.contextId, { filename: request.filename, metadata: request.metadata });
+          break;
         case "submit":
           result = await s.submission.submit(admitRequest(request.action), c);
           break;

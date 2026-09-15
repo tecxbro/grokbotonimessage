@@ -13,15 +13,26 @@ const assignedExamples = Object.freeze({
   'update-card.json': 'app.update',
 });
 
+async function exampleAction(operation) {
+  try {
+    const fixture = JSON.parse(await readFile(new URL(`tests/fixtures/${operation}.json`, root), 'utf8'));
+    return parseAction(fixture.valid);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    // Installed archives intentionally omit tests and development-only dependencies.
+    return parseAction(JSON.parse(await readFile(new URL(`examples/wt-08/${operation}.json`, root), 'utf8')));
+  }
+}
+
 export async function validateExamples({ check = false } = {}) {
   const rows = [], names = [];
   const assembled = assembleDocumentedFeatureSurface();
   const operationRegistrations = assembled.operationRegistrations;
   await mkdir(new URL('examples/wt-08/', root), { recursive: true });
   for (const registration of operationRegistrations) {
-    const { operation, owner, implementation } = registration;
-    const fixture = JSON.parse(await readFile(new URL(`tests/fixtures/${operation}.json`, root), 'utf8'));
-    const action = parseAction(fixture.valid);
+    const { operation, owner, handlerRegistration, implementation, providerSupport,
+      configuredAvailability, liveVerified } = registration;
+    const action = await exampleAction(operation);
     if (action.operation !== operation) throw new Error('EXAMPLE_OPERATION_MISMATCH');
     localRequestSchema.parse({ version: 1, method: 'submit', action });
     const schema = await readFile(new URL(`schemas/${operation}.json`, root), 'utf8');
@@ -30,11 +41,10 @@ export async function validateExamples({ check = false } = {}) {
     const target = new URL(`examples/wt-08/${name}`, root);
     if (check) { if (await readFile(target, 'utf8') !== example) throw new Error(`EXAMPLE_DRIFT:${operation}`); }
     else await writeFile(target, example);
-    rows.push(`| ${operation} | ${owner} | ${implementation} | [schema](schemas/${name}) | [example](examples/wt-08/${name}) | ${createHash('sha256').update(schema).digest('hex')} |`);
+    rows.push(`| ${operation} | ${owner} | ${handlerRegistration} | ${implementation} | ${providerSupport} | ${configuredAvailability} | ${liveVerified ? 'yes' : 'no'} | [schema](schemas/${name}) | [example](examples/wt-08/${name}) | ${createHash('sha256').update(schema).digest('hex')} |`);
   }
   for (const [name, operation] of Object.entries(assignedExamples)) {
-    const fixture = JSON.parse(await readFile(new URL(`tests/fixtures/${operation}.json`, root), 'utf8'));
-    const action = parseAction(fixture.valid);
+    const action = await exampleAction(operation);
     if (action.operation !== operation) throw new Error('ASSIGNED_EXAMPLE_OPERATION_MISMATCH');
     localRequestSchema.parse({ version: 1, method: 'submit', action });
     const example = JSON.stringify(action, null, 2) + '\n';
@@ -50,7 +60,7 @@ export async function validateExamples({ check = false } = {}) {
 
 export async function generateSkill({ check = false } = {}) {
   const { rows, operations, examplesValidated, assignedExamplesValidated, filesValidated } = await validateExamples({ check });
-  const block = `${start}\n\nGenerated from the assembled public handler registry, strict action schemas and validated F0 fixtures. Handler implementation is structural and remains separate from provider support, account/conversation availability, and live verification. Discover current scoped capabilities before execution.\n\n| Operation | Owner | Handler implementation | Shape | Invocation payload | Schema SHA-256 |\n| --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n\n${end}`;
+  const block = `${start}\n\nGenerated from the assembled public handler registry, explicit capability declarations, strict action schemas and validated F0 fixtures. Handler registration, implementation declaration, provider support, configured account/conversation availability, and live verification are separate facts. A registered handler with an unimplemented or missing declaration remains unavailable. Static documentation cannot establish deployment configuration; discover current scoped capabilities before execution.\n\n| Operation | Owner | Handler registration | Implementation declaration | Provider support | Configured availability | Live verified | Shape | Invocation payload | Schema SHA-256 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n\n${end}`;
   const target = new URL('SKILL.md', root), old = await readFile(target, 'utf8');
   if (old.split(start).length !== 2 || old.split(end).length !== 2) throw new Error('MISSING_GENERATION_MARKERS');
   const next = old.slice(0, old.indexOf(start)) + block + old.slice(old.indexOf(end) + end.length);

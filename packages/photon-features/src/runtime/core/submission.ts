@@ -9,7 +9,7 @@ import type {
   OutboxRecord,
   Transaction,
 } from "../../state/index.js";
-import { admit } from "./admission.js";
+import { admit, captureAdmission } from "./admission.js";
 import { DurableContexts } from "./authorization.js";
 import { argumentDigest, requestIdentity } from "./idempotency.js";
 import { fault } from "./errors.js";
@@ -36,15 +36,19 @@ export class DurableSubmission implements SubmissionPort {
   ): Promise<OperationResult> {
     const action = admit(input);
     return this.store.transaction((tx) => {
-      const c = this.contexts.action(tx, supplied, action),
+      const c = this.contexts.refresh(tx, supplied),
         id = requestIdentity(action, c),
         hash = argumentDigest(action),
         old = tx.get("outbox", id);
       if (old) {
         this.contexts.owned(tx, id, c);
         if (old.argumentDigest !== hash) fault("IDEMPOTENCY_CONFLICT");
+        // Completed/unknown child replay returns its durable result without
+        // reacquiring a single-use stream or other consumed input.
         return old.result;
       }
+      this.contexts.action(tx, c, action);
+      const admission = captureAdmission(tx, action, c, this.contexts.clock.now());
       const result: OperationResult = {
         version: 1,
         requestId: id,
@@ -61,6 +65,7 @@ export class DurableSubmission implements SubmissionPort {
           scope: c.scope,
           revision: 0,
           action,
+          admission,
           principalId: c.principalId,
           taskId: c.taskId,
           generation: c.generation,

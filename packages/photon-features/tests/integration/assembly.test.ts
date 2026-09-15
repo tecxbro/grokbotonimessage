@@ -23,23 +23,32 @@ test("actual lane factories assemble exactly 44 public handlers and every shared
   );
 });
 
-test("generated manual handler statuses agree with the actual assembled registry", () => {
+test("generated manual keeps registration, implementation, provider, configuration and live evidence separate", () => {
   const assembled = assembleDocumentedFeatureSurface();
   const expected = assembled.operationRegistrations;
   const manual = readFileSync(new URL("../../../SKILL.md", import.meta.url), "utf8");
   const rows = new Map(
-    [...manual.matchAll(/^\| ([^|]+) \| ([^|]+) \| (implemented|unimplemented) \|/gm)]
-      .map(match => [match[1]!, { owner: match[2]!, implementation: match[3]! }]),
+    [...manual.matchAll(/^\| ([^|]+) \| ([^|]+) \| (registered|unregistered) \| (implemented|partial|unimplemented) \| (native|fallback|unsupported|unknown) \| (runtime-discovery-required) \| (yes|no) \|/gm)]
+      .map(match => [match[1]!, { owner: match[2]!, handlerRegistration: match[3]!,
+        implementation: match[4]!, providerSupport: match[5]!, configuredAvailability: match[6]!,
+        liveVerified: match[7] === "yes" }]),
   );
 
   assert.equal(rows.size, operations.length);
   for (const registration of expected)
     assert.deepEqual(rows.get(registration.operation), {
       owner: registration.owner,
+      handlerRegistration: registration.handlerRegistration,
       implementation: registration.implementation,
+      providerSupport: registration.providerSupport,
+      configuredAvailability: registration.configuredAvailability,
+      liveVerified: registration.liveVerified,
     });
-  assert.ok(expected.every(registration => registration.implementation === "implemented"));
-  assert.match(manual, /Handler implementation is structural and remains separate from provider support, account\/conversation availability, and live verification\./);
+  assert.ok(expected.every(registration => registration.handlerRegistration === "registered"));
+  assert.deepEqual(expected.filter(registration => registration.implementation !== "implemented")
+    .map(registration => registration.operation), ["poll.get", "poll.vote", "poll.unvote", "poll.addOption"]);
+  assert.ok(expected.every(registration => registration.liveVerified === false));
+  assert.match(manual, /Handler registration, implementation declaration, provider support, configured account\/conversation availability, and live verification are separate facts\./);
 });
 
 test("assembly fails closed when a public lane or compiler is absent", () => {
