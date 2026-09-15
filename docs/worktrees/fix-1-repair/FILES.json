@@ -35,6 +35,11 @@
       "justification": "Repair authority and exact independent worker delegations"
     },
     {
+      "path": "docs/worktrees/fix-1-repair/typing-start-lifetime.md",
+      "owner": "coordinator",
+      "justification": "Deferred typing authorization evidence retained with the repair record"
+    },
+    {
       "path": "docs/worktrees/fix-1-repair/A.md",
       "owner": "A",
       "justification": "Coordinator prepares prompt; assigned worker appends its own evidence and handoff after preparation",

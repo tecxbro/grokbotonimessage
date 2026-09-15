@@ -119,6 +119,7 @@ export function verifyOwnership(root=process.cwd(),lane='wt-00') {
     const owned = new Set(manifest.owners.integration);
     const assigned = new Set(Object.values(manifest.owners).flat());
     const maintenance = new Set(manifest.integrationMaintenance ?? []);
+    const inheritedReadOnly = new Set(manifest.inheritedReadOnly ?? []);
     const repairAssignments = exactMaintenancePaths(root,manifest);
     for (const path of maintenance) {
       if (path.includes('..') || path.startsWith('/') || /[*?]/.test(path))
@@ -129,7 +130,7 @@ export function verifyOwnership(root=process.cwd(),lane='wt-00') {
     const snapshots = manifest.snapshotRoots.integration ?? [];
     for (const path of paths) {
       const snapshot = snapshots.some(prefix => path.startsWith(prefix) && /\.(md|txt|json)$/.test(path));
-      if (!reviewed.has(path) && !owned.has(path) && !maintenance.has(path) && !repairAssignments.has(path) && !snapshot) throw new Error(`UNOWNED_PATH:${path}`);
+      if (!reviewed.has(path) && !owned.has(path) && !maintenance.has(path) && !repairAssignments.has(path) && !inheritedReadOnly.has(path) && !snapshot) throw new Error(`UNOWNED_PATH:${path}`);
     }
     return {lane,baselineCommit:base,baselineTag:history.tag,baselineTagPresent:history.tagPresent,
       requiredReviewedCommits:history.reviewed.length,checked:paths.length,reviewedLanePaths:[...reviewed].filter(path=>paths.includes(path)).length,
