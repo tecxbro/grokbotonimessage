@@ -35,3 +35,14 @@ Implement exact assigned entry points around the one F0 SQLite/outbox model. Pre
 - The assembled E2E set produced 26/29 passes. The three failures are unchanged out-of-lane integration/tooling defects recorded as CR-04; none is relabelled as a WT-01 pass.
 - The required lane verifier remains blocked by `LANE_NOT_ASSEMBLED`; the ownership and documentation checks remain blocked by their shared base/inventory assumptions. Exact current outputs remain in `CHANGE-REQUESTS.md`.
 - Committed the owned implementation, tests, and lane documentation as `08d9ed396e1b18b0bd5edfcc866c7dde0518c006`, then reran package typecheck/build/contract checks, focused 15/15, and all WT-01 46/46 against that commit. This final documentation-only update records the immutable tested identity.
+
+## 2026-09-10 — Finding 6 conversation-ordering correction
+
+- Confirmed `DurableSQLiteStore.predecessors()` deliberately used project/account/line FIFO and reproduced the cross-conversation dependency from the query.
+- Narrowed ordinary predecessor matching to full project/account/line/space scope. `queued`, `blocked`, and `unknown-outcome` remain blockers in the same conversation; `provider-accepted` and other terminal results do not.
+- Gave `space.create` an explicit project/account/line creation dependency because it has no existing destination conversation. An unresolved creation does not fence unrelated ordinary conversation work.
+- Kept line-rate limiting out of predecessor ordering and did not retry or downgrade any `unknown-outcome` record.
+- Added a status-matrix regression for same-line/same-space versus same-line/different-space work, plus the line-scoped creation case.
+- Red/green verification restored the original account/line query temporarily: the new compiled regression failed 2 of 22 tests by reporting cross-conversation predecessors, then passed after the resource-scoped query was restored.
+- Package typecheck, build, all WT-01 tests (48/48), generated contract check, and scoped whitespace validation passed for source/test patch digest `0b3f37ff87e4a697e46087ede224e7e28afbcebb385692301bc6e56ef74c59ba` at pre-existing HEAD `15aa038084451f930e6fead1831f908fbe00e56c`. The first attempted build exposed only a typed test-fixture construction error; it was corrected before the passing rebuild and its stale compiled test run is not evidence.
+- The exact Node 24.13.0 aggregate lane command remains blocked by `LANE_NOT_ASSEMBLED`; ownership remains blocked by `UNOWNED_PATH:.gitignore`; documentation verification cannot open `.photon-local/verification.json` because the lane gate emits no report. These shared-tooling results are recorded in `CHANGE-REQUESTS.md` and are not relabelled as Finding 6 failures or passes.
