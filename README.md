@@ -8,7 +8,20 @@ Use Node 24.13.0 (the Photon workspace requirement), npm 10.9.2, and run `npm ci
 
 ```sh
 npm run photon:build
-node scripts/generate-contracts.mjs --check
+npm run photon:check
+```
+
+`photon:check` explicitly validates the assembled candidate manifest, including on
+maintenance branches and detached PR checkouts. For a genuine foundation source
+checkout, use `npm run photon:check:foundation`; the F0 lane verifier also selects
+that target explicitly. Neither target falls back to another manifest when its
+schema, file count, or contract hash differs. Direct generator invocations require
+`--target assembled-candidate` or `--target foundation`, including generation.
+The frozen F0 manifest and checkpoint must not be regenerated for assembled work.
+
+The historical F0 lane checks below apply to its registered foundation checkout:
+
+```sh
 node scripts/verify-worktree.mjs wt-00
 node scripts/verify-ownership.mjs wt-00
 node scripts/verify-docs.mjs wt-00

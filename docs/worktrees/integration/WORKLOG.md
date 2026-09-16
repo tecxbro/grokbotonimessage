@@ -1,5 +1,21 @@
 # Integration worklog
 
+## 2026-09-16 — explicit contract validation target
+
+User-authorized maintenance on the clean registered
+`codex/step-2-messaging-guidance` checkout at
+`d959c3954af8c4ef4efa15a383d07ec1cc7994b1` preserves the installed expiry repair.
+Run 35066315109 fails on both operating systems at the branch-selected contract
+manifest, before installed tests. The generator now requires an explicit target;
+the normal check and current-checkout workflows select assembled-candidate, while
+the F0 lane verifier selects foundation. The foundation verification-tools test
+is explicitly maintained here for this repair, with its exact path recorded in
+ownership and FILES. Regression fixtures use real archived contract bytes and
+separate Git repositories for named and detached checkout states. CI fetches the
+immutable history required by the real F0 regression. Neither manifest nor the
+F0 checkpoint is updated. Detailed local and remote evidence is recorded in
+TEST-EVIDENCE.md.
+
 ## 2026-09-10 — identity and input review
 
 The designated worktree was initially absent, so work stopped without mutation.

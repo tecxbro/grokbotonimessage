@@ -1,5 +1,21 @@
 # Integration architecture
 
+## Contract verification targets — 2026-09-16
+
+`scripts/generate-contracts.mjs` requires `--target assembled-candidate` or
+`--target foundation`, independently of Git branch and checkout state. The former
+selects `docs/worktrees/integration/candidate-contract.json`; the latter selects
+the frozen `docs/worktrees/foundation.json`. Unknown or absent targets fail before
+generation. Schema serialization, sorted file hashing and manifest file-count
+checks remain in place; no digest-based fallback exists.
+
+`npm run photon:check` selects assembled-candidate for the current source tree.
+Both Photon workflows and workspace CI use that command, including jobs which
+run foundation unit tests against assembled sources. Genuine F0 source checks
+use `photon:check:foundation` or the explicit target in `verify-lane.mjs`. Archived
+F0 schemas are compiled in an isolated regression fixture to validate the real
+immutable checkpoint, so test workflows fetch full Git history.
+
 ## Current completion architecture — 2026-09-13
 
 This section supersedes historical production-wiring claims below. The assigned

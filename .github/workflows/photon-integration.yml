@@ -55,7 +55,7 @@ jobs:
         run: npm test
       - name: Photon foundation tests
         run: npm run photon:test
-      - name: Generated contract drift
+      - name: Generated assembled-candidate contract drift
         run: npm run photon:check
       - name: Assembled offline integration including install and rollback
         run: npm run photon:test:integration
