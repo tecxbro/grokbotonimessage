@@ -5,7 +5,7 @@ description: Operate the installed Grok Photon messaging executable using scoped
 
 # Operate Grok Photon
 
-Use the existing executable for messaging operations. Map normal English to a supported operation. Keep CLI syntax, JSON, local paths and internal errors out of the iMessage conversation. Do not write SDK integration code or build missing features during operation. The persistent runtime owns cloud iMessage, credentials, resources and the outbox. Never start another Spectrum client.
+Use the existing executable for messaging operations. Map normal English to a supported operation. Keep CLI syntax, JSON, local paths and internal errors out of the iMessage conversation. Do not write SDK integration code or build missing Photon runtime features during operation. The persistent runtime owns cloud iMessage, credentials, resources and the outbox. Never start another Spectrum client.
 
 This skill applies to real incoming work after deployment and activation. Reply
 to a real user request in its originating conversation using only that request's
@@ -54,7 +54,7 @@ Exit codes: 0 means a successful protocol response with no reported adverse outc
 
 ## Discovery, resources and targets
 
-Read scoped capabilities before choosing an operation. Check implementation, account and conversation availability, provider support, blockers and evidence tier separately. Unimplemented, unavailable or unknown support is not permission to attempt a substitute. Only use a documented fallback reported by the runtime and acceptable to the user's intent. A warn-and-skip or accepted no-op does not prove an effect.
+Read scoped capabilities before committing to an operation. Check implementation, account and conversation availability, provider support, blockers and evidence tier separately. Unimplemented, unavailable or unknown support is not permission to attempt a substitute. Only use a documented fallback reported by the runtime and acceptable to the user's intent. A warn-and-skip or accepted no-op does not prove an effect.
 
 Resolve people and conversations through existing task context and persisted resource references. Do not invent reference IDs or scopes from phone numbers, names or raw strings. References contain `version`, `kind`, `id`, `scope` and kind-specific parent IDs. The host revalidates scope, ownership, parent identity and generation. If the target is ambiguous, ask one short clarification question. A newly created space requires a new scoped context before follow-up operations. Media must use host-staged bytes or authorized attachment references; stream/template/codec IDs must already be registered. If the task lacks a resource or grant, report the blocker through the existing orchestrator.
 
@@ -64,40 +64,189 @@ Four concise, schema-validated starting points are [create a poll](examples/wt-0
 
 ## Choosing the operation
 
-Inspect the current scoped capabilities before choosing. Implementation,
-provider support, account availability, conversation availability and evidence
-are separate facts. If the required operation is genuinely unavailable, report
-the blocker naturally; do not invent an SDK fallback or make Grok a second
-messaging runtime.
+Choose the simplest AVAILABLE format that accomplishes the user's goal.
+Use richer formats when they materially improve choosing, understanding, or
+interacting, not merely because the feature exists. Respect explicit user
+requests; do not require the user to name a Photon operation before choosing an
+appropriate format. Grok remains the reasoning agent; Photon remains the messaging
+tool. These are conversational decisions, not keyword triggers or a second agent loop.
 
-- Ordinary answer: use `text.send`. When the answer refers to one specific
-  incoming message and targeted replies are available, use `message.reply`.
-- Reaction: use `message.react` only when a targeted acknowledgment is useful
-  and sufficient. Do not automatically react to every message, receipt or
-  outgoing echo, and do not add a redundant acknowledgment bubble.
-- Effect: use `effect.send` for an explicit request or a clearly appropriate
-  expressive moment, such as a requested celebration. Do not decorate routine
-  answers randomly or send a duplicate plain copy.
-- Preserve your normal decision-making. Only when you independently choose
-  to present a poll, invoke `poll.create` to display it through iMessage.
-  Do not turn ordinary questions, lists, or multiple-choice text into polls.
+Understand intent → choose a candidate format → check capabilities and prerequisites
+→ use the existing schema/example → inspect outcome.
 
-  An inbound `poll-answer` is a user interaction rendered as text for this
-  conversation. Read the question, choice, selection state, sender, and
-  available provenance, then continue through your existing reasoning and tools.
+Before executing the candidate, inspect current scoped capabilities.
+Implementation, provider support, account availability, conversation availability
+and evidence are separate facts. Every format needs current authorization and
+actual scoped resources; fixture IDs grant no authority. Follow the existing
+invocation contract and stable idempotency rules above, then inspect the returned
+status using the outcome rules below.
 
-  A deselection is not a positive answer. Missing or ambiguous source context
-  must not be silently applied to an unrelated task. Ask for clarification
-  when needed.
+If an operation or prerequisite is genuinely unavailable or unknown, use only an
+authorized, intent-preserving documented fallback reported by the runtime.
+Otherwise explain the blocker naturally. An explicit request is not permission to
+invent support, silently substitute a different experience, or make Grok a second
+messaging runtime. Never bypass the runtime with newly written Spectrum integration.
+For example, a missing original card session blocks an update; sending another
+card is not an intent-preserving fallback.
 
-  Do not create a separate poll on Grok's server, call `poll.vote` to record
-  the human's click, or scrape a terminal/chat to recover the poll.
-- Card update: when the task changes an authorized existing card, use
-  `app.update` with that card and session. Do not silently replace it with a new
-  bubble.
-- Generated media: write the completed artifact only into the configured import
-  directory, run `media.import`, then put its returned staged descriptor into
-  `attachment.send` or `voice.send`. Import never authorizes another file.
+### Text
+
+- Use when: an ordinary answer, explanation, or question is best expressed in
+  prose. Ordinary answer: use `text.send` unless a specific message needs a reply.
+- Avoid when: text alone would lose an explicitly requested or materially useful
+  choice, visual, or interaction that is available.
+- Example: “What time does dinner start?” → answer with `text.send`.
+- Counterexample: “Ask the group: pizza, sushi, or tacos” → consider a poll so
+  people can tap a choice, rather than defaulting to a prose list.
+- Prerequisites and contract: authorized conversation/space reference and available
+  `text.send`; use its [schema](schemas/text.send.json) and
+  [example](examples/wt-08/text.send.json).
+
+### Targeted reply
+
+- Use when: responding to a specific authorized message and preserving that
+  connection helps the conversation; choose `message.reply`.
+- Avoid when: there is no specific target or its identity/scope is ambiguous.
+  Never guess a message reference from quoted words or the most recent message.
+- Example: answering “Does this time work for you?” on one specific scheduling
+  message → `message.reply` to that authorized message.
+- Counterexample: a general summary with no authorized message reference →
+  `text.send` to the authorized conversation, not a fabricated reply target.
+- Prerequisites and contract: available targeted replies and the actual authorized
+  message reference; use the [schema](schemas/message.reply.json) and
+  [reply example](examples/wt-08/reply.json).
+
+### Reaction
+
+- Use when: a small targeted acknowledgment is useful and sufficient;
+  choose `message.react`.
+- Avoid when: the user needs an answer, explanation, or action. Do not automatically
+  react to every message, receipt or outgoing echo, and do not add redundant text.
+- Example: “Got it, see you there” → a suitable reaction alone when acknowledgment
+  is all that is needed.
+- Counterexample: “Why did the upload fail?” → explain in text or a targeted reply;
+  a reaction is not an answer.
+- Prerequisites and contract: actual authorized message reference, available
+  reactions and a supported reaction value from the
+  [schema](schemas/message.react.json); adapt the
+  [example](examples/wt-08/message.react.json), never invent a tapback value.
+
+### Poll
+
+- Use when: a bounded preference or group vote benefits from tapping an option.
+  Preserve your normal decision-making: independently choose the format from
+  intent, then use `poll.create`; the user need not ask for that operation by name.
+- Avoid when: explaining, exploring an open-ended question, or merely listing
+  options. Do not automatically turn ordinary questions, lists, or multiple-choice text into polls.
+- Example: “Ask the group: pizza, sushi, or tacos” → a `poll.create` candidate with
+  that question and those options, if available in the authorized group.
+- Counterexample: “Explain the differences between those options” → text or a
+  targeted reply, not a poll.
+- Prerequisites and contract: authorized space, available poll creation and a
+  bounded question/options payload conforming to the
+  [schema](schemas/poll.create.json) and [example](examples/wt-08/create-poll.json).
+  Native poll management is a separate capability; see its boundaries below.
+
+An inbound `poll-answer` is a user interaction rendered as text for this
+conversation. Read the question, choice, selection state, sender, and
+available provenance, then continue through your existing reasoning and tools.
+
+A deselection is not a positive answer. Missing or ambiguous source context
+must not be silently applied to an unrelated task. Ask for clarification
+when needed. Preserve the verified correlation rules in “Work after a wake”;
+labels, recency and `captureId` are not authoritative poll/message references.
+
+Do not create a separate poll on Grok's server, call `poll.vote` to record
+the human's click, or scrape a terminal/chat to recover the poll.
+
+### Image / media
+
+- Use when: an image is requested or the visual materially helps understanding.
+  Generating/retrieving the artifact and delivering it are separate steps.
+- Avoid when: an image is decorative in a routine answer, no suitable real artifact
+  exists, or generation/retrieval is unavailable. Never invent a generated file or
+  claim success before a tool has actually produced it.
+- Example: “Draw a diagram of this flow” → use an available authorized Grok tool to
+  create the image, then `media.import` followed by `attachment.send`.
+- Counterexample: “What is 2 + 2?” → answer in text; do not generate a decorative image.
+- Prerequisites and contract: Generation uses an existing authorized Grok tool,
+  when available; retrieval likewise needs an existing authorized tool/source.
+  Photon does not provide an image generator. Generated media: write the completed
+  artifact only into the configured private import directory, run `media.import`
+  using the exact input under “Invocation and identity”, then use its returned
+  staged descriptor unchanged in `attachment.send`'s
+  [schema](schemas/attachment.send.json) and
+  [example](examples/wt-08/attachment.send.json). Both import and sending must be
+  authorized and available. Import never authorizes another file and is not delivery.
+  The same staging rule applies to `voice.send`; preserve the installed voice policy.
+
+### iMessage effect
+
+- Use when: explicitly requested or appropriate to an expressive moment, such as
+  a requested celebration; choose `effect.send` with the intended content.
+- Avoid when: routine errors or sensitive messages need a clear, restrained answer.
+  Do not decorate routine answers randomly. Do not send a duplicate plain copy.
+- Example: “Celebrate with confetti” → one `effect.send` containing the celebration
+  text with `confetti`. Other supported screen-effect examples are `balloons` for
+  a birthday and `fireworks` for a celebration, when appropriate to the request.
+- Counterexample: “My payment failed” → plain text or a targeted reply explaining
+  the issue; no celebratory effect.
+- Prerequisites and contract: authorized space, available cloud iMessage effect
+  support and supported inner content; use the [schema](schemas/effect.send.json)
+  and [example](examples/wt-08/effect.send.json). The effect names above match the
+  existing schema and the [official effects documentation](https://photon.codes/docs/spectrum-ts/providers/imessage/messaging-features/message-effects.md)
+  pinned by this release. Use the operation's short effect values, not raw Apple
+  IDs or SDK code. An accepted send is not proof the recipient saw the animation.
+
+### Existing app / card
+
+- Use when: a configured app card makes interaction or persistent shared state
+  more useful than prose. Choose `app.send` for an initial configured card or
+  `app.sendCustomized` for an initial card with the registered customized layout.
+  When the task changes an authorized existing card, use `app.update` on it.
+- Avoid when: a short answer suffices, the template/origin is unconfigured, or
+  required references or interaction capabilities are missing. A URL alone is
+  not an app registration. Do not silently replace an update with a new bubble.
+- Example: “Share our configured RSVP card” → initial `app.send` or
+  `app.sendCustomized` as its template permits; “Update that card's count” →
+  `app.update` with the original returned card and session references.
+- Counterexample: “When is the party?” → answer in text, without creating a card.
+- Prerequisites and contract: actual registered templates, approved origins,
+  authorized space/resources and current capabilities for the requested behavior.
+  Keep the returned references for updates; the original live SDK session must
+  still be available. Use existing contracts:
+  `app.send` [schema](schemas/app.send.json) / [example](examples/wt-08/app.send.json),
+  `app.sendCustomized` [schema](schemas/app.sendCustomized.json) / [example](examples/wt-08/app.sendCustomized.json),
+  and `app.update` [schema](schemas/app.update.json) / [example](examples/wt-08/update-card.json).
+  Preserve the native card and cold-restart boundaries below.
+
+### New mini app
+
+- Use when: the user asks for a new app artifact and existing authorized
+  coding/deployment tools can carry out that work within their granted scope.
+  Creating an app is different from sending an existing one.
+- Avoid when: an existing configured card or prose satisfies the request, or the
+  necessary tools, hosting, registration or configuration are missing.
+  Do not claim an arbitrary app-building/publishing workflow exists.
+- Example: “Build a small shared packing checklist” → first check the existing
+  authorized artifact tools and configuration; create only what those permit,
+  then separately check whether the result can be sent as a configured card.
+- Counterexample: “Send our existing RSVP card” → use its configured card contract;
+  do not start a new app build.
+- Prerequisites and contract: an existing authorized coding/deployment tool may
+  create a user artifact; this does not permit editing the Photon runtime.
+  There is no app-creation or hosting operation in this messaging contract.
+  Report missing tools or configuration rather than inventing them. If a real
+  artifact is subsequently registered and approved, use the existing app/card
+  schemas and examples above; a static file or deployed URL alone is insufficient.
+  Static preview, web interaction, and verified live iMessage rendering are
+  separate evidence tiers. Claim only the one actually observed. A preview does
+  not prove working shared state, authenticated web callbacks or live rendering.
+  A new build does not remove cold-restart limitations: the original SDK update
+  session cannot be reconstructed, and a blocked update must not become a new card.
+
+### Execution discipline
+
 - Typing: begin typing for an active conversational reply phase and let the host
   manage its lease. End it on completion, cancellation, failure or loss of
   ownership. Do not leave typing active while waiting for the user.

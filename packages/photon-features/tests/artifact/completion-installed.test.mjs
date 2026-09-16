@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
@@ -12,6 +12,10 @@ test('real archive installs without source/dev dependencies and runs production 
   const packed = spawnSync('npm', ['pack', '--workspace=@grokbot/photon-features', '--ignore-scripts', '--json', '--pack-destination', directory], { encoding: 'utf8', timeout: 30000 });
   assert.equal(packed.status, 0, packed.stderr);
   const info = JSON.parse(packed.stdout)[0];
+  const packedSkill = spawnSync('tar', ['-xOf', join(directory, info.filename), 'package/SKILL.md']);
+  assert.equal(packedSkill.status, 0, packedSkill.stderr.toString());
+  assert.deepEqual(packedSkill.stdout, await readFile(resolve('packages/photon-features/SKILL.md')),
+    'the packaged skill must contain the complete reviewed manual guidance byte-for-byte');
   const names = new Set(info.files.map(file => file.path));
   for (const name of ['bin/grok-photon-task', 'bin/grok-photon-host', 'dist/src/host/text-producer.js', 'dist/src/host/card-backend.js',
     'dist/src/host/card-browser.js', 'dist/src/host/authority-admin.js', 'schemas/protocol.json', 'schemas/stream.open.json',

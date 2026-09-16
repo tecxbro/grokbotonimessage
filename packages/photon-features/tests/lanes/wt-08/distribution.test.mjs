@@ -144,6 +144,8 @@ test('all generated examples validate, registry drift detected, offline smoke ne
   assert.equal((await generateSkill({ check: true })).examplesValidated, 44);
   const skill = new URL('../../../SKILL.md', import.meta.url); const original = await readFile(skill);
   try {
+    await generateSkill();
+    assert.deepEqual(await readFile(skill), original, 'generation must preserve manual guidance and the generated inventory byte-for-byte');
     await writeFile(skill, original.toString().replace('| text.send |', '| invented.operation |'));
     await assert.rejects(generateSkill({ check: true }), /SKILL_REGISTRY_DRIFT/);
   } finally { await writeFile(skill, original); }

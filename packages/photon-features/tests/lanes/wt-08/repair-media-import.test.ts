@@ -1,7 +1,7 @@
 import test, { type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { chmod, mkdir, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import {
@@ -14,6 +14,7 @@ import {
 import type { OwnedSdk } from "../../../src/adapters/transport/spectrum-owner.js";
 import {
   mediaImportInputSchema,
+  parseAction,
   type Action,
   type OperationResult,
 } from "../../../src/contracts/index.js";
@@ -286,12 +287,68 @@ test("manual operating decisions cover required behavior and preserve the genera
     fs.readFile(new URL("../../../../SKILL.md", import.meta.url), "utf8"));
   for (const phrase of [
     "Ordinary answer", "targeted acknowledgment", "requested celebration", "independently choose",
-    "Do not turn ordinary questions, lists, or multiple-choice text into polls", "inbound `poll-answer`",
+    "Do not automatically turn ordinary questions, lists, or multiple-choice text into polls", "inbound `poll-answer`",
     "A deselection is not a positive answer", "Do not create a separate poll on Grok's server",
     "authorized existing card", "Generated media", "Do not leave typing active while waiting for the user",
     "timer-driven filler", "genuinely unavailable", "unknown outcome", "make Grok a second",
     "stable identity without creating a replacement action",
   ]) assert.match(skill, new RegExp(phrase, "i"));
+  const decisions = skill.slice(skill.indexOf("## Choosing the operation"),
+    skill.indexOf("## Incremental text supplied by an authorized producer"));
+  const prose = decisions.replace(/\s+/g, " ");
+  for (const phrase of [
+    "Choose the simplest AVAILABLE format that accomplishes the user's goal",
+    "materially improve choosing, understanding, or interacting",
+    "Respect explicit user requests", "do not require the user to name a Photon operation",
+    "Understand intent → choose a candidate format → check capabilities and prerequisites → use the existing schema/example → inspect outcome",
+    "authorized, intent-preserving documented fallback", "Never bypass the runtime with newly written Spectrum integration",
+    "Grok remains the reasoning agent; Photon remains the messaging tool",
+  ]) assert.ok(prose.includes(phrase), phrase);
+  const cases = [
+    { heading: "Text", operation: "text.send", positive: "What time does dinner start?", negative: "Ask the group: pizza, sushi, or tacos" },
+    { heading: "Targeted reply", operation: "message.reply", positive: "Does this time work for you?", negative: "no authorized message reference" },
+    { heading: "Reaction", operation: "message.react", positive: "Got it, see you there", negative: "Why did the upload fail?" },
+    { heading: "Poll", operation: "poll.create", positive: "Ask the group: pizza, sushi, or tacos", negative: "Explain the differences between those options" },
+    { heading: "Image / media", operation: "attachment.send", positive: "Draw a diagram of this flow", negative: "What is 2 + 2?" },
+    { heading: "iMessage effect", operation: "effect.send", positive: "Celebrate with confetti", negative: "My payment failed" },
+    { heading: "Existing app / card", operation: "app.send", positive: "Share our configured RSVP card", negative: "When is the party?" },
+    { heading: "New mini app", operation: null, positive: "Build a small shared packing checklist", negative: "Send our existing RSVP card" },
+  ];
+  for (const { heading, operation, positive, negative } of cases) {
+    const start = decisions.indexOf(`### ${heading}\n`);
+    assert.notEqual(start, -1, heading);
+    const end = decisions.indexOf("\n### ", start + 1);
+    const section = decisions.slice(start, end === -1 ? undefined : end).replace(/\s+/g, " ");
+    for (const label of ["Use when:", "Avoid when:", "Example:", "Counterexample:", "Prerequisites and contract:"])
+      assert.ok(section.includes(label), `${heading}: ${label}`);
+    assert.ok(section.includes(positive), `${heading}: positive scenario`);
+    assert.ok(section.includes(negative), `${heading}: negative scenario`);
+    if (operation) assert.ok(section.includes(`schemas/${operation}.json`), `${heading}: schema`);
+  }
+  for (const phrase of [
+    "Generation uses an existing authorized Grok tool, when available",
+    "Photon does not provide an image generator", "Never invent a generated file",
+    "media.import", "attachment.send", "registered templates", "approved origins",
+    "app.sendCustomized", "app.update", "original returned card and session references",
+    "Creating an app is different from sending an existing one",
+    "does not permit editing the Photon runtime", "Do not claim an arbitrary app-building/publishing workflow exists",
+    "Report missing tools or configuration", "Static preview, web interaction, and verified live iMessage rendering",
+    "cold-restart", "Do not send a duplicate plain copy", "routine errors or sensitive messages",
+  ]) assert.ok(prose.includes(phrase), phrase);
+  // Linked contracts must exist in the installed package; examples still use
+  // the canonical parser. These checks cover documentation, not Grok behavior.
+  for (const [, path] of decisions.matchAll(/\]\(((?:schemas|examples)\/[^)]+\.json)\)/g)) {
+    const value = JSON.parse(await readFile(new URL(`../../../../${path}`, import.meta.url), "utf8"));
+    if (path!.startsWith("examples/")) parseAction(value);
+  }
+  const effectSchema = JSON.parse(await readFile(new URL("../../../../schemas/effect.send.json", import.meta.url), "utf8"));
+  const effectExample = JSON.parse(await readFile(new URL("../../../../examples/wt-08/effect.send.json", import.meta.url), "utf8"));
+  for (const effect of ["confetti", "balloons", "fireworks"]) {
+    assert.ok(prose.includes(`\`${effect}\``), effect);
+    assert.ok(effectSchema.properties.arguments.properties.content.properties.effect.enum.includes(effect), effect);
+    parseAction({ ...effectExample, arguments: { ...effectExample.arguments,
+      content: { ...effectExample.arguments.content, effect } } });
+  }
   const block = skill.slice(skill.indexOf(generatedStart), skill.indexOf(generatedEnd) + generatedEnd.length);
   assert.equal(createHash("sha256").update(block).digest("hex"),
     // Completion adds the verified progressive provider declaration; all 44
