@@ -38,6 +38,14 @@ both Ubuntu and macOS and skipped installed tests. The local results above do
 not change that historical result; any subsequent hosted run is separate
 evidence reported after publication. No live suite, deployment or messages ran.
 
+Hosted follow-up at `4759c93d15e0c98a34e652b44638ae73b49328b9`: foundation
+workflow 35069355172 passed, and both operating systems in assembled run
+35069355162 passed the explicit contract target check. The new F0 regression
+then exposed its own dependency on the unpublished local `photon-v3-f0` tag.
+The correction archives the immutable `base.commit` from included-commits.json,
+matching the existing history verifier's tag-optional contract. It does not
+publish or change the F0 tag, alter a digest, or substitute current sources.
+
 ## Current completion verification — 2026-09-13
 
 The current local candidate runs on macOS arm64 with exact Node 24.13.0 and npm

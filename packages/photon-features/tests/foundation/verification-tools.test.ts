@@ -99,7 +99,11 @@ test('explicit target still rejects schema, source hash and file-count drift wit
 });
 
 test('explicit foundation target validates real immutable F0 bytes even on a maintenance branch',t=>{
- const f=contractFixture(t,'photon-v3-f0');
+ // The recorded commit is published history; the optional local tag need not
+ // exist in CI. Never substitute HEAD or regenerate the foundation manifest.
+ const {base}=JSON.parse(readFileSync(resolve(root,'docs/worktrees/integration/included-commits.json'),'utf8'));
+ assert.match(base.commit,/^[a-f0-9]{40}$/);
+ const f=contractFixture(t,base.commit);
  const before=readFileSync(resolve(f.directory,'docs/worktrees/foundation.json'));
  const result=f.check('foundation');assert.equal(result.status,0,result.stderr);
  const report=JSON.parse(result.stdout);assert.equal(report.target,'foundation');assert.equal(report.files,36);
