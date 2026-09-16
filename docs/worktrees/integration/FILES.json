@@ -224,7 +224,7 @@
     },
     {
       "path": "scripts/generate-contracts.mjs",
-      "purpose": "Branch-aware immutable F0 and post-F0 candidate digest validation"
+      "purpose": "Explicit foundation or assembled-candidate schema and digest validation independent of Git branch"
     },
     {
       "path": "scripts/verify-all.mjs",
@@ -517,6 +517,13 @@
     {
       "path": "packages/photon-features/tests/lanes/wt-08/repair-media-import.test.ts",
       "purpose": "Completion regression or installed executable evidence for production wiring"
+    }
+  ],
+  "verifierRepairFiles": [
+    {
+      "path": "packages/photon-features/tests/foundation/verification-tools.test.ts",
+      "historicalOwner": "wt-00",
+      "purpose": "Authorized verifier maintenance: named and detached checkouts, real F0 validation and fail-closed drift regressions"
     }
   ],
   "sharedOwnership": "Integration owns public F0 roundtrip migration, the WT-02/WT-05 continuation composition contract, assembled handler-status projection, and the concrete production host/launcher. Exact cross-lane lifecycle and release-tool changes are listed as integration maintenance; other lane-internal behavior is preserved.",

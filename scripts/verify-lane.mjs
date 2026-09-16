@@ -48,7 +48,7 @@ export function verifyLane(root=process.cwd(),lane='wt-00') {
    run('build',['node_modules/typescript/bin/tsc','-p','packages/photon-features/tsconfig.json']);
    requireTests(root,foundationTests);
    for(const name of ['contracts','feature-services','receipts','sdk-compatibility','ownership','verification-tools'])run(name==='ownership'?'ownership-tests':name,['--test','--test-reporter=tap',`packages/photon-features/dist/tests/foundation/${name}.test.js`],true);
-   run('schema-drift',['scripts/generate-contracts.mjs','--check']);
+   run('schema-drift',['scripts/generate-contracts.mjs','--check','--target','foundation']);
    run('legacy-foundation',['--test','--test-reporter=tap','packages/photon-features/dist/tests/lanes/wt-00/*.test.js'],true);
    run('existing-cli',['--test','--test-reporter=tap','test/*.test.js'],true);
    run('ownership',['scripts/verify-ownership.mjs',lane]);

@@ -1,5 +1,51 @@
 # Integration test evidence
 
+## Explicit contract target repair — 2026-09-16
+
+Tested on macOS arm64 with Node 24.13.0/npm 10.9.2 in registered
+`worktrees/step-2-messaging-guidance`, branch `codex/step-2-messaging-guidance`,
+starting at `d959c3954af8c4ef4efa15a383d07ec1cc7994b1` plus this verifier-only
+working diff. The prior expiry runner is unchanged. Both contract manifests,
+production sources, SKILL.md, production inventory and dependency files are
+unchanged. Immutable F0 remains `ee2f8576b55973eee312bca5cad0549b6f959a88`.
+
+| Local command | Result |
+| --- | --- |
+| `npm run photon:check` | Passed directly on the maintenance branch: assembled-candidate, 3 schemas, 56 files, unchanged digest `2f52389bd6e24eeedc8b2f9f02d75f160fa69dc12569c489432f2a084df73539` |
+| `node --test packages/photon-features/dist/tests/foundation/verification-tools.test.js` | 11/11 passed; includes two maintenance branches, detached checkout, real immutable F0 validation, schema/hash/file-count drift rejection and absent/invalid targets |
+| `node packages/photon-features/scripts/generate-skill.mjs --check` | Passed: 44 operations/examples, 4 assigned examples, 48 files |
+| `npm run photon:test:integration` | 856/856 passed across 97 files; zero skipped, failed or cancelled |
+| `npm run photon:test:installed` | Passed all seven modes: provider-failure, abort, cancel, expiry, stall, cold-restore, buffered |
+| Focused installed runner with `COMPLETION_FAILURE_MODE=expiry COMPLETION_EXPIRY_SCHEDULE_DELAY_MS=2500` | Passed with a freshly packed archive; same checksum `4b1c283b6f46c431b59d6be852e7e0f13892338acf7a6f45b2f181255fff004f` |
+| `node scripts/verify-ownership.mjs integration` | Passed after recording the exact maintained regression file |
+| `node scripts/verify-docs.mjs integration` | Passed after recording the regression under maintenance rather than changing its historical owner |
+| `git diff --check` | Passed |
+
+Focused delay evidence (Unix milliseconds): stream `expiresAt=1789544104277`;
+open 245 ms, boundary read 0 ms, initial append 285 ms with `{accepted:true}`,
+execute 247 ms, first provider send observed at `1789544097317`.
+The final keepalive started at `1789544099572` and completed at `1789544099865`.
+Its earliest possible producer-stall deadline was therefore `1789544104572`,
+295 ms later than absolute expiry. Expiry was observed at `1789544104284`.
+The terminal result was unknown-outcome/reconcile-first and replay did not send
+a replacement. This establishes absolute expiry after dispatch rather than
+the five-second producer stall. Pre-dispatch expiry coverage remains intact.
+
+Raw local logs are ignored `.photon-local/explicit-target-integration.log`,
+`explicit-target-installed.log`, and `explicit-target-expiry-delay.log`.
+Actual GitHub run 35066315109 at the starting SHA failed contract validation on
+both Ubuntu and macOS and skipped installed tests. The local results above do
+not change that historical result; any subsequent hosted run is separate
+evidence reported after publication. No live suite, deployment or messages ran.
+
+Hosted follow-up at `4759c93d15e0c98a34e652b44638ae73b49328b9`: foundation
+workflow 35069355172 passed, and both operating systems in assembled run
+35069355162 passed the explicit contract target check. The new F0 regression
+then exposed its own dependency on the unpublished local `photon-v3-f0` tag.
+The correction archives the immutable `base.commit` from included-commits.json,
+matching the existing history verifier's tag-optional contract. It does not
+publish or change the F0 tag, alter a digest, or substitute current sources.
+
 ## Current completion verification — 2026-09-13
 
 The current local candidate runs on macOS arm64 with exact Node 24.13.0 and npm

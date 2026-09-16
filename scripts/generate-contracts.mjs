@@ -2,13 +2,22 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
+import { parseArgs } from 'node:util';
 import { z } from 'zod';
 import { actionSchema } from '../packages/photon-features/dist/src/contracts/actions.js';
 import { incomingEventSchema } from '../packages/photon-features/dist/src/contracts/events.js';
 import { resultSchema } from '../packages/photon-features/dist/src/contracts/results.js';
 const root = resolve(dirname(fileURLToPath(import.meta.url)),'..');
-const check = process.argv.includes('--check');
+const { values: { check = false, target } } = parseArgs({ options: {
+  check: { type: 'boolean' }, target: { type: 'string' },
+} });
+const targets = new Map([
+  ['assembled-candidate', 'docs/worktrees/integration/candidate-contract.json'],
+  ['foundation', 'docs/worktrees/foundation.json'],
+]);
+if (!targets.has(target)) throw new Error('CONTRACT_TARGET_REQUIRED: --target assembled-candidate|foundation');
+// Validation intent is independent of branch names and detached CI checkouts.
+const manifestPath = targets.get(target);
 for (const [name,schema] of Object.entries({action:actionSchema,event:incomingEventSchema,result:resultSchema})) {
   const path = resolve(root,`packages/photon-features/schemas/${name}.schema.json`);
   const body = JSON.stringify(z.toJSONSchema(schema,{target:'draft-2020-12',unrepresentable:'throw'}),null,2)+'\n';
@@ -25,10 +34,8 @@ files.sort();
 const hash = createHash('sha256');
 for (const path of files) hash.update(path+'\0').update(readFileSync(resolve(root,path))).update('\0');
 const digest = hash.digest('hex');
-const branch=execFileSync('git',['-C',root,'branch','--show-current'],{encoding:'utf8'}).trim();
-const candidateBranch=branch==='main'||branch==='photon-v3/integration'||branch==='fix-1'||/^repair\/fix-1-[a-e]$/.test(branch);
-const path=resolve(root,candidateBranch?'docs/worktrees/integration/candidate-contract.json':'docs/worktrees/foundation.json');
+const path=resolve(root,manifestPath);
 const foundation=JSON.parse(readFileSync(path));
 if(check) {if(foundation.contractDigest!==digest||foundation.digestFileCount!==undefined&&foundation.digestFileCount!==files.length)throw new Error('CONTRACT_DIGEST_DRIFT');}
 else {foundation.contractDigest=digest;if('digestFileCount' in foundation)foundation.digestFileCount=files.length;else foundation.digestFiles=files;writeFileSync(path,JSON.stringify(foundation,null,2)+'\n');}
-console.log(JSON.stringify({schemas:3,contractDigest:digest,files:files.length}));
+console.log(JSON.stringify({target,manifest:manifestPath,schemas:3,contractDigest:digest,files:files.length}));

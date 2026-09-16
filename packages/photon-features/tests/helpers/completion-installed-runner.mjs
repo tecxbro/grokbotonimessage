@@ -21,6 +21,10 @@ const exec = (args, input, env = {}) => new Promise((resolveResult, reject) => {
   child.stdin.end(input === undefined ? undefined : JSON.stringify(input));
 });
 const wait = async (predicate, label, limit = 1000) => { for (let i = 0; i < limit; i++) { if (await predicate()) return; await new Promise(r => setTimeout(r, 10)); } throw new Error('TIMEOUT:' + label); };
+const waitUntil = async (deadline, label, slackMs = 1000) => {
+  const remaining = Math.max(0, deadline - Date.now());
+  await wait(() => Date.now() >= deadline, label, Math.ceil((remaining + slackMs) / 10));
+};
 try {
   for (const path of [release, runtime, join(runtime, 'captures'), join(runtime, 'staging'), join(runtime, 'imports')]) await mkdir(path, { recursive: true, mode: 0o700 });
   const extracted = spawnSync('tar', ['-xzf', archive, '--strip-components=1', '-C', release], { encoding: 'utf8' }); assert.equal(extracted.status, 0, extracted.stderr);
@@ -206,13 +210,66 @@ try {
     const check = await exec([join(release, args[0]), ...args.slice(1)]); assert.equal(check.code, 0, check.stdout + check.stderr);
   }
   const failures = {};
+  let expiryTiming;
   for (const mode of (['cold-restore', 'buffered'].includes(process.env.COMPLETION_FAILURE_MODE) ? [] : [process.env.COMPLETION_FAILURE_MODE ?? 'provider-failure'])) {
-    const item = (await cli('stream.open', { version: 1, ttlMs: mode === 'expiry' ? 1500 : 30000 })).stream;
+    // Two published producer-stall windows leave one bounded window for the
+    // installed CLI/provider handoff and one for synchronized expiry coverage.
+    const ttlMs = mode === 'expiry' ? 10000 : 30000;
+    const openedAt = Date.now();
+    const openedFailureStream = await cli('stream.open', { version: 1, ttlMs });
+    const item = openedFailureStream.stream;
+    const openCompletedAt = Date.now();
+    const boundaryReadStartedAt = Date.now();
     const before = (await events()).filter(e => e.type === 'send').length;
+    const boundaryReadCompletedAt = Date.now();
     const action = { version: 1, contextId: 'context-1', idempotencyKey: mode, operation: 'text.stream', arguments: { space, stream: item } };
-    const queued = await cli('execute', action);
-    await cli('stream.append', { version: 1, stream: item, sequence: 0, text: 'Partial thought.' });
-    await wait(async () => (await events()).filter(e => e.type === 'send').length === before + 1, mode + ' first send');
+    let queued, firstProviderSendObservedAt;
+    if (mode === 'expiry') {
+      assert.equal(ttlMs, openedFailureStream.stallMs * 2, 'expiry budget is exactly two producer-stall windows');
+      assert.ok(item.expiresAt - openCompletedAt >= openedFailureStream.stallMs, 'opened stream retains a full setup window');
+      const scheduleDelayMs = Number(process.env.COMPLETION_EXPIRY_SCHEDULE_DELAY_MS ?? 0);
+      const cadenceMs = Math.floor(openedFailureStream.stallMs / 2);
+      assert.ok(Number.isSafeInteger(scheduleDelayMs) && scheduleDelayMs >= 0 && scheduleDelayMs <= cadenceMs,
+        'controlled scheduling delay stays within the producer cadence');
+      if (scheduleDelayMs > 0) await waitUntil(Date.now() + scheduleDelayMs, 'controlled expiry scheduling delay');
+      const appendStartedAt = Date.now();
+      const firstAppendOutcome = await cli('stream.append', { version: 1, stream: item, sequence: 0, text: 'Partial thought.' });
+      const appendCompletedAt = Date.now();
+      assert.deepEqual(firstAppendOutcome, { accepted: true }, 'initial content is accepted while the stream is valid');
+      assert.ok(appendCompletedAt < item.expiresAt, 'initial content precedes absolute stream expiry');
+      const executeStartedAt = Date.now();
+      queued = await cli('execute', action);
+      const executeCompletedAt = Date.now();
+      await wait(async () => {
+        const observed = (await events()).filter(e => e.type === 'send').length === before + 1;
+        if (observed && firstProviderSendObservedAt === undefined) firstProviderSendObservedAt = Date.now();
+        return observed;
+      }, mode + ' first send', Math.ceil(openedFailureStream.stallMs / 10));
+      const keepaliveAppends = [];
+      let sequence = 1, lastAppendCompletedAt = appendCompletedAt;
+      while (item.expiresAt - lastAppendCompletedAt >= openedFailureStream.stallMs) {
+        await waitUntil(lastAppendCompletedAt + cadenceMs, 'expiry producer cadence');
+        const startedAt = Date.now();
+        const outcome = await cli('stream.append', { version: 1, stream: item, sequence, text: ' Still working.' });
+        const completedAt = Date.now();
+        assert.deepEqual(outcome, { accepted: true }, 'producer remains valid before expiry');
+        keepaliveAppends.push({ sequence, startedAt, completedAt, elapsedMs: completedAt - startedAt });
+        sequence++; lastAppendCompletedAt = completedAt;
+      }
+      const remainingBeforeExpiry = item.expiresAt - Date.now();
+      assert.ok(remainingBeforeExpiry > 0 && remainingBeforeExpiry < openedFailureStream.stallMs,
+        'last accepted content makes absolute expiry, not producer stall, the next deadline');
+      await waitUntil(item.expiresAt, 'absolute stream expiry');
+      expiryTiming = { expiresAt: item.expiresAt, openedAt, openCompletedAt, openElapsedMs: openCompletedAt - openedAt,
+        boundaryReadStartedAt, boundaryReadCompletedAt, boundaryReadElapsedMs: boundaryReadCompletedAt - boundaryReadStartedAt,
+        scheduleDelayMs, appendStartedAt, appendCompletedAt, appendElapsedMs: appendCompletedAt - appendStartedAt,
+        firstAppendOutcome, executeStartedAt, executeCompletedAt, executeElapsedMs: executeCompletedAt - executeStartedAt,
+        firstProviderSendObservedAt, keepaliveAppends, expiryObservedAt: Date.now() };
+    } else {
+      queued = await cli('execute', action);
+      await cli('stream.append', { version: 1, stream: item, sequence: 0, text: 'Partial thought.' });
+      await wait(async () => (await events()).filter(e => e.type === 'send').length === before + 1, mode + ' first send');
+    }
     if (mode === 'provider-failure') {
       await cli('stream.append', { version: 1, stream: item, sequence: 1, text: 'BOUNDARY_FAIL' });
       await cli('stream.close', { version: 1, stream: item, sequence: 2 });
@@ -253,5 +310,5 @@ try {
   const deniedCallback = await fetch('http://127.0.0.1:' + cardPort + '/interactions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(staleCallback) });
   assert.equal(deniedCallback.status, 403, 'new old-generation callback cannot act after owner renewal');
   await stop(); assert.deepEqual(preserved(), pendingEvidence, 'renewal and restart preserve unknown/blocked evidence exactly');
-  console.log(JSON.stringify({ archive, checksum, installedRoot: root, freshInstall: true, repeatedInstall: true, validation: true, progressiveProducer: !buffered, bufferedFallback: buffered, firstSendBeforeClose: !buffered, sameMessage: true, restartReplay: true, shutdown: true, universalUpdates: true, customizedUpdates: true, participantCallbacks: true, authorityRenewal: true, deniedOwner: true, staleGeneration: true, textClaimReplyAck: true, mediaImportSendFetch: true, voiceSend: true, pollCreateAnswer: true, typingLifecycle: true, avatarRetention: true, createdChatRetention: true, streamFailures: failures, productionActivation: false, approvedRelease: false }));
+  console.log(JSON.stringify({ archive, checksum, installedRoot: root, freshInstall: true, repeatedInstall: true, validation: true, progressiveProducer: !buffered, bufferedFallback: buffered, firstSendBeforeClose: !buffered, sameMessage: true, restartReplay: true, shutdown: true, universalUpdates: true, customizedUpdates: true, participantCallbacks: true, authorityRenewal: true, deniedOwner: true, staleGeneration: true, textClaimReplyAck: true, mediaImportSendFetch: true, voiceSend: true, pollCreateAnswer: true, typingLifecycle: true, avatarRetention: true, createdChatRetention: true, streamFailures: failures, expiryTiming, productionActivation: false, approvedRelease: false }));
 } finally { if (host && host.exitCode === null) { const exited = new Promise(resolve => host.once("exit", resolve)); host.kill('SIGTERM'); await exited; } if (!process.env.COMPLETION_KEEP) await rm(root, { recursive: true, force: true }); else console.error('Fixture root: ' + root); }
