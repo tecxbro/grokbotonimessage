@@ -1,11 +1,13 @@
 import { spawn } from "node:child_process";
 
-export interface CommandResult { exitCode: number; stdout: string }
+export interface CommandResult { exitCode: number; stdout: string; stderr?: string }
 export interface DiscoveryProcessOptions {
   cwd: string;
   env: NodeJS.ProcessEnv;
   signal?: AbortSignal;
   timeoutMs?: number;
+  /** Auth/help inspection only: bounded in-memory diagnostics, never normal output. */
+  captureStderr?: boolean;
   /** Login only: forward both channels verbatim, retaining neither in memory. */
   stream?: (bytes: Buffer) => void;
 }
@@ -16,7 +18,7 @@ export function runDiscoveryProcess(executable: string, args: string[], options:
   return new Promise((resolve, reject) => {
     if (options.signal?.aborted) { reject(new Error("SETUP_CANCELLED")); return; }
     const child = spawn(executable, args, { cwd: options.cwd, env: options.env, stdio: ["ignore", "pipe", "pipe"] });
-    const chunks: Buffer[] = [];
+    const chunks: Buffer[] = [], errors: Buffer[] = [];
     let size = 0, failure: string | undefined;
     const stop = (code: string) => { failure ??= code; child.kill("SIGKILL"); };
     const abort = () => stop("SETUP_CANCELLED");
@@ -28,16 +30,43 @@ export function runDiscoveryProcess(executable: string, args: string[], options:
       if (size > 2 * 1024 * 1024) stop("SETUP_OUTPUT_TOO_LARGE");
       else chunks.push(bytes);
     });
-    child.stderr.on("data", (bytes: Buffer) => { if (options.stream) options.stream(bytes); });
+    child.stderr.on("data", (bytes: Buffer) => {
+      if (options.stream) { options.stream(bytes); return; }
+      if (options.captureStderr) {
+        size += bytes.length;
+        if (size > 2 * 1024 * 1024) stop("SETUP_OUTPUT_TOO_LARGE");
+        else errors.push(bytes);
+      }
+    });
     const cleanup = () => { clearTimeout(timer); options.signal?.removeEventListener("abort", abort); };
     child.on("error", () => { cleanup(); reject(new Error("SETUP_PROCESS_FAILED")); });
     child.on("close", code => {
       cleanup();
       if (failure) reject(new Error(failure));
-      else resolve({ exitCode: code ?? 1, stdout: Buffer.concat(chunks).toString("utf8") });
+      else resolve({ exitCode: code ?? 1, stdout: Buffer.concat(chunks).toString("utf8"),
+        ...(options.captureStderr ? { stderr: Buffer.concat(errors).toString("utf8") } : {}) });
     });
   });
 }
+
+/** Structurally compatible with RFX-02's resolver; no cross-lane import is needed. */
+export type GrokCommandStyle = "gateway-flag" | "gateway-subcommand";
+export type GrokCommandStyleResolver = (
+  executable: string, timeoutMs: number,
+  inspect: (executable: string, args: readonly string[], timeoutMs: number) => Promise<string>,
+) => Promise<GrokCommandStyle>;
+
+/** Compatibility implementation until composition injects RFX-02's shared resolver. */
+export const inspectGrokCommandStyle: GrokCommandStyleResolver = async (executable, timeoutMs, inspect) => {
+  const help = await inspect(executable, ["--help"], timeoutMs);
+  const flag = /(?:^|\s)--gateway(?=\s|[=,]|$)/m.test(help);
+  const subcommand = /(?:^|\n)\s*gateway(?:\s|$)|\b(?:gbot|grok-bot)\s+gateway\s/m.test(help);
+  if (flag === subcommand) throw new Error("GROK_WAKE_COMMAND_STYLE_UNAVAILABLE");
+  const gatewayHelp = await inspect(executable, [flag ? "--gateway" : "gateway", "--help"], timeoutMs);
+  if (!/(?:^|\n)\s*send(?:\s|$)|(?:--gateway|\bgateway)\s+send\b/m.test(gatewayHelp))
+    throw new Error("GROK_WAKE_COMMAND_STYLE_UNAVAILABLE");
+  return flag ? "gateway-flag" : "gateway-subcommand";
+};
 
 export interface GrokAgentCandidate { id: string; name?: string }
 export interface GrokDiscovery {
@@ -46,6 +75,8 @@ export interface GrokDiscovery {
   agentId: string | null;
   candidates: GrokAgentCandidate[];
   evidence: "live-gateway-roster" | null;
+  commandStyle: GrokCommandStyle | null;
+  commandStyleEvidence: "installed-cli-help" | null;
   unresolved: string[];
 }
 
@@ -55,13 +86,31 @@ export function commandVersion(text: string): string | null {
 }
 
 /** Read-only discovery. Never consult profiles, invoke send, or fall back to files. */
-export async function discoverGrok(executable: string | null, run: DiscoveryRunner): Promise<GrokDiscovery> {
-  const result: GrokDiscovery = { executable, version: null, agentId: null, candidates: [], evidence: null, unresolved: [] };
+export async function discoverGrok(executable: string | null, run: DiscoveryRunner, resolveStyle: GrokCommandStyleResolver = inspectGrokCommandStyle): Promise<GrokDiscovery> {
+  const result: GrokDiscovery = { executable, version: null, agentId: null, candidates: [], evidence: null, commandStyle: null, commandStyleEvidence: null, unresolved: [] };
   if (!executable) { result.unresolved.push("grok.executable"); return result; }
   try {
     const version = await run(executable, ["--version"]);
     if (version.exitCode === 0) result.version = commandVersion(version.stdout);
     const help = await run(executable, ["--help"]);
+    try {
+      const inspected = new Set<string>();
+      const style = await resolveStyle(executable, 30_000, async (path, args) => {
+        // Even an injected resolver receives a help-only capability, never a send runner.
+        if (path !== executable || !(args.length === 1 && args[0] === "--help" ||
+          args.length === 2 && ["--gateway", "gateway"].includes(args[0]!) && args[1] === "--help"))
+          throw new Error("GROK_WAKE_COMMAND_STYLE_UNAVAILABLE");
+        const response = args.length === 1 ? help : await run(path, [...args]);
+        if (response.exitCode !== 0) throw new Error("GROK_WAKE_COMMAND_STYLE_UNAVAILABLE");
+        inspected.add(args.join(" "));
+        return `${response.stdout}\n${response.stderr ?? ""}`;
+      });
+      if (style !== "gateway-flag" && style !== "gateway-subcommand") throw new Error("GROK_WAKE_COMMAND_STYLE_UNAVAILABLE");
+      if (!inspected.has("--help") || !inspected.has(`${style === "gateway-flag" ? "--gateway" : "gateway"} --help`))
+        throw new Error("GROK_WAKE_COMMAND_STYLE_UNAVAILABLE");
+      result.commandStyle = style;
+      result.commandStyleEvidence = "installed-cli-help";
+    } catch { result.unresolved.push("grok.commandStyle"); }
     // This known adapter forces the live backend. Merely listing files is not live evidence.
     if (help.exitCode !== 0 || !/\bbots\s+list\b/.test(help.stdout) ||
       !/(?:^|\s)--gateway(?:\s|$)/m.test(help.stdout) || !/--json\b/.test(help.stdout)) {
