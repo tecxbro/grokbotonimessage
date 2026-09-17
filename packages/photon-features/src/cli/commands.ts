@@ -71,3 +71,27 @@ export async function executeCommand(
 ): Promise<CliResponse> {
   return call(commandRequest(argv, contextId, input));
 }
+
+/** Setup is VM-local discovery and never enters the authenticated runtime socket. */
+export function setupCommandOptions(argv: string[], env: NodeJS.ProcessEnv): import("./setup.js").SetupOptions {
+  if (argv[0] !== "setup") throw new CliError("INVALID_ARGUMENTS", 2);
+  const flags = new Map<string, string | true>();
+  const values = ["--installation-root", "--project", "--tool-root", "--photon-executable", "--grok-executable"];
+  for (let i = 1; i < argv.length; i++) {
+    const key = argv[i]!;
+    if (flags.has(key)) throw new CliError("INVALID_ARGUMENTS", 2);
+    if (key === "--json") flags.set(key, true);
+    else {
+      if (!values.includes(key)) throw new CliError("INVALID_ARGUMENTS", 2);
+      const value = argv[++i];
+      if (!value || value.startsWith("--")) throw new CliError("INVALID_ARGUMENTS", 2);
+      flags.set(key, value);
+    }
+  }
+  const installationRoot = flags.get("--installation-root");
+  if (!flags.has("--json") || typeof installationRoot !== "string") throw new CliError("INVALID_ARGUMENTS", 2);
+  return { installationRoot, projectId: flags.get("--project") as string | undefined,
+    toolRoot: flags.get("--tool-root") as string | undefined ?? env.GROK_PHOTON_TOOL_ROOT,
+    photonExecutable: flags.get("--photon-executable") as string | undefined ?? env.GROK_PHOTON_PHOTON_EXECUTABLE,
+    grokExecutable: flags.get("--grok-executable") as string | undefined ?? env.GROK_PHOTON_GROK_EXECUTABLE };
+}
