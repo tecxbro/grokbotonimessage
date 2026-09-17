@@ -53,6 +53,22 @@
       "reviewedCommit": "0d3a3f7197ccccbd98ac26ab0f8c74ad03ed2503",
       "implementationCommit": "8f51e364acb5cb9f35736da263a31b2e4372a630",
       "laneNote": "docs/release-fix/RFX-07.md"
+    },
+    {
+      "lane": "RFX-04",
+      "branch": "codex/rfx-04-vm-bootstrap",
+      "implementationCommit": "e15fc7e0d4554c812075837ce988b28feff9c93c",
+      "reviewedCommit": "a75a91ea49b3e6a04e712327218eb3683ecb5dd1",
+      "laneNote": "docs/release-fix/rfx-04-vm-bootstrap.md",
+      "reason": "Reuse authenticated VM CLI session and persist installed help discovery seam."
+    },
+    {
+      "lane": "RFX-11",
+      "branch": "codex/rfx-11-lifecycle",
+      "implementationCommit": "2e388657355b5b0c22842d3c1199f6a67bd3a8bf",
+      "reviewedCommit": "c9ff0d46e379554d8c8e671451674f8c2fe27a71",
+      "laneNote": "docs/release-fix/rfx-11-lifecycle.md",
+      "reason": "Characterize authority expiry/renewal limits without unsafe automatic reseeding."
     }
   ],
   "pendingLanes": [
