@@ -6,7 +6,7 @@ import {
   type OperationResult,
   type TrustedContext,
 } from "../../contracts/index.js";
-import { fault } from "./errors.js";
+import { fault, safeBlockerId } from "./errors.js";
 /** Host-owned certification; never accepted in action JSON. No implicit unsafe handler fallback. */
 export interface ExecutionBinding {
   handler: OperationHandler;
@@ -39,6 +39,7 @@ export function cleanResult(raw: OperationResult): OperationResult {
       code: r.error.code,
       message: r.error.code,
       retry: r.error.retry,
+      ...(safeBlockerId(r.error.blockerId) ? { blockerId: safeBlockerId(r.error.blockerId) } : {}),
     };
   r.observations = r.observations.map(
     ({ providerCode: _, ...observation }) => observation,

@@ -37,6 +37,8 @@ export interface ExecuteOperationOptions {
     action: Action,
     services: PublicExecutionServices,
   ): Promise<OperationResult>;
+  /** Read-only provider/resource preflight under the acquired claim; never dispatches a mutation. */
+  prepare?(action: Action, services: PublicExecutionServices): Promise<void>;
   capability(context: PublicExecutionServices["context"], action?: Action, tx?: Transaction): Capability;
   resources: ResourceResolver;
   media?: MediaStager;
@@ -69,6 +71,22 @@ export async function executeOperation(
   const unregister = options.onRunning?.(options.requestId, () => controller.abort());
   let heartbeat: ReturnType<typeof setInterval> | undefined;
   try {
+    const services = createExecutionServices({
+      claims: options.claims,
+      requestId: options.requestId,
+      claim,
+      controller,
+      deadlineMs,
+      resources: options.resources,
+      media: options.media,
+      streams: options.streams,
+      bindResources: options.bindResources,
+      afterCommit: options.afterCommit,
+    });
+    if (options.prepare) {
+      const row = options.claims.store.transaction(tx => options.claims.writable(tx, options.requestId, claim).row);
+      await withDeadline(() => options.prepare!(row.action, services), controller, deadlineMs);
+    }
     const start = options.claims.store.transaction((tx) => {
       const { row, context } = options.claims.writable(
         tx,
@@ -101,18 +119,7 @@ export async function executeOperation(
       Math.max(250, Math.floor(leaseMs / 3)),
     );
     heartbeat.unref();
-    const services = createExecutionServices({
-      claims: options.claims,
-      requestId: options.requestId,
-      claim,
-      controller,
-      deadlineMs,
-      resources: options.resources,
-      media: options.media,
-      streams: options.streams,
-      bindResources: options.bindResources,
-      afterCommit: options.afterCommit,
-    });
+
     const result = cleanResult(await options.handler(start.action, services));
     return options.claims.store.transaction((tx) => {
       const { row } = options.claims.writable(

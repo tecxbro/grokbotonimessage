@@ -1,3 +1,4 @@
+import { generateKeyPairSync } from "node:crypto";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -84,7 +85,7 @@ test("prepared production binding preserves admission revision and original card
     grok: { executable: "/usr/bin/false", timeoutMs: 1_000 },
     authorization: { administrativeOperations: [], allowedRecipients: [], allowNativeContent: false },
     cards: [{
-      id: "fixture-card",
+      id: "fixture-card", backendId: "fixture-backend-v1",
       kind: "customized",
       origins: ["https://fixture.invalid"],
       extension: {
@@ -99,6 +100,10 @@ test("prepared production binding preserves admission revision and original card
         backendContractId: "fixture-backend-v1",
       },
     }],
+    cardBackend: { kind: "signed-card-v1", id: "fixture-backend-v1", origin: "https://fixture.invalid", port: 18765,
+      participants: [{ id: "participant-1", imessageAddress: "+15555550999",
+        publicKey: generateKeyPairSync("ed25519").publicKey.export({ format: "jwk" }) as { kty: "OKP"; crv: "Ed25519"; x: string },
+        enrollmentEvidence: "offline-fixture-key" }] },
     runtime: {
       statePath: join(runtimeDirectory, "state.sqlite"),
       captureDirectory: join(runtimeDirectory, "captures"),
@@ -106,19 +111,21 @@ test("prepared production binding preserves admission revision and original card
     },
   };
 
-  let stopStream!: () => void;
-  const stopped = new Promise<void>(resolve => { stopStream = resolve; });
-  const sdk: OwnedSdk = {
-    messages: () => ({ async *[Symbol.asyncIterator]() { await stopped; } }),
-    space: async () => native,
-    provider: () => ({ space: {}, getMembers: async () => [], getAttachment: async () => undefined }) as never,
-    stop: async () => stopStream(),
+  const sdkFactory = async (): Promise<OwnedSdk> => {
+    let stopStream!: () => void;
+    const stopped = new Promise<void>(resolve => { stopStream = resolve; });
+    return {
+      messages: () => ({ async *[Symbol.asyncIterator]() { await stopped; } }),
+      space: async () => native,
+      provider: () => ({ space: {}, getMembers: async () => [], getAttachment: async () => undefined }) as never,
+      stop: async () => stopStream(),
+    };
   };
   let authenticated: unknown;
   let callbackWakes = 0;
-  const composition = await createProductionComposition(configuration, root, root, {
+  const compose = () => createProductionComposition(configuration, root, root, {
     now: () => now,
-    sdkFactory: async () => sdk,
+    sdkFactory,
     grokCommandStyle: "gateway-flag",
     grokRunner: async () => { callbackWakes++; return "accepted"; },
     cardBackend: {
@@ -128,6 +135,7 @@ test("prepared production binding preserves admission revision and original card
     },
   });
 
+  let composition = await compose();
   try {
     await composition.runtime.start();
     const capabilities = await composition.executor.dispatch({
@@ -221,6 +229,22 @@ test("prepared production binding preserves admission revision and original card
       body: new Uint8Array([1]),
       headers: { "content-type": "application/json" },
     }), { status: "replayed" });
+    await composition.runtime.stop();
+    composition = await compose();
+    await composition.runtime.start();
+    const restored = await settle(composition, { ...secondUpdate, idempotencyKey: "after-module-restart" });
+    assert.equal(restored.status, "executor-completed", JSON.stringify(restored));
+    assert.deepEqual(restored.references, sent.references);
+    assert.equal(native.messages.size, 1);
+    assert.equal(native.calls.length, 4);
+    await composition.runtime.stop();
+    native.messages.clear(); // Controlled public lookup now cannot return the original provider session.
+    composition = await compose();
+    await composition.runtime.start();
+    const unrestorable = await settle(composition, { ...secondUpdate, idempotencyKey: "after-provider-restart" });
+    assert.equal(unrestorable.status, "blocked", JSON.stringify(unrestorable));
+    assert.equal(unrestorable.error?.blockerId, "requires_original_session");
+    assert.equal(native.calls.length, 4, "cold loss must never send a replacement card");
   } finally {
     await composition.runtime.stop();
   }

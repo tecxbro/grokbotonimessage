@@ -43,6 +43,17 @@ export function cardConfigurationBlockers(operation: Operation, templates: Produ
   backendReady: boolean, action?: Action): string[] {
   if (!templates || !["app.send", "app.sendCustomized", "app.update"].includes(operation)) return [];
   const requested = action?.operation === "app.send" || action?.operation === "app.sendCustomized" ? action.arguments : undefined;
+  // The reserved built-in static template is provided by RFX-09's resolver.
+  // An explicit registration with that ID still owns its origin restrictions.
+  if (operation === "app.send" && (!requested || requested.templateId === "universal-static") &&
+      !templates.some(template => template.id === "universal-static")) {
+    if (requested) {
+      try { const url = new URL(requested.url);
+        if (url.protocol !== "https:" || url.username || url.password) return ["Static cards require an HTTPS URL without credentials."];
+      } catch { return ["Static cards require a valid HTTPS URL."]; }
+    }
+    return [];
+  }
   const candidates = templates.filter(t => (!requested || t.id === requested.templateId) &&
     (operation === "app.update" || t.kind === (operation === "app.send" ? "universal" : "customized")));
   if (!candidates.length) return ["The requested template ID and kind must match a configured production card template."];

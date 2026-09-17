@@ -55,6 +55,7 @@ function sameReference(a: ResourceRef, b: ResourceRef): boolean {
 
 const informational = new Set([
   "Runtime readiness is not provider delivery, read, rendering, interaction, or device evidence.",
+  "Static HTTPS cards use templateId universal-static; device rendering unverified.",
   "Device rendering is unverified.", "No live provider or device verification has been performed.",
   "Not live verified.", "Device rendering unverified.", "Provider delivery not observed.",
   "SDK completion does not prove that a recipient device rendered the indicator.",
@@ -119,7 +120,7 @@ export function productionCapability(
   if (operation === "text.stream" && !inventory.streams) add("The production registered-stream port is not bound.");
   if (administrative.has(operation) && !inventory.administrativeOperations.has(operation)) add("Administrative intent is not enabled for this operation.");
   if (nativeContent.has(operation) && !inventory.allowNativeContent) add("Native content intent is not enabled for this operation.");
-  if (cards.has(operation) && (inventory.cardTemplates?.length ?? inventory.configuredCardTemplates) === 0)
+  if (cards.has(operation) && operation !== "app.send" && (inventory.cardTemplates?.length ?? inventory.configuredCardTemplates) === 0)
     add("No production card template is configured for this operation.");
   for (const blocker of cardConfigurationBlockers(operation, inventory.cardTemplates, inventory.cardBackendReady === true, action)) add(blocker);
   if (operation === "app.update" && inventory.cardUpdateReady !== true)

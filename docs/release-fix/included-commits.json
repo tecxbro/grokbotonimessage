@@ -83,6 +83,13 @@
       "reviewedCommit": "25b58bda4436ea4a592297d31e852eab6566bdc0",
       "implementationCommit": "1d15daa32584991341f45930de12ebdffb64d241",
       "laneNote": "docs/release-fix/RFX-08.md"
+    },
+    {
+      "lane": "RFX-09",
+      "branch": "codex/rfx-09-cards",
+      "reviewedCommit": "1823103e4b204790664fa48f1eaa79abbd8660b7",
+      "implementationCommit": "d0c27bd18ebd4936fec1c68455ee29b4d6e9931d",
+      "laneNote": "docs/release-fix/RFX-09.md"
     }
   ],
   "pendingLanes": [
@@ -291,9 +298,9 @@
         "packages/photon-features/tests/integration/rfx-card-restart.test.ts"
       ],
       "laneNote": "docs/release-fix/RFX-09.md",
-      "integrationStatus": "not-merged",
+      "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "testEvidence": "rfx09-final",
       "postImplementationChanges": [
         "docs/release-fix/RFX-09.md"
       ]

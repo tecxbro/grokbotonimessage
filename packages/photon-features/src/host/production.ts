@@ -51,7 +51,10 @@ import { createPollModule, createFeatureModule as createPollFeature } from "../f
 import type { PollManagement, PollProviderBinding } from "../features/polls/sdk.js";
 import { createCardsModule, createFeatureModule as createCardFeature } from "../features/cards/module.js";
 import { createInteractionAdapter, type AppBackendContract, type InteractionResult } from "../features/cards/interaction-adapter.js";
+import { CardError } from "../features/cards/configuration.js";
 import type { CardTemplate } from "../features/cards/configuration.js";
+import { RuntimeFault } from "../runtime/core/errors.js";
+import { STATIC_CARD_TEMPLATE_ID } from "../features/cards/sdk.js";
 import { CardRuntime } from "../features/cards/operations.js";
 import { SESSION_CODEC } from "../features/cards/session-codec.js";
 import { key as cardStateKey } from "../features/cards/state.js";
@@ -137,6 +140,7 @@ class ProductionLocalExecutor implements LocalExecutor {
     private readonly resources: ResourceResolver,
     private readonly bindResources: (requestId: string) => BindExecutionResources,
     private readonly capability: (operation: Operation, context: TrustedContext, action?: Action, tx?: Transaction) => Capability,
+    private readonly prepare: (action: Action, services: PublicExecutionServices) => Promise<void>,
     private readonly correlations: Correlations,
     private readonly captureProcessing: {
       owner: SpectrumOwner;
@@ -211,6 +215,7 @@ class ProductionLocalExecutor implements LocalExecutor {
             claims: this.claims,
             requestId: row.id,
             handler,
+            prepare: this.prepare,
             capability: (context, action, tx) => this.capability(row.action.operation, context, action, tx),
             resources: this.resources,
             bindResources: this.bindResources(row.id),
@@ -458,12 +463,45 @@ export async function createProductionComposition(
     binding,
     space: (reference, services) => resources.space(reference, services.context),
     requestId: request,
+    loadSession: async (reference, services) => {
+      services.assertActiveClaim();
+      return store.transaction(tx => {
+        contexts.refresh(tx, services.context);
+        rowFor(store, reference, services.context, tx, now);
+        const checkpoint = tx.get("checkpoints", cardStateKey("session", reference.id));
+        if (!checkpoint) return undefined;
+        if (checkpoint.codecId !== SESSION_CODEC.id || checkpoint.codecVersion !== SESSION_CODEC.version ||
+            !sameScope(checkpoint.scope, reference.scope) || checkpoint.claim?.generation !== services.context.generation)
+          throw new RuntimeFault("RESOURCE_NOT_FOUND");
+        return checkpoint.payloadJson;
+      });
+    },
     updateRevision: (action, services) => {
       const captured = services.admission?.cardUpdate;
       return captured?.cardId === action.arguments.card.id && captured.sessionId === action.arguments.session.id
         ? captured.expectedRevision : undefined;
     },
   });
+  const cardReadiness = new Map<string, boolean>();
+  const prepare = async (action: Action, services: PublicExecutionServices) => {
+    if (action.operation !== "app.update" || !configuration.provider.availableOperations.includes("app.update")) return;
+    const key = requestIdentity(action, services.context);
+    cardReadiness.delete(key);
+    const captured = services.admission?.cardUpdate;
+    if (!captured || captured.cardId !== action.arguments.card.id || captured.sessionId !== action.arguments.session.id)
+      throw new RuntimeFault("IDEMPOTENCY_CONFLICT");
+    let readiness;
+    try { readiness = await cardRuntime.updateCapability(action.arguments.session, services); }
+    catch (error) {
+      if (error instanceof CardError) throw new RuntimeFault(error.code, "never", error.blockerId);
+      throw error;
+    }
+    if (!readiness.available) throw new RuntimeFault("UNAVAILABLE", "never", readiness.blockerId);
+    const current = services.transaction(unit => unit.get("cards", action.arguments.card.id));
+    if (!current || current.revision !== captured.expectedRevision) throw new RuntimeFault("IDEMPOTENCY_CONFLICT");
+    if (cardReadiness.size >= 1000) cardReadiness.delete(cardReadiness.keys().next().value!);
+    cardReadiness.set(key, true);
+  };
   const cardFeature = createCardFeature(cardRuntime);
   const persistCardSession = (result: import("../contracts/results.js").OperationResult,
     services: PublicExecutionServices) => {
@@ -531,7 +569,8 @@ export async function createProductionComposition(
   const capability = (operation: Operation, trusted: TrustedContext, action?: Action, tx?: Transaction): Capability => {
     const snapshot = { routeMode: configuration.provider.dedicated ? "dedicated" as const : "shared" as const,
       routeReady: owner.ready(), pollManagement: pollManagementAvailable,
-      cardTemplates: configuration.cards, cardBackendReady: Boolean(backend ?? dependencies.cardBackend) };
+      cardTemplates: configuration.cards, cardBackendReady: Boolean(backend ?? dependencies.cardBackend),
+      cardUpdateReady: action?.operation === "app.update" && cardReadiness.get(requestIdentity(action, trusted)) === true };
     return productionCapability(
     operation,
     trusted,
@@ -570,7 +609,8 @@ export async function createProductionComposition(
         "poll.addOption": pollManagementAvailable ? [] :
           ["The configured Spectrum owner has no approved public native poll-management adapter."],
         ...(action?.operation === "app.send" || action?.operation === "app.sendCustomized" ? {
-          [action.operation]: templates.some(template => template.id === action.arguments.templateId &&
+          [action.operation]: (action.operation === "app.send" && action.arguments.templateId === STATIC_CARD_TEMPLATE_ID &&
+            !templates.some(template => template.id === STATIC_CARD_TEMPLATE_ID)) || templates.some(template => template.id === action.arguments.templateId &&
             template.kind === (action.operation === "app.send" ? "universal" : "customized")) ? [] :
             ["The requested template ID and kind must match a configured production card template."],
         } : {}),
@@ -609,7 +649,7 @@ export async function createProductionComposition(
   const wake = configuredGrokWake(handoff);
   const dispatcher = new WakeDispatcher(store, { now }, wake, configuration.task.grokAgentId);
   const interactions = createInteractionAdapter({
-    backend: backend ?? dependencies.cardBackend,
+    backend: dependencies.cardBackend ?? backend,
     authorize: tx => { contexts.current(tx, context.principalId, context.contextId); },
     transactions: store,
     clock: { now },
@@ -681,7 +721,7 @@ export async function createProductionComposition(
     authorize: authorizeCapture,
   };
   const executor = new ProductionLocalExecutor(store, protocol, claims, recovery, router, captures,
-    providerRoutes, resources, requestId => services => resourcePorts.bind(requestId, services), capability,
+    providerRoutes, resources, requestId => services => resourcePorts.bind(requestId, services), capability, prepare,
     correlations, captureProcessing, pump,
     async () => {
       textProducer.shutdown();

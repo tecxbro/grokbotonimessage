@@ -38,9 +38,9 @@ for (const [servingPhone, secondary] of [["+15555550101", false], [undefined, fa
     provider: { kind: "spectrum-cloud-imessage", projectId: "project-1", projectSecretFile,
       projectSecretFormat: "photon-project-secret-v1", accountId: "account-1", lineId: "shared-line-1",
       ...(servingPhone ? { phone: servingPhone } : {}), conversationId: "authenticated-native-conversation", dedicated: false,
-      availableOperations: secondary ? ["text.send", "space.create", "space.get", "typing.begin", "typing.end"] : ["text.send"] },
+      availableOperations: secondary ? ["text.send", "space.create", "space.get", "typing.begin", "typing.end"] : ["text.send", "app.send"] },
     local: { socketPath: join(runtime, "runtime.sock"), credentialFile, principalId: "owner-1", credentialId: "credential-1" },
-    task: { contextId: "context-1", taskId: "task-1", generation: 1, permissions: secondary ? ["text.send", "space.create", "space.get", "typing.begin", "typing.end"] : ["text.send"],
+    task: { contextId: "context-1", taskId: "task-1", generation: 1, permissions: secondary ? ["text.send", "space.create", "space.get", "typing.begin", "typing.end"] : ["text.send", "app.send"],
       issuedAt: now - 1000, expiresAt: now + 120000, grokAgentId: "grok-1" },
     grok: { executable: "/fixture/gbot", timeoutMs: 1000 },
     authorization: { administrativeOperations: secondary ? ["space.create"] : [], allowedRecipients: secondary ? ["+15555550777"] : [], allowNativeContent: false }, cards: [],
@@ -53,7 +53,7 @@ for (const [servingPhone, secondary] of [["+15555550101", false], [undefined, fa
   const space = { id: secondary ? "created-secondary-dm" : configuration.provider.conversationId!, __platform: "imessage", platform: "imessage", phone: "shared", type: "dm",
     send: async (input: ContentInput) => {
       const content = (await resolveContents([input]))[0]!; sent.push(content);
-      return { id: "outbound-1", platform: "imessage", space, content, direction: "outbound", timestamp: new Date(now) } as unknown as Message;
+      return { id: `outbound-${sent.length}`, platform: "imessage", sender: undefined, space, content, direction: "outbound", timestamp: new Date(now) } as unknown as Message;
     }, getMessage: async () => undefined,
     startTyping: async () => { typingStarts++; }, stopTyping: async () => undefined,
   } as unknown as Space;
@@ -177,5 +177,20 @@ for (const [servingPhone, secondary] of [["+15555550101", false], [undefined, fa
     assert.equal(observer.transaction(tx => tx.list("inbox", conversationScope, 100)).length, 1);
     assert.equal(rows().length, 1);
     assert.deepEqual({ constructions, listeners, wakes: wakes.length }, { constructions: secondary ? 2 : 1, listeners: secondary ? 2 : 1, wakes: 1 });
+    if (!secondary) {
+      const card = await request<OperationResult>({ version: 1, method: "submit", action: { version: 1,
+        contextId: "context-1", idempotencyKey: "static-card", operation: "app.send",
+        arguments: { space: action.arguments.space, templateId: "universal-static", url: "https://ordinary.example/card" } } });
+      await eventually(() => {
+        const status = observer.transaction(tx => tx.get("outbox", card.requestId))?.result.status;
+        return !!status && !["queued", "running"].includes(status);
+      }, "built-in static card completes without templates or backend");
+      const completedCard = observer.transaction(tx => tx.get("outbox", card.requestId))!.result;
+      assert.equal(completedCard.status, "provider-accepted", JSON.stringify(completedCard));
+      assert.equal(sent.length, 2);
+      assert.equal(sent[1]!.type, "app");
+      if (sent[1]!.type === "app") assert.equal(sent[1]!.live, false);
+      assert.equal(wakes.length, 1);
+    }
   } finally { await composition.runtime.stop(); observer.close(); }
 });
