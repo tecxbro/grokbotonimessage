@@ -126,6 +126,10 @@ export const productionHostConfigurationSchema = hostConfigurationShape.superRef
 /** v3 describes installation-owner intent; permission grants do not imply provider capability. */
 export const normalizedHostConfigurationSchema = hostConfigurationShape.extend({
   version: z.literal(3),
+  grok: hostConfigurationShape.shape.grok.extend({
+    commandStyle: z.enum(["gateway-flag", "gateway-subcommand"]).optional(),
+    commandStyleEvidence: z.literal("installed-cli-help").optional(),
+  }),
   ownerModel: z.enum(["installation-owner", "legacy-task"]),
   activateAfterValidation: z.boolean(),
   provider: hostConfigurationShape.shape.provider.extend({
@@ -136,6 +140,8 @@ export const normalizedHostConfigurationSchema = hostConfigurationShape.extend({
   }),
 }).superRefine((value, context) => {
   validateConfiguration(value, context);
+  if (Boolean(value.grok.commandStyle) !== Boolean(value.grok.commandStyleEvidence))
+    context.addIssue({ code: "custom", path: ["grok"], message: "command style requires installed CLI help evidence" });
   for (const template of value.cards)
     if (value.ownerModel === "installation-owner" && template.live && !template.extension)
       context.addIssue({ code: "custom", path: ["cards", template.id, "live"], message: "live template extension required" });

@@ -284,6 +284,17 @@
           "type": "integer",
           "minimum": 1000,
           "maximum": 60000
+        },
+        "commandStyle": {
+          "type": "string",
+          "enum": [
+            "gateway-flag",
+            "gateway-subcommand"
+          ]
+        },
+        "commandStyleEvidence": {
+          "type": "string",
+          "const": "installed-cli-help"
         }
       },
       "required": [

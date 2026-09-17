@@ -644,7 +644,7 @@ export async function createProductionComposition(
     installationRoot,
     releaseRoot,
     timeoutMs: configuration.grok.timeoutMs,
-    commandStyle: dependencies.grokCommandStyle,
+    commandStyle: dependencies.grokCommandStyle ?? configuration.grok.commandStyle,
   }, dependencies.grokRunner, dependencies.grokHelpInspector);
   const wake = configuredGrokWake(handoff);
   const dispatcher = new WakeDispatcher(store, { now }, wake, configuration.task.grokAgentId);

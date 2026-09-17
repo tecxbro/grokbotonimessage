@@ -70,7 +70,7 @@ const discoverySchema = z.object({
     lineCandidates: candidates(z.object({ id: z.string().min(1), platform: z.string().optional(), phoneNumber: z.string().optional() })) }),
   secretFile: z.object({ path: z.string().refine(isAbsolute), mode: z.literal('0600'), format: z.literal('photon-project-secret-v1') }).nullable(),
   grok: z.object({ executable: z.string().refine(isAbsolute).nullable(), agentId: z.string().nullable(),
-    candidates: candidates(identitySchema), evidence: z.literal('live-gateway-roster').nullable(), unresolved: z.array(z.string()) }),
+    candidates: candidates(identitySchema), evidence: z.literal('live-gateway-roster').nullable(), commandStyle: z.enum(['gateway-flag', 'gateway-subcommand']).nullable(), commandStyleEvidence: z.literal('installed-cli-help').nullable(), unresolved: z.array(z.string()) }),
   unresolved: z.array(z.string()),
 });
 
@@ -97,6 +97,7 @@ function resolveSetupDiscovery(input, choices) {
   if (!agentId) throw new Error('GROK_AGENT_SELECTION_REQUIRED');
   if (!grok.executable || grok.evidence !== 'live-gateway-roster' || !grok.candidates.some(row => row.id === agentId))
     throw new Error('LIVE_GROK_AGENT_REQUIRED');
+  if (!grok.commandStyle || grok.commandStyleEvidence !== 'installed-cli-help') throw new Error('GROK_WAKE_COMMAND_STYLE_UNAVAILABLE');
   const resolvable = new Set(['project', 'spectrum.user', 'spectrum.servingE164', 'grok.agentId']);
   if ([...discovery.unresolved, ...grok.unresolved].some(field => !resolvable.has(field)))
     throw new Error('SETUP_DISCOVERY_INCOMPLETE');
@@ -117,7 +118,7 @@ function resolveSetupDiscovery(input, choices) {
     projectSecretFile: discovery.secretFile.path, accountId: user.accountId ?? user.id,
     dedicated, lineId: dedicated ? spectrum.dedicatedLineId : undefined, phone,
     initialAddress, conversationId: choices.initialConversationId,
-    grokAgentId: agentId, grokExecutable: grok.executable };
+    grokAgentId: agentId, grokExecutable: grok.executable, commandStyle: grok.commandStyle, commandStyleEvidence: grok.commandStyleEvidence };
 }
 
 /** Internal project/account identity, not a provider-issued line identifier. */
@@ -158,7 +159,7 @@ async function generateOwnerConfiguration(input) {
       principalId: randomUUID(), credentialId: randomUUID() },
     task: { contextId: randomUUID(), taskId: randomUUID(), generation: 0, permissions: [...operations],
       issuedAt, expiresAt: issuedAt + 86_400_000, grokAgentId: resolved.grokAgentId },
-    grok: { executable: resolved.grokExecutable, timeoutMs: 15000 },
+    grok: { executable: resolved.grokExecutable, timeoutMs: 15000, commandStyle: resolved.commandStyle, commandStyleEvidence: resolved.commandStyleEvidence },
     authorization: { administrativeOperations: [...administrativeOperations],
       allowedRecipients: resolved.initialAddress ? [resolved.initialAddress] : [], allowNativeContent: true },
     cards: parsed.cards, ...(parsed.cardBackend ? { cardBackend: parsed.cardBackend } : {}),

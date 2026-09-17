@@ -34,5 +34,6 @@ const result = spawnSync(process.execPath, ["--test", "--test-reporter=tap", ...
 });
 process.stdout.write(result.stdout ?? "");
 process.stderr.write(result.stderr ?? "");
+if (result.error || result.signal) console.error(JSON.stringify({ integrationRunnerError: result.error?.code ?? null, signal: result.signal, status: result.status }));
 const count = validateTestResult(result);
 console.log(`integration-test-files: ${tests.length}; tests: ${count}; live suite excluded by explicit authorization boundary`);

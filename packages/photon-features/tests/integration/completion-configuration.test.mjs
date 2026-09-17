@@ -25,7 +25,8 @@ test('generated permission profiles and host validation cover the unchanged 44-o
   assert.equal(productionHostConfigurationSchema.safeParse({ ...config, provider: { ...config.provider, availableOperations: ['app.update'] } }).success, false);
   assert.equal(productionHostConfigurationSchema.safeParse({ ...config, ownerAdministration: { principalId: 'owner', credentialFile: config.local.credentialFile } }).success, false);
   const missing = configurationBlockers(config);
-  for (const op of ['poll.get', 'poll.vote', 'poll.unvote', 'poll.addOption', 'app.send', 'app.sendCustomized', 'app.update', 'custom.send']) assert.ok(missing[op]?.length, op);
+  assert.equal(missing['app.send'], undefined, 'built-in static card needs no backend or template');
+  for (const op of ['poll.get', 'poll.vote', 'poll.unvote', 'poll.addOption', 'app.sendCustomized', 'app.update', 'custom.send']) assert.ok(missing[op]?.length, op);
   const custom = { id: 'example', kind: 'customized', origins: ['https://cards.example.invalid'], extension: { appName: 'Example', teamId: 'EXAMPLE001', extensionBundleId: 'invalid.example.card' } };
   assert.equal(configurationBlockers({ ...config, cards: [custom] })['app.update'], undefined);
   assert.equal(productionHostConfigurationSchema.safeParse({ ...config, cards: [{ ...custom, updateUrl: '() => execute()' }] }).success, false);
@@ -62,7 +63,7 @@ async function discovered(t, mode = 'shared') {
       lineCandidates: mode === 'dedicated' ? [{ id: 'dedicated-1', platform: 'imessage', phoneNumber: '+15555550101' }] : [] },
     secretFile: { path: secretPath, mode: '0600', format: 'photon-project-secret-v1' },
     grok: { executable: join(root, 'gbot'), version: '1.0.0', agentId: 'live-agent-1',
-      candidates: [{ id: 'live-agent-1' }], evidence: 'live-gateway-roster', unresolved: [] },
+      candidates: [{ id: 'live-agent-1' }], evidence: 'live-gateway-roster', commandStyle: 'gateway-flag', commandStyleEvidence: 'installed-cli-help', unresolved: [] },
     unresolved: [], nextDecision: null,
   };
   return { root, runtime, projectSecret, discovery, input: { version: 2, discovery } };
@@ -89,6 +90,8 @@ for (const mode of ['shared', 'dedicated']) test(`RFX-04 ${mode} discovery gener
   assert.ok(config.task.expiresAt > config.task.issuedAt);
   assert.equal(config.activation, 'disabled');
   assert.equal(config.activateAfterValidation, true);
+  assert.equal(config.grok.commandStyle, 'gateway-flag');
+  assert.equal(config.grok.commandStyleEvidence, 'installed-cli-help');
   assert.equal(await readConfiguredProjectSecret(config), fixture.projectSecret);
   assert.equal(await readFile(fixture.discovery.secretFile.path, 'utf8'), before);
   assert.equal(JSON.stringify(config).includes(fixture.projectSecret), false);
@@ -171,6 +174,7 @@ test('legacy independent owner token boundary remains enforced', async t => {
   const config = await generateConfiguration(fixture.input);
   const legacy = { ...config, version: 2, ownerAdministration: { principalId: 'legacy-owner', credentialFile: join(fixture.runtime, 'owner-token') } };
   delete legacy.ownerModel; delete legacy.activateAfterValidation;
+  delete legacy.grok.commandStyle; delete legacy.grok.commandStyleEvidence;
   delete legacy.provider.initialAddress; delete legacy.provider.projectSecretFormat;
   legacy.provider.conversationId = 'existing-native-conversation';
   const parsed = productionHostConfigurationSchema.parse(legacy);
@@ -267,4 +271,17 @@ test('normal setup rejects manual permission profiles and missing discovery prer
   await assert.rejects(generateConfiguration(fixture.input), /INITIAL_CONVERSATION_OR_ADDRESS_REQUIRED/);
   const config = await generateConfiguration({ ...fixture.input, choices: { initialAddress: 'owner@example.test' } });
   assert.equal(config.provider.initialAddress, 'owner@example.test');
+});
+
+
+test('owner setup requires observed Grok command shape and evidence', async t => {
+  const fixture = await discovered(t);
+  for (const grok of [
+    { ...fixture.discovery.grok, commandStyle: null },
+    { ...fixture.discovery.grok, commandStyleEvidence: null },
+  ]) await assert.rejects(generateConfiguration({ ...fixture.input,
+    discovery: { ...fixture.discovery, grok } }), /GROK_WAKE_COMMAND_STYLE_UNAVAILABLE/);
+  const config = await generateConfiguration({ ...fixture.input,
+    discovery: { ...fixture.discovery, grok: { ...fixture.discovery.grok, commandStyle: 'gateway-subcommand' } } });
+  assert.equal(config.grok.commandStyle, 'gateway-subcommand');
 });

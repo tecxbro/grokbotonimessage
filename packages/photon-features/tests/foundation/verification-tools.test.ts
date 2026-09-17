@@ -74,7 +74,7 @@ test('explicit assembled target works on maintenance branches and detached PR ch
      assert.equal(f.git('branch','--show-current'),branch??'');
      const result=f.check('assembled-candidate');assert.equal(result.status,0,result.stderr);
      const report=JSON.parse(result.stdout);
-     assert.equal(report.target,'assembled-candidate');assert.equal(report.files,56);
+     assert.equal(report.target,'assembled-candidate');assert.equal(report.files, JSON.parse(readFileSync(resolve(f.directory,'docs/worktrees/integration/candidate-contract.json'),'utf8')).digestFileCount);
      assert.equal(report.contractDigest,JSON.parse(readFileSync(resolve(root,'docs/worktrees/integration/candidate-contract.json'),'utf8')).contractDigest);
      assert.notEqual(f.check('foundation').status,0,'assembled bytes cannot satisfy the frozen foundation target');
    });
@@ -86,7 +86,7 @@ test('explicit target still rejects schema, source hash and file-count drift wit
  for(const [path,change,error] of [
    ['packages/photon-features/schemas/action.schema.json',()=> '{}\n',/SCHEMA_DRIFT:action/],
    ['packages/photon-features/src/host/index.ts',(body:string)=>body+'\n// contract drift\n',/CONTRACT_DIGEST_DRIFT/],
-   ['docs/worktrees/integration/candidate-contract.json',(body:string)=>JSON.stringify({...JSON.parse(body),digestFileCount:57}),/CONTRACT_DIGEST_DRIFT/],
+   ['docs/worktrees/integration/candidate-contract.json',(body:string)=>JSON.stringify({...JSON.parse(body),digestFileCount:JSON.parse(body).digestFileCount + 1}),/CONTRACT_DIGEST_DRIFT/],
  ] as const) {
    const file=resolve(f.directory,path),original=readFileSync(file,'utf8');
    try {writeFileSync(file,change(original));const result=f.check('assembled-candidate');assert.notEqual(result.status,0);assert.match(result.stderr,error);}

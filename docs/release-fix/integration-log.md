@@ -391,3 +391,21 @@ Reviewed SHA: `b9be4107fbe013602964124242604fc176582262`. Adopt the reviewed com
 - `packages/photon-features/tests/lanes/wt-08/regression.test.ts` — RFX-06: Adopt the reviewed complete metadata and payload contract in historical synthetic installer fixtures without deleting failure assertions. Synchronize exact artifact dependency validation with the reviewed RFX-08 direct pins and include the RFX-04 Photon CLI installer in the archive support list. Covered by `rfx06-verified` below.
 
 Command (pinned Node 24.13.0 / npm 10.9.2): `npm run photon:build && node --test --test-reporter=tap packages/photon-features/tests/artifact/rfx-owner-package.test.mjs packages/photon-features/tests/lanes/wt-08/distribution.test.mjs packages/photon-features/dist/tests/lanes/wt-08/regression.test.js packages/photon-features/dist/tests/e2e/install-rollback.test.js packages/photon-features/tests/integration/completion-browser.test.mjs`. Exit 0; tested HEAD `cf5521921c3e6526ad6e32b02ac945f6dd94b65f` plus listed glue edits. Log: `.photon-local/rfx-00/rfx06-verified.log`.
+
+## RFX-02 / RFX-04 / RFX-05 setup command contract
+
+Adopt installed help evidence through discovery, generation, v3 schema and the production wake binding. Legacy v2 remains strict and unchanged. Align the static-card configuration assertion with RFX-09 and strip new v3-only fields in the legacy fixture; no assertion was removed.
+
+- `packages/photon-features/schemas/host-configuration-v3.json` — required shared discovery/configuration interface adoption; tested by `setup-style-final`.
+
+- `packages/photon-features/scripts/generate-configuration.mjs` — required shared discovery/configuration interface adoption; tested by `setup-style-final`.
+
+- `packages/photon-features/src/cli/main.ts` — required shared discovery/configuration interface adoption; tested by `setup-style-final`.
+
+- `packages/photon-features/src/host/configuration.ts` — required shared discovery/configuration interface adoption; tested by `setup-style-final`.
+
+- `packages/photon-features/src/host/production.ts` — required shared discovery/configuration interface adoption; tested by `setup-style-final`.
+
+- `packages/photon-features/tests/integration/completion-configuration.test.mjs` — required shared discovery/configuration interface adoption; tested by `setup-style-final`.
+
+Exact command: `npm run photon:build && node --test --test-reporter=tap packages/photon-features/tests/integration/completion-configuration.test.mjs packages/photon-features/tests/integration/rfx-vm-bootstrap.test.mjs packages/photon-features/dist/tests/integration/rfx-wake-reliability.test.js packages/photon-features/dist/tests/integration/release-fix-shared-roundtrip.test.js`. Exit 0; 79 passed, 0 failed/skipped. Tested HEAD `f83f4a4e27e8e5b5fe4a29b524158369610ce52e` plus listed edits.

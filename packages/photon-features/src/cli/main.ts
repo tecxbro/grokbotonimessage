@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { MAX_REQUEST_BYTES } from "../contracts/actions.js";
 import { executeCommand, setupCommandOptions } from "./commands.js";
 import { callRuntime } from "./local-client.js";
+import { discoverGrokCommandStyle } from "../host/grok-wake.js";
 import { setupDiscovery } from "./setup.js";
 import { CliError, formatCommandResult, formatSetupResult } from "./output.js";
 export async function readJson(input: NodeJS.ReadableStream): Promise<unknown> {
@@ -21,7 +22,7 @@ export async function main(argv: string[] = process.argv.slice(2), env = process
   stdout: Pick<NodeJS.WriteStream, "write"> = process.stdout, stderr: Pick<NodeJS.WriteStream, "write"> = process.stderr): Promise<number> {
   try {
     if (argv[0] === "setup") {
-      const result = await setupDiscovery(setupCommandOptions(argv, env), { env, stderr });
+      const result = await setupDiscovery(setupCommandOptions(argv, env), { env, stderr, discoverGrokCommandStyle });
       const formatted = formatSetupResult(result);
       stdout.write(formatted.stdout);
       if (formatted.stderr) stderr.write(formatted.stderr);
