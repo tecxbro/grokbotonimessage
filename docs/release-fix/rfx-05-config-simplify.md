@@ -208,5 +208,7 @@ core authorization edits, or sibling changes. Tested base HEAD was
 b83e3afd7049a991de6daffedf831165890f0901 plus this lane's changes; per-file dirty
 content SHA-256 values were recorded in the ignored working-content.json.
 
-Implementation commit identity will be recorded in a following documentation-only
-commit so this note does not attempt to embed its own future Git hash.
+Implementation commit: `54f90b99e2a325759b52639bca8c43716850f7e7`.
+This following documentation-only commit records that exact tested implementation
+identity. No source changes occurred after the final 869-test run. Both commits
+remain local on codex/rfx-05-config-simplify; nothing was pushed.
