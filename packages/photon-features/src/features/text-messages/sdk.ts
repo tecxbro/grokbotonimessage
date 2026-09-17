@@ -77,6 +77,87 @@ import type { ProviderContext } from "../../contracts/transport.js";
 import type { ResourceResolver } from "../../contracts/ports.js";
 import type { OperationResult as PublicResult } from "../../contracts/results.js";
 import type { ResourceRef } from "../../contracts/references.js";
+import type { ReferenceRecord } from "../../state/ports.js";
+
+/** Additive JSON on the shared reference row; never a serialized SDK handle or a second journal. */
+export interface ReactionIdentity {
+  version: 1;
+  providerId: string;
+  parentProviderId: string;
+  parentNativeId: string;
+  parentPartIndex: number | null;
+  parentDirection: Message["direction"];
+  spaceId: string;
+  phone: string;
+  direction: "outbound";
+  emoji: string;
+  nativeReaction:
+    | import("spectrum-ts/providers/imessage").IMessageReactionRecord
+    | null;
+}
+export type ReactionReferenceRecord = ReferenceRecord & {
+  reactionIdentity?: ReactionIdentity;
+};
+export const REACTION_COLD_RECOVERY = "REACTION_COLD_RECOVERY_UNAVAILABLE";
+
+/** Snapshot only public SDK identity. In particular multipart IDs must not be guessed from strings. */
+export function reactionIdentity(message: Message): ReactionIdentity {
+  requireThat(
+    message.content.type === "reaction",
+    "UNAVAILABLE",
+    `${REACTION_COLD_RECOVERY}: public lookup did not return reaction content and its target handle.`,
+  );
+  requireThat(
+    message.direction === "outbound",
+    "FORBIDDEN",
+    "Reaction is not outbound.",
+  );
+  const parent = imessage(message.content.target);
+  requireThat(
+    parent.direction === "inbound" || parent.direction === "outbound",
+    "FORBIDDEN",
+    "Reaction parent direction is unavailable.",
+  );
+  const native = imessage(message).reactionRecord;
+  const parentNativeId = parent.parentId ?? parent.id;
+  const parentPartIndex = parent.partIndex ?? null;
+  if (native) {
+    requireThat(
+      native.selected !== false,
+      "FORBIDDEN",
+      "Reaction is no longer selected.",
+    );
+    requireThat(
+      native.targetGuid === parentNativeId &&
+        // A single-part target omits partIndex; native metadata can explicitly report its first part.
+        (native.targetPartIndex ?? 0) === (parentPartIndex ?? 0),
+      "SCOPE_MISMATCH",
+      "Native reaction metadata differs from its content target.",
+    );
+    const emoji =
+      native.reaction.kind === "emoji"
+        ? native.reaction.emoji
+        : tapbacks[native.reaction.kind as keyof typeof tapbacks];
+    requireThat(
+      emoji === message.content.emoji,
+      "SCOPE_MISMATCH",
+      "Native reaction metadata differs from its content emoji.",
+    );
+  }
+  return {
+    version: 1,
+    providerId: message.id,
+    parentProviderId: parent.id,
+    parentNativeId,
+    parentPartIndex,
+    parentDirection: parent.direction,
+    spaceId: message.space.id,
+    phone: imessage(message.space).phone!,
+    direction: "outbound",
+    emoji: message.content.emoji,
+    nativeReaction: native ? structuredClone(native) : null,
+  };
+}
 /** Adapter for the shared compiler registry while its legacy signature is migrated by integration. */
 export interface PublicContentCompiler {
   family: ContentSpec["type"];
@@ -183,6 +264,12 @@ export function mapTextMessageOperation(
     "UNSUPPORTED",
     "SDK returned too many message handles.",
   );
+  if (reactionParent)
+    requireThat(
+      messages.length === 1,
+      "UNAVAILABLE",
+      "SDK did not return one reaction handle.",
+    );
   for (const message of messages) {
     checkPublicSpace(message.space, s, o);
     requireThat(
@@ -210,7 +297,14 @@ export function mapTextMessageOperation(
         "SCOPE_MISMATCH",
         "SDK returned a reaction to another parent.",
       );
+      requireThat(
+        action.operation === "message.react" &&
+          message.content.emoji === tapbacks[action.arguments.reaction],
+        "SCOPE_MISMATCH",
+        "SDK returned a different reaction.",
+      );
     }
+    const identity = reactionParent ? reactionIdentity(message) : undefined;
     const id = digestTextInput([
       s.context.scope,
       message.id,
@@ -227,28 +321,35 @@ export function mapTextMessageOperation(
       : { version: 1, kind: "message", id, scope: s.context.scope };
     s.transaction((unit) => {
       const prior = unit.get("references", id);
-      if (prior)
+      if (prior) {
         requireThat(
           prior.providerId === message.id &&
             prior.ownedByPrincipalId === s.context.principalId,
           "FORBIDDEN",
           "Returned resource conflicts with its stored owner.",
         );
-      else
-        unit.put(
-          "references",
-          {
-            id,
-            reference: ref,
-            scope: ref.scope,
-            providerId: message.id,
-            ownedByPrincipalId: s.context.principalId,
-            taskId: s.context.taskId,
-            generation: s.context.generation,
-            revision: 0,
-          },
-          null,
-        );
+        if (identity)
+          requireThat(
+            digestTextInput(
+              (prior as ReactionReferenceRecord).reactionIdentity ?? null,
+            ) === digestTextInput(identity),
+            "SCOPE_MISMATCH",
+            "Returned reaction conflicts with stored identity.",
+          );
+      } else {
+        const record: ReactionReferenceRecord = {
+          id,
+          reference: ref,
+          scope: ref.scope,
+          providerId: message.id,
+          ownedByPrincipalId: s.context.principalId,
+          taskId: s.context.taskId,
+          generation: s.context.generation,
+          revision: 0,
+          ...(identity ? { reactionIdentity: identity } : {}),
+        };
+        unit.put("references", record, null);
+      }
     });
     result.references.push(ref);
   }
@@ -297,6 +398,9 @@ export async function executeTextChild(
 
 /** Preserve already-recorded child progress when a later pre-dispatch check fails. */
 export function textFailure(base: PublicResult, error: unknown): PublicResult {
+  const coldRecovery =
+    error instanceof FeatureError &&
+    error.message.startsWith(`${REACTION_COLD_RECOVERY}:`);
   const allowed = [
     "SCOPE_MISMATCH",
     "STALE_FENCE",
@@ -332,8 +436,11 @@ export function textFailure(base: PublicResult, error: unknown): PublicResult {
             : "failed",
     error: {
       code,
-      message: "WT-03 validation or authoritative resource resolution failed.",
+      message: coldRecovery
+        ? error.message
+        : "WT-03 validation or authoritative resource resolution failed.",
       retry: code === "UNKNOWN_OUTCOME" ? "reconcile-first" : "never",
+      ...(coldRecovery ? { blockerId: REACTION_COLD_RECOVERY } : {}),
     },
   };
 }

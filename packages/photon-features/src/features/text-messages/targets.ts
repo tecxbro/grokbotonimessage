@@ -8,7 +8,8 @@ import {
   type ReferenceRecord,
 } from "../../index.js";
 import { checkMessage, checkSpace, type TextMessageOptions } from "./sdk.js";
-import { requireThat } from "./errors.js";
+import { requireThat, FeatureError } from "./errors.js";
+import { imessage } from "spectrum-ts/providers/imessage";
 const handles = new WeakMap<
   ExecutionServices["resources"],
   Map<string, Message>
@@ -130,7 +131,13 @@ export async function targetMessage(
 
 import type { ExecutionServices as PublicServices } from "../../contracts/services.js";
 import type { MessageRef, ReactionRef } from "../../contracts/references.js";
-import { checkPublicSpace, type PublicTextMessageOptions } from "./sdk.js";
+import {
+  checkPublicSpace,
+  reactionIdentity,
+  REACTION_COLD_RECOVERY,
+  type ReactionReferenceRecord,
+  type PublicTextMessageOptions,
+} from "./sdk.js";
 /** Resolve the shared domain record before handing a reference to the existing SDK owner. */
 export async function publicRecordFor(
   ref: ResourceRef,
@@ -185,12 +192,29 @@ export async function resolveMessageTarget(
       "FORBIDDEN",
       "Target belongs to another principal.",
     );
-  const message = await o.resources.message(ref, s.context);
+  let message: Message | undefined;
+  try {
+    message = await o.resources.message(ref, s.context);
+  } catch (error) {
+    s.assertActiveClaim();
+    if (
+      ref.kind === "reaction" &&
+      error instanceof Error &&
+      error.message === "RESOURCE_NOT_FOUND"
+    )
+      throw new FeatureError(
+        "UNAVAILABLE",
+        `${REACTION_COLD_RECOVERY}: public lookup could not restore the bot reaction handle.`,
+      );
+    throw error;
+  }
   s.assertActiveClaim();
   requireThat(
     message,
-    "RESOURCE_NOT_FOUND",
-    "Actual SDK target is unavailable.",
+    ref.kind === "reaction" ? "UNAVAILABLE" : "RESOURCE_NOT_FOUND",
+    ref.kind === "reaction"
+      ? `${REACTION_COLD_RECOVERY}: public lookup could not restore the bot reaction handle.`
+      : "Actual SDK target is unavailable.",
   );
   checkPublicSpace(message.space, s, o);
   requireThat(
@@ -217,11 +241,37 @@ export async function resolveReactionTarget(
   s: PublicServices,
   o: PublicTextMessageOptions,
 ): Promise<Message> {
+  const record = (await publicRecordFor(ref, s)) as ReactionReferenceRecord;
+  requireThat(
+    record.ownedByPrincipalId === s.context.principalId,
+    "FORBIDDEN",
+    "Target belongs to another principal.",
+  );
+  const identity = record.reactionIdentity;
+  requireThat(
+    identity?.version === 1,
+    "UNAVAILABLE",
+    `${REACTION_COLD_RECOVERY}: durable reaction identity is missing; a legacy reference cannot prove the intended tapback.`,
+  );
   const reaction = await resolveMessageTarget(ref, s, o, true);
   requireThat(
     reaction.content.type === "reaction",
     "UNAVAILABLE",
-    "Actual reaction content is required.",
+    `${REACTION_COLD_RECOVERY}: public lookup returned metadata without reaction content and its target handle.`,
+  );
+  const restored = reactionIdentity(reaction);
+  requireThat(
+    identity.providerId === record.providerId &&
+      identity.direction === restored.direction &&
+      identity.spaceId === restored.spaceId &&
+      identity.phone === restored.phone &&
+      identity.parentProviderId === restored.parentProviderId &&
+      identity.parentNativeId === restored.parentNativeId &&
+      identity.parentPartIndex === restored.parentPartIndex &&
+      identity.parentDirection === restored.parentDirection &&
+      identity.emoji === restored.emoji,
+    "SCOPE_MISMATCH",
+    "Restored reaction differs from its durable identity.",
   );
   const parent = await resolveMessageTarget(
     { version: 1, kind: "message", id: ref.messageId, scope: ref.scope },
@@ -231,7 +281,10 @@ export async function resolveReactionTarget(
   checkPublicSpace(reaction.content.target.space, s, o);
   requireThat(
     reaction.content.target.id === parent.id &&
-      reaction.content.target.platform === parent.platform,
+      reaction.content.target.platform === parent.platform &&
+      (imessage(parent).parentId ?? parent.id) === identity.parentNativeId &&
+      (imessage(parent).partIndex ?? null) === identity.parentPartIndex &&
+      parent.direction === identity.parentDirection,
     "SCOPE_MISMATCH",
     "Reaction parent differs from the authorized target.",
   );
