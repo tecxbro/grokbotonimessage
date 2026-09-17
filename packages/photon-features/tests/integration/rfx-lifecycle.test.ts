@@ -9,10 +9,15 @@ import { createConnection } from "node:net";
 import { setTimeout as delay } from "node:timers/promises";
 import { acquireHostOwnership, reconcileHostOwnership } from "../../src/host/owner-lock.js";
 import { loadProductionHostConfiguration } from "../../src/host/configuration.js";
-import { configuredAuthority } from "../../src/host/authority.js";
+import { bootstrapOrValidateAuthority, configuredAuthority } from "../../src/host/authority.js";
 import { setupProductionInstallation, changeProductionActivation, validateProductionInstallation, processMain } from "../../src/host/process.js";
 import { supervisorGuidance } from "../../src/host/supervisor.js";
 import { DurableSQLiteStore } from "../../src/adapters/state/sqlite.js";
+import { administerAuthority, inspectAuthority } from "../../src/host/authority-admin.js";
+import { DurableWork } from "../../src/runtime/core/work-handoff.js";
+import { DurableRecovery } from "../../src/runtime/core/recovery.js";
+import { requestIdentity } from "../../src/runtime/core/idempotency.js";
+import type { Action, ResourceRef } from "../../src/contracts/index.js";
 import { DurableSubmission } from "../../src/runtime/core/submission.js";
 import { DurableContexts } from "../../src/runtime/core/authorization.js";
 import { privateTestRoot } from "../helpers/private-temp.js";
@@ -299,4 +304,132 @@ test("failed startup rollback retains ownership for explicit reconciliation", as
   assert.match(h.stderr(), /HOST_SHUTDOWN_FAILED/);
   assert.doesNotMatch(h.stdout(), /"status":"ready"/);
   assert.ok((await lstat(join(f.runtime, "host.lock"))).isFile());
+});
+
+// These characterize the existing audited renewal contract; passing them proves
+// the lifecycle cannot safely automate it as an identity-preserving extension.
+async function renewalFixture(t: Parameters<typeof privateTestRoot>[0], expired: boolean) {
+  const f = await fixture(t);
+  const config = await loadProductionHostConfiguration(f.root);
+  const now = Date.now();
+  config.task.issuedAt = now - 120_000;
+  config.task.expiresAt = now + (expired ? -60_000 : 60_000);
+  const credential = join(f.runtime, "owner-token");
+  await writeFile(credential, "d".repeat(64), { mode: 0o600 });
+  config.ownerAdministration = { principalId: "owner-admin", credentialFile: credential };
+  await writeFile(join(f.runtime, "configuration.json"), JSON.stringify(config), { mode: 0o600 });
+  const { context } = configuredAuthority(config);
+  const store = new DurableSQLiteStore(config.runtime.statePath);
+  const atIssue = context.issuedAt + 1;
+  bootstrapOrValidateAuthority(store, context, config.provider.conversationId, atIssue);
+  const message: ResourceRef = { version: 1, kind: "message", id: "retained-message", scope: context.scope };
+  store.transaction(tx => {
+    tx.put("references", { id: message.id, scope: context.scope, revision: 0, reference: message,
+      providerId: "offline-provider-message", ownedByPrincipalId: context.principalId,
+      taskId: context.taskId, generation: context.generation }, null);
+    tx.put("handoffs", { id: "retained-handoff", scope: context.scope, revision: 0,
+      taskId: context.taskId, generation: context.generation, principalId: context.principalId,
+      eventIds: [], state: "pending", claim: null, createdAt: atIssue }, null);
+  });
+  const action: Action = { version: 1, contextId: context.contextId, idempotencyKey: "retained-request",
+    operation: "text.send", arguments: { space: { version: 1, kind: "space", id: context.scope.spaceId, scope: context.scope }, text: "offline pending work" } };
+  const contexts = new DurableContexts(store, { now: () => atIssue });
+  const queued = await new DurableSubmission(store, contexts).submit(action, context);
+  store.close();
+  const inspected = await inspectAuthority(f.root, f.releaseRoot, credential);
+  const next = { ...context, contextId: "renewed-context", generation: context.generation + 1,
+    issuedAt: now, expiresAt: now + 86_400_000 };
+  const request = { version: 1 as const, requestId: "renewal-request", mode: "renew" as const,
+    expectedContext: inspected.expectedContext, expectedContextRevision: inspected.expectedContextRevision,
+    expectedTaskRevision: inspected.expectedTaskRevision, nextContext: next, reason: "offline renewal contract characterization" };
+  const requestFile = join(f.runtime, "authority-request.json");
+  return { ...f, config, credential, context, message, action, queued, request, requestFile,
+    apply: async (value = request, token = credential) => {
+      await writeFile(requestFile, JSON.stringify(value), { mode: 0o600 });
+      return administerAuthority(f.root, f.releaseRoot, requestFile, token);
+    } };
+}
+
+for (const expired of [false, true]) {
+  const phase = expired ? "after expiry" : "before expiry";
+  test(`renewal blocker ${phase}: authenticated same-identity extension is refused without mutation`, async t => {
+    const f = await renewalFixture(t, expired);
+    const before = await readFile(join(f.runtime, "configuration.json"), "utf8");
+    await assert.rejects(f.apply({ ...f.request, nextContext: { ...f.context, expiresAt: f.request.nextContext.expiresAt } }), /INVALID_AUTHORITY_SUCCESSOR/);
+    assert.equal(await readFile(join(f.runtime, "configuration.json"), "utf8"), before);
+    const store = new DurableSQLiteStore(f.config.runtime.statePath);
+    try {
+      assert.deepEqual(store.transaction(tx => tx.get("contexts", f.context.contextId))?.context, f.context);
+      assert.equal(store.scan("authorityAudits").length, 0);
+      assert.equal(store.transaction(tx => tx.get("handoffs", "retained-handoff"))?.state, "pending");
+      assert.equal(store.transaction(tx => tx.get("outbox", f.queued.requestId))?.result.status, "queued");
+    } finally { store.close(); }
+  });
+
+  test(`renewal blocker ${phase}: audited generation rotation fences existing resources and work`, async t => {
+    const f = await renewalFixture(t, expired);
+    await assert.rejects(f.apply(f.request, f.config.local.credentialFile), /OWNER_AUTHENTICATION_REQUIRED/);
+    assert.equal((await f.apply()).generation, f.context.generation + 1);
+    assert.equal((await f.apply()).generation, f.context.generation + 1, "exact audited request replay is idempotent");
+    const store = new DurableSQLiteStore(f.config.runtime.statePath);
+    try {
+      const next = f.request.nextContext;
+      const contexts = new DurableContexts(store, { now: Date.now });
+      const work = new DurableWork(store, contexts);
+      assert.equal(store.scan("authorityAudits").length, 1);
+      assert.equal(store.transaction(tx => tx.get("tasks", f.context.taskId))?.generation, next.generation);
+      assert.equal(store.transaction(tx => tx.get("contexts", f.context.contextId))?.context.revokedAt !== null, true);
+      assert.deepEqual(work.list(next, 100), [], "pending old-generation work is hidden from successor");
+      assert.throws(() => work.change(next, "retained-handoff", "claim"), /RESOURCE_NOT_FOUND/);
+      assert.throws(() => store.transaction(tx => contexts.reference(tx, next, f.message)), /RESOURCE_NOT_FOUND/);
+      assert.throws(() => store.transaction(tx => contexts.owned(tx, f.queued.requestId, next)), /RESOURCE_NOT_FOUND/);
+      assert.notEqual(requestIdentity(f.action, f.context), requestIdentity({ ...f.action, contextId: next.contextId }, next),
+        "resubmitting the same key under the successor does not preserve request identity");
+      new DurableRecovery(store, contexts).recover();
+      assert.equal(store.transaction(tx => tx.get("outbox", f.queued.requestId))?.result.status, "blocked");
+      assert.equal(store.transaction(tx => tx.get("outbox", f.queued.requestId))?.result.error?.code, "CONTEXT_REVOKED");
+      assert.equal(store.transaction(tx => tx.get("handoffs", "retained-handoff"))?.state, "pending");
+      assert.equal(store.transaction(tx => tx.get("references", f.message.id))?.generation, f.context.generation);
+    } finally { store.close(); }
+  });
+}
+
+for (const invalidation of ["revoked", "cancelled"] as const) {
+  test(`renewal safeguards: authenticated ${invalidation} authority cannot renew`, async t => {
+    const f = await renewalFixture(t, true);
+    const store = new DurableSQLiteStore(f.config.runtime.statePath);
+    try {
+      store.transaction(tx => {
+        if (invalidation === "revoked") {
+          const row = tx.get("contexts", f.context.contextId)!;
+          tx.put("contexts", { ...row, revision: row.revision + 1,
+            context: { ...row.context, revokedAt: Date.now() } }, row.revision);
+        } else {
+          const row = tx.get("tasks", f.context.taskId)!;
+          tx.put("tasks", { ...row, revision: row.revision + 1, cancelledAt: Date.now() }, row.revision);
+        }
+      });
+      const inspected = await inspectAuthority(f.root, f.releaseRoot, f.credential);
+      await assert.rejects(f.apply({ ...f.request, expectedContext: inspected.expectedContext,
+        expectedContextRevision: inspected.expectedContextRevision, expectedTaskRevision: inspected.expectedTaskRevision }), /AUTHORITY_CANNOT_BE_RENEWED/);
+      assert.equal(store.scan("authorityAudits").length, 0);
+      assert.equal(store.transaction(tx => tx.get("handoffs", "retained-handoff"))?.generation, f.context.generation);
+    } finally { store.close(); }
+  });
+}
+
+test("renewal safeguards: expired legacy authority is not auto-renewed or reseeded by setup/start", async t => {
+  const f = await renewalFixture(t, true);
+  await assert.rejects(setupProductionInstallation(f.root, f.releaseRoot, { activateAfterValidation: true }), /EXPIRED_TASK_BINDING/);
+  const h = host(t, f);
+  assert.deepEqual(await h.exited, [1, null]);
+  assert.match(h.stderr(), /EXPIRED_TASK_BINDING/);
+  assert.doesNotMatch(h.stdout(), /sdk-start|ready/);
+  const store = new DurableSQLiteStore(f.config.runtime.statePath);
+  try {
+    assert.deepEqual(store.transaction(tx => tx.get("contexts", f.context.contextId))?.context, f.context);
+    assert.equal(store.scan("authorityAudits").length, 0);
+    assert.equal(store.transaction(tx => tx.get("handoffs", "retained-handoff"))?.state, "pending");
+  } finally { store.close(); }
+  assert.equal((await loadProductionHostConfiguration(f.root)).activation, "disabled");
 });
