@@ -24,25 +24,20 @@ Installation selects `ROOT/releases/SHA256` inactive and preserves runtime state
 
 Photon CLI authentication/device-login happens on the Grok Bot cloud VM. Setup reuses an authenticated VM CLI session and verifies it; if missing or expired, it performs one headless `photon login --no-browser`. Surface the **real verification URL and fresh code** streamed on stderr to the owner. Never invent a code or ask the user to paste a project secret in normal chat: the authenticated CLI retrieves it into private runtime storage. Setup output contains identities and decisions, never the secret. Discovery is Linux-only.
 
+Fresh installation deliberately leaves `ROOT/runtime/configuration.json` absent. Run the selected release's setup command once:
+
 ```sh
 umask 077
-node RELEASE/bin/grok-photon setup --installation-root ROOT --grok-executable /absolute/existing/gbot --json > ROOT/runtime/discovery.json
+node RELEASE/bin/grok-photon setup --installation-root ROOT --grok-executable /absolute/existing/gbot --json
 ```
 
-Setup discovers the Photon executable (or installs it in its private tool root), authenticated project/user/route and live Grok roster. If a project is ambiguous, rerun with `--project ID` from returned candidates. If an agent or initial address remains ambiguous, select only the relevant candidate/address in the small choices object. Inspect unresolved fields; nonzero incomplete discovery is not readiness. No chat is made writable just because its ID looks valid.
+This command carries the owner's activation intent: it discovers Photon and the live Grok target, generates and exclusively persists the real owner configuration, validates it, enables it, and starts the foreground runtime. It prints `status: "ready"` only after the host is ready and stays running until stopped. Do not redirect its output to a discovery input file or start another host alongside it.
 
-Build the generator input from the actual discovery JSON. With Node, for example:
+Ambiguous discovery returns `needs-input` before creating configuration, local authority credentials, or runtime state. If a project is ambiguous, rerun with `--project ID` from returned candidates. Other unresolved fields must be resolved before setup proceeds; it never guesses a user, dedicated line, or Grok target. The programmatic `setupDiscovery()` primitive remains available for discovery-only workflows. No chat is made writable just because its ID looks valid.
 
-```sh
-node --input-type=module -e 'import {readFileSync,writeFileSync} from "node:fs"; const root=process.argv[1]; const discovery=JSON.parse(readFileSync(root+"/runtime/discovery.json","utf8")); writeFileSync(root+"/runtime/setup-input.json",JSON.stringify({version:2,discovery,activateAfterValidation:true}),{flag:"wx",mode:0o600});' ROOT
-node RELEASE/scripts/generate-configuration.mjs ROOT/runtime/setup-input.json ROOT/runtime/configuration.json
-node RELEASE/bin/grok-photon-host validate --installation-root ROOT
-node RELEASE/bin/grok-photon-host setup --installation-root ROOT
-```
+New setup uses version-3 installation-owner configuration with full owner operation permission intent; actual provider capabilities, exact resource ownership, recipients, prerequisites and fencing still restrict execution. Internal principal/context/task IDs and local credentials are generated. The permanent owner grant uses numeric `Number.MAX_SAFE_INTEGER` expiry, so it does not expire after 24 hours. Finite legacy/delegated task expiry, revocation, cancellation and generation fencing remain enforced.
 
-The explicit `activateAfterValidation:true` carries the owner's already-given activation intent once. Omit it or use false to generate inactive configuration; later `grok-photon-host enable --installation-root ROOT` is an explicit activation action. Validation alone never enables. Do not execute these real activation steps from Codex.
-
-New setup uses version-3 installation-owner configuration with full owner operation permission intent; actual provider capabilities, exact resource ownership, recipients, prerequisites and fencing still restrict execution. Internal principal/context/task IDs and local credentials are generated. No manual permission-profile ceremony or pasted secret is required. Legacy version-2 configuration and v1 generator inputs remain supported for existing installations; their historical profiles are compatibility examples, not the normal setup path.
+The compatibility `scripts/generate-configuration.mjs INPUT OUTPUT` entry point still accepts version-2 discovery input and creates disabled configuration. Its optional `activateAfterValidation` intent is honored by `grok-photon-host setup`, which starts the foreground runtime when enabled. Without activation intent, host setup only validates and stays disabled. Validation alone never enables. Existing version-2 configurations and v1 generator inputs retain their authority and finite expiry. First-time setup never overwrites an existing configuration, token or database; use the existing host run/recovery commands for an established installation. Do not execute real activation steps from Codex.
 
 The verified installed Grok help determines `gateway-flag` or `gateway-subcommand`, stored with its evidence. Validation rechecks that shape without sending. No hard-coded historical argument order or live send probe is used.
 
@@ -77,7 +72,7 @@ The wake includes exact release SKILL.md and grok-photon-task paths. Use that la
 - `app.update`: original public provider session and admitted revision must be available; otherwise reports requires_original_session or the exact URL/template/reconciliation blocker. Never sends a replacement card.
 - `reaction.remove`: exact bot reaction and parent/part must be restored publicly; cold recovery otherwise reports REACTION_COLD_RECOVERY_UNAVAILABLE. Never infer a removable handle from matching emoji.
 - Shared group administration: respects dedicated-line-only support. No provider limitation is bypassed.
-- All operations after authority expiry: unavailable pending explicit safe owner transition; multi-day automatic renewal remains unresolved below.
+- Finite legacy/delegated authority after expiry: unavailable pending explicit safe owner transition. Newly generated permanent installation-owner grants have no 24-hour expiry.
 
 Capabilities distinguish implementation, configuration, provider/account support, runtime dependencies, current resource/route authorization, actual blockers and informational notes. Provider acceptance, device observation and live verification are independent evidence. Handoff remains blocked for the operation whose required dependency/resource is missing, not merely because live verification has not occurred.
 
@@ -152,7 +147,7 @@ Checkpoint restart restores callback/replay state. An update after restart addit
 
 ## Explicit owner authority transition and expiry limitation
 
-Generated authority currently expires after 24 hours. RFX-11 proved that same-context expiry extension is rejected; a successor generation invalidates prior resource/handoff ownership. There is no safe automatic renewal or uninterrupted multi-day guarantee in this release. Stop before expiry and reconcile pending/unknown work before an explicit owner transition. Never edit timestamps, reset SQLite, or silently reseed authority. This is a remaining lifecycle blocker, independent of supervisor availability.
+Newly generated installation-owner authority uses a permanent numeric expiry sentinel and needs no daily renewal. Previously generated finite-expiry owner configurations and legacy/delegated tasks keep their original expiry; setup does not migrate them. RFX-11 proved that same-context expiry extension is rejected, while a successor generation invalidates prior resource/handoff ownership. For finite authority, reconcile pending/unknown work before an explicit owner transition. Never edit timestamps, reset SQLite, or silently reseed authority.
 
 New version-3 installation-owner configuration uses the same private owner credential for explicit administration. Historical version-2 configuration retains its separate ownerAdministration principalId and distinct 0600 credentialFile. Do not synthesize a new owner token for a v3 install. Same-OS-user processes can read each other's
 files and are one trust domain; this is not isolation from a hostile process

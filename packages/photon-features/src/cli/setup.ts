@@ -1,3 +1,8 @@
+import { fileURLToPath } from "node:url";
+import { generateInitialOwnerConfiguration, writeInitialConfiguration } from "../host/setup-configuration.js";
+import { setupProductionInstallation } from "../host/process.js";
+import { assertSelectedRelease } from "../host/selected-release.js";
+import type { ProductionCompositionDependencies } from "../host/production.js";
 import { chmod, lstat, mkdtemp, open } from "node:fs/promises";
 import { homedir } from "node:os";
 import { constants } from "node:fs";
@@ -242,7 +247,7 @@ export async function setupDiscovery(options: SetupOptions, services: SetupServi
         // phoneNumber is the user's own number; only assignedPhoneNumber is serving evidence.
         result.spectrum.servingE164 = result.spectrum.user?.assignedPhoneNumber ?? null;
       }
-      if (!result.spectrum.servingE164) unresolved.push("spectrum.servingE164");
+      if (result.spectrum.mode === "dedicated" && !result.spectrum.servingE164) unresolved.push("spectrum.servingE164");
     }
     if (!authenticated) unresolved.push("photon.identity");
     const grokExecutable = await installer.findExecutable(options.grokExecutable ?? "gbot", env);
@@ -254,6 +259,33 @@ export async function setupDiscovery(options: SetupOptions, services: SetupServi
   } catch (error) {
     if (error instanceof CliError) throw error;
     const code = error instanceof Error && /^(?:SETUP|PHOTON|NPM)_[A-Z_]+$/.test(error.message) ? error.message : "SETUP_FAILED";
+    throw new CliError(code, 5);
+  }
+}
+
+export interface SetupRunServices extends SetupServices {
+  /** Programmatic fixture boundaries only; the installed CLI supplies neither. */
+  hostDependencies?: ProductionCompositionDependencies;
+  releaseRoot?: string;
+}
+
+/** Discover, exclusively configure, validate, activate and run a fresh owner.
+ * Ambiguous discovery returns unchanged before creating authority. Successful
+ * setup owns the foreground host until shutdown; repeat setup never resets it. */
+export async function setupAndRun(options: SetupOptions, services: SetupRunServices = {}): Promise<SetupDiscovery | void> {
+  const discovery = await setupDiscovery(options, services);
+  if (discovery.status !== "discovered" || discovery.unresolved.length || discovery.grok.unresolved.length) return discovery;
+  const releaseRoot = services.releaseRoot ?? fileURLToPath(new URL("../../../", import.meta.url));
+  try {
+    await assertSelectedRelease(options.installationRoot, releaseRoot);
+    const configuration = await generateInitialOwnerConfiguration({ version: 2, discovery, activateAfterValidation: true });
+    await writeInitialConfiguration(options.installationRoot, configuration);
+    const lifecycle = await setupProductionInstallation(options.installationRoot, releaseRoot,
+      { activateAfterValidation: true }, services.hostDependencies);
+    await lifecycle.start();
+  } catch (error) {
+    if (error instanceof CliError) throw error;
+    const code = error instanceof Error && /^[A-Z_]+$/.test(error.message) ? error.message : "SETUP_FAILED";
     throw new CliError(code, 5);
   }
 }

@@ -480,7 +480,8 @@
       "packages/photon-features/tests/integration/completion-browser.test.mjs",
       "packages/photon-features/tests/integration/completion-configuration.test.mjs",
       "packages/photon-features/tests/integration/completion-sdk.test.mjs",
-      "packages/photon-features/tests/lanes/wt-08/repair-media-import.test.ts"
+      "packages/photon-features/tests/lanes/wt-08/repair-media-import.test.ts",
+      "packages/photon-features/src/host/setup-configuration.ts"
     ]
   },
   "integrationMaintenance": [

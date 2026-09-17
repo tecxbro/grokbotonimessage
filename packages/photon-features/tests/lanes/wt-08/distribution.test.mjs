@@ -80,7 +80,7 @@ test('clean and repeat installation is inactive, preserves fuller skill and unre
     const first = await installRelease(f); assert.equal(first.activation, 'disabled');
     assert.deepEqual(await installRelease(f), first);
     assert.equal(await readFile(skill, 'utf8'), 'fuller installed policy');
-    assert.deepEqual(JSON.parse(await readFile(join(f.root, 'runtime/configuration.json'), 'utf8')), { version: 1, activation: 'disabled' });
+    await assert.rejects(lstat(join(f.root, 'runtime/configuration.json')), { code: 'ENOENT' });
     await writeFile(join(f.root, 'unrelated'), 'preserve');
     await installRelease(f); assert.equal(await readFile(join(f.root, 'unrelated'), 'utf8'), 'preserve');
     const unrelated = join(f.dir, 'other'); await mkdir(unrelated, { mode: 0o700 }); await writeFile(join(unrelated, 'data'), 'keep');
@@ -94,7 +94,7 @@ test('owner lock, active configuration and existing socket prevent installation'
     for (const name of ['.install-lock', 'runtime/host.lock', 'runtime/runtime.sock']) {
       const p = join(f.root, name); await writeFile(p, 'owner'); await assert.rejects(installRelease(f), /OWNER/); await rm(p);
     }
-    await writeFile(join(f.root, 'runtime/configuration.json'), JSON.stringify({ activation: 'enabled' }));
+    await writeFile(join(f.root, 'runtime/configuration.json'), JSON.stringify({ activation: 'enabled' }), { mode: 0o600 });
     await assert.rejects(installRelease(f), /DEACTIVATION/);
   } finally { await f.close(); }
 });

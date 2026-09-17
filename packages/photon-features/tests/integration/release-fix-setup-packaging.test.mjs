@@ -4,15 +4,15 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile, readFile, lstat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { generateConfiguration } from '../../scripts/generate-configuration.mjs';
-import { validateProductionInstallation, setupProductionInstallation, runProductionHost } from '../../dist/src/host/process.js';
+import { setupAndRun } from '../../dist/src/cli/setup.js';
+import { runProductionHost } from '../../dist/src/host/process.js';
 import { loadNormalizedHostConfiguration } from '../../dist/src/host/configuration.js';
 import { DurableSQLiteStore } from '../../dist/src/adapters/state/sqlite.js';
 
 // Fresh owner setup and host lifecycle use the real generator/config/locks/SQLite.
 // External SDK/Grok boundaries are controlled. Packaging mechanics are additionally
 // covered by tests/artifact/rfx-owner-package.test.mjs and completion-installed.test.mjs.
-test('fresh discovered shared owner validates offline, honors persisted activation and resolves once with one owner', async t => {
+test('one setup discovers, configures, activates and runs a shared owner; restart preserves the route', async t => {
   const root = await privateTestRoot(t, 'rfx-setup-');
   const runtime = join(root, 'runtime'), releaseId = 'd'.repeat(64), releaseRoot = join(root, 'releases', releaseId);
   await mkdir(runtime, { mode: 0o700 });
@@ -23,22 +23,33 @@ test('fresh discovered shared owner validates offline, honors persisted activati
     files: [{ path: 'SKILL.md', sha256: createHash('sha256').update(skill).digest('hex') }] }), { mode: 0o600 });
   await writeFile(join(root, 'selected-release.json'), JSON.stringify({ version: 1, release: releaseId, activation: 'disabled' }), { mode: 0o600 });
   const executable = join(root, 'gbot');
-  await writeFile(executable, '#!/bin/sh\nif [ "$1" = "--help" ]; then echo "  --gateway"; elif [ "$1" = "--gateway" ] && [ "$2" = "--help" ]; then echo "  send AGENT POINTER"; else exit 1; fi\n', { mode: 0o700 });
-  const secret = join(runtime, 'project-secret.json');
-  await writeFile(secret, JSON.stringify({ version: 1, projectId: 'project-1', projectSecret: 'offline-only' }), { mode: 0o600 });
+  await writeFile(executable, `#!${process.execPath}
+const args = process.argv.slice(2).join(' ');
+if (args === '--version') console.log('gbot 1.2.3');
+else if (args === '--help') console.log('  --gateway --json bots list');
+else if (args === '--gateway --help') console.log('  send <agent> <message>');
+else if (args === '--gateway --json bots list') console.log(JSON.stringify([{id:'agent-1'}]));
+else process.exitCode = 1;
+`, { mode: 0o700 });
   const user = { id: 'user-1', accountId: 'account-1', phoneNumber: '+15555550102' };
-  const discovery = { version: 1, kind: 'setup-discovery', installationRoot: root,
-    project: { id: 'project-1' }, projectCandidates: [{ id: 'project-1' }],
-    spectrum: { mode: 'shared', user, userCandidates: [user], servingE164: null, dedicatedLineId: null, lineCandidates: [] },
-    secretFile: { path: secret, mode: '0600', format: 'photon-project-secret-v1' },
-    grok: { executable, agentId: 'agent-1', candidates: [{ id: 'agent-1' }], evidence: 'live-gateway-roster',
-      commandStyle: 'gateway-flag', commandStyleEvidence: 'installed-cli-help', unresolved: [] }, unresolved: [] };
-  const config = await generateConfiguration({ version: 2, discovery, activateAfterValidation: true });
-  await writeFile(join(runtime, 'configuration.json'), JSON.stringify(config), { mode: 0o600 });
-  assert.equal((await validateProductionInstallation(root, releaseRoot)).activation, 'disabled');
-  await assert.rejects(lstat(config.runtime.statePath), { code: 'ENOENT' });
-  assert.equal((await setupProductionInstallation(root, releaseRoot)).activation, 'enabled');
-  await assert.rejects(lstat(config.runtime.statePath), { code: 'ENOENT' });
+  const photon = join(root, 'photon');
+  await writeFile(photon, `#!${process.execPath}
+const responses = {
+  '--version': 'photon 2.2.0', whoami: 'Offline owner', '--help': '  auth\\n  projects',
+  'auth --help': '  status', 'auth status --help': '--json',
+  'auth status --json': [{url:'https://app.photon.codes',loggedIn:true,user:{id:'owner-1'}}],
+  'projects ls --json': [{id:'project-1'}], 'projects --help': '  secret', 'projects secret --help': '--json',
+  'projects secret project-1 --json': {id:'project-1',projectSecret:'offline-only'},
+  'spectrum users ls --project project-1 --json': [${JSON.stringify(user)}],
+  'spectrum lines ls --project project-1 --json': []
+};
+const value = responses[process.argv.slice(2).join(' ')];
+if (value === undefined) process.exitCode = 1;
+else console.log(typeof value === 'string' ? value : JSON.stringify(value));
+`, { mode: 0o700 });
+  const options = { installationRoot: root, photonExecutable: photon, grokExecutable: executable };
+  const services = { platform: 'linux', releaseRoot, env: { HOME: root } };
+  let config;
   let owners = 0, listeners = 0, stops = 0, ready = false;
   const calls = [];
   const space = { __platform: 'imessage', id: 'iMessage;-;+15555550102', phone: 'shared', type: 'dm' };
@@ -56,16 +67,22 @@ test('fresh discovered shared owner validates offline, honors persisted activati
   for (let lifetime = 1; lifetime <= 2; lifetime++) {
     ready = false;
     let failure;
-    const running = runProductionHost(root, releaseRoot, dependencies).catch(error => { failure = error; });
+    let completed = false;
+    const running = (lifetime === 1 ? setupAndRun(options, { ...services, hostDependencies: dependencies })
+      : runProductionHost(root, releaseRoot, dependencies)).then(result => { completed = true; assert.equal(result, undefined, JSON.stringify(result)); }).catch(error => { failure = error; });
     try {
       let socket = false;
       for (let i = 0; i < 500; i++) {
         if (failure) throw failure;
-        try { socket = (await lstat(config.local.socketPath)).isSocket(); } catch {}
+        assert.equal(completed, false, "setup must stay alive until shutdown");
+        try { socket = (await lstat(join(runtime, 'runtime.sock'))).isSocket(); } catch {}
         if (ready && socket) break;
         await new Promise(resolve => setTimeout(resolve, 10));
       }
       assert.ok(ready && socket, 'real host reaches ready local interface');
+      config ??= await loadNormalizedHostConfiguration(root);
+      assert.equal(config.activation, 'enabled');
+      assert.equal(config.task.expiresAt, Number.MAX_SAFE_INTEGER);
     } finally { process.emit('SIGTERM'); await running; }
     if (failure) throw failure;
     assert.equal(owners, lifetime); assert.equal(listeners, lifetime); assert.equal(stops, lifetime);
@@ -80,5 +97,8 @@ test('fresh discovered shared owner validates offline, honors persisted activati
   const store = new DurableSQLiteStore(config.runtime.statePath);
   try { assert.equal(store.scan('handoffs').length, 0); assert.equal(store.scan('outbox').length, 0); }
   finally { store.close(); }
-  assert.equal((await readFile(secret, 'utf8')).includes('offline-only'), true);
+  assert.equal((await readFile(config.provider.projectSecretFile, 'utf8')).includes('offline-only'), true);
+  const original = await readFile(join(runtime, 'configuration.json'), 'utf8');
+  await assert.rejects(setupAndRun(options, services), { code: 'EXISTING_INSTALLATION_REQUIRES_MIGRATION' });
+  assert.equal(await readFile(join(runtime, 'configuration.json'), 'utf8'), original);
 });

@@ -367,3 +367,16 @@ The new installed matrix uses seven isolated failure modes, a real npm archive,
 production-only dependencies, real authenticated CLI/socket/SQLite and actual
 SDK modules with controlled external transport. No production credentials or
 messages were used. Final commands and artifact evidence are in TEST-EVIDENCE.md.
+
+## 2026-09-17 — Four release setup repairs
+
+User assignment: remove fresh-install placeholder, allow shared discovery without a
+serving phone, generate permanent installation-owner expiry, and join discovery through
+foreground startup. Work is isolated on `codex/rfx-00-release-fix` from `39acd52f`.
+The original shared-number and finite-expiry defects were reproduced by regression tests.
+Typed generation and the one-command flow compile with Node 24.13.0. Offline verification
+uses fixture CLIs/SDKs, private filesystem state and Unix sockets; no real account activation.
+
+Final local verification: 1,073/1,073 aggregate tests, 49/49 package tests and all seven
+installed-runtime fixture modes passed. Build/typecheck and required drift/ownership/docs
+checks passed. Exact snapshot and code digest are recorded in TEST-EVIDENCE.md.

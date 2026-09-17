@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import childProcess from 'node:child_process';
 import { syncBuiltinESMExports } from 'node:module';
-import { mkdtemp, readFile, writeFile, mkdir, rm, chmod, symlink } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, mkdir, rm, chmod, symlink, lstat } from 'node:fs/promises';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -266,14 +266,14 @@ test('owner-local installs privately and inactive; checksum, competing ownership
   await assert.rejects(installRelease({ ...options, checksum: '0'.repeat(64) }), /ARTIFACT_CHECKSUM_MISMATCH/);
   const installed = await installRelease(options);
   assert.equal(installed.activation, 'disabled');
-  assert.equal(JSON.parse(await readFile(join(root, 'runtime/configuration.json'), 'utf8')).activation, 'disabled');
+  await assert.rejects(lstat(join(root, 'runtime/configuration.json')), { code: 'ENOENT' });
   for (const path of ['.install-lock', 'runtime/host.lock', 'runtime/runtime.sock']) {
     await writeFile(join(root, path), 'another owner');
     await assert.rejects(installRelease(options), /INSTALL_OWNER_EXISTS|HOST_OWNER_OR_SOCKET_EXISTS/);
     await assert.rejects(rollbackInstallation({ root, release: installed.release }), /INSTALL_OWNER_EXISTS|HOST_OWNER_OR_SOCKET_EXISTS/);
     await rm(join(root, path));
   }
-  await writeFile(join(root, 'runtime/configuration.json'), JSON.stringify({ activation: 'enabled' }));
+  await writeFile(join(root, 'runtime/configuration.json'), JSON.stringify({ activation: 'enabled' }), { mode: 0o600 });
   await assert.rejects(installRelease(options), /DEACTIVATION_REQUIRED/);
   await assert.rejects(rollbackInstallation({ root, release: installed.release }), /DEACTIVATION_REQUIRED/);
   const link = join(f.directory, 'link'); await symlink(root, link);

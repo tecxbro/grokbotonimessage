@@ -260,3 +260,22 @@ fail closed as unimplemented even when a handler is registered.
 ## Completion pass 2026-09-13
 
 Completion design: construct serializable trusted backend settings in executable startup; add bounded authenticated inert text producers to the private local protocol; retain one owner, receiver, inbox/outbox and executeChild. Owner authority changes use a separate stopped-host administration procedure, never ordinary task credentials. Native poll management and cold card session restoration require a verified public shared-owner SDK surface.
+
+## Release setup repair (2026-09-17)
+
+The user-authorized repair at release baseline `39acd52f31800c724153b65463a5c762489156e3`
+adds `setupAndRun` as the CLI setup entry point. It retains pure discovery and returns
+ambiguous discovery before authority creation. A selected release is checked before
+configuration generation. Shared mode may omit display serving metadata; dedicated
+mode still requires it. Provider routing is unchanged.
+
+`host/setup-configuration.ts` owns v2 discovery validation, v3 owner generation and
+exclusive 0600 configuration persistence. The legacy generator delegates to this same
+implementation. Fresh install does not create a placeholder. Setup validates, explicitly
+activates, and awaits the existing host lifecycle; an enabled host setup also calls its
+returned start function. Programmatic dependency hooks support offline fixtures only.
+
+New installation-owner authority uses the numeric `Number.MAX_SAFE_INTEGER` expiry
+sentinel. No validator exemption or legacy authority rewrite is introduced: finite tasks
+still expire, and revocation, cancellation and generation transitions retain their checks.
+Existing configuration/token/state blocks first-time generation and is never overwritten.

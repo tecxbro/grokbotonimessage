@@ -499,3 +499,10 @@ test('returned route must bind through the existing owner route table, not only 
   assert.equal(f.calls.gets.length, 0);
   assert.equal(JSON.parse(await readFile(f.path, 'utf8')).provider.conversationId, undefined);
 });
+
+test('generated installation owner validates beyond 24 hours without renewal', async t => {
+  const f = await discovered(t);
+  const config = await generateConfiguration(f.input);
+  assert.equal(config.task.expiresAt, Number.MAX_SAFE_INTEGER);
+  await validateInitialConversationPrerequisites(config, config.task.issuedAt + 2 * 86_400_000);
+});

@@ -35,7 +35,7 @@ test('real installer with explicit offline archive fixture: clean/repeat install
   assert.equal(JSON.parse(readFileSync(join(root,'selected-release.json'),'utf8')).release,checksum);
   assert.equal(sha256(readFileSync(path)),before);
   await assert.rejects(installRelease({archivePath,checksum:'f'.repeat(64),root}),/CHECKSUM/);
-  writeFileSync(join(root,'runtime/configuration.json'),JSON.stringify({version:1,activation:'enabled'}));
+  writeFileSync(join(root,'runtime/configuration.json'),JSON.stringify({version:1,activation:'enabled'}),{mode:0o600});
   await assert.rejects(rollbackRelease({root,release:checksum}),/DEACTIVATION_REQUIRED/);
 });
 

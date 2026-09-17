@@ -106,13 +106,13 @@ export async function changeProductionActivation(
 /** Caller authorization is carried once, explicitly. Validation never grants
  * activation by itself; start revalidates and acquires the same owner lock. */
 export async function setupProductionInstallation(root: string, releaseRoot: string,
-  options: { activateAfterValidation?: boolean } = {}) {
-  const validated = await validateProductionInstallation(root, releaseRoot);
+  options: { activateAfterValidation?: boolean } = {}, dependencies: ProductionCompositionDependencies = {}) {
+  const validated = await validateProductionInstallation(root, releaseRoot, dependencies);
   const configuration = await loadNormalizedHostConfiguration(root);
   const activation = activationAfterValidationRequested(configuration, options.activateAfterValidation)
     ? await changeProductionActivation(root, releaseRoot, "enabled") : validated.activation;
   return { ...validated, activation, supervisor: supervisorGuidance(root, releaseRoot),
-    start: () => runProductionHost(root, releaseRoot) };
+    start: () => runProductionHost(root, releaseRoot, dependencies) };
 }
 
 /** Foreground lifecycle. Dependency injection is programmatic only, for offline
@@ -202,6 +202,7 @@ export async function runProductionHost(root: string, releaseRoot: string,
 export async function processMain(
   argv: string[] = process.argv.slice(2),
   releaseRoot = fileURLToPath(new URL("../../../", import.meta.url)),
+  dependencies: ProductionCompositionDependencies = {},
 ): Promise<number> {
   try {
     if (argv[0] === "authority.inspect") {
@@ -220,8 +221,9 @@ export async function processMain(
     }
     const { command, root, activateAfterValidation } = parse(argv);
     if (command === "setup") {
-      const { start: _start, ...result } = await setupProductionInstallation(root, releaseRoot, { activateAfterValidation });
+      const { start, ...result } = await setupProductionInstallation(root, releaseRoot, { activateAfterValidation }, dependencies);
       process.stdout.write(JSON.stringify({ version: 1, valid: true, ...result }) + "\n");
+      if (result.activation === "enabled") await start();
       return 0;
     }
     if (command === "supervisor") {

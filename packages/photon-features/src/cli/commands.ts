@@ -72,7 +72,7 @@ export async function executeCommand(
   return call(commandRequest(argv, contextId, input));
 }
 
-/** Setup is VM-local discovery and never enters the authenticated runtime socket. */
+/** Setup authorizes fresh VM-local discovery, configuration, activation and foreground startup. */
 export function setupCommandOptions(argv: string[], env: NodeJS.ProcessEnv): import("./setup.js").SetupOptions {
   if (argv[0] !== "setup") throw new CliError("INVALID_ARGUMENTS", 2);
   const flags = new Map<string, string | true>();

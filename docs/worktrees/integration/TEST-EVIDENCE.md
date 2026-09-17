@@ -636,3 +636,44 @@ evidence. They do not prove installation, activation, provider rendering,
 recipient-visible typing, delivery/read state, a live Grok task, or device
 behavior. No deployment, credential change, live message, or F0 tag update was
 performed.
+
+## 2026-09-17 — Release setup repairs, local verification
+
+Release branch: `codex/rfx-00-release-fix`, base HEAD
+`39acd52f31800c724153b65463a5c762489156e3`, edits left uncommitted.
+An isolated local verification clone committed the same changed code/tests as
+`8dbdc4cf4601aba7d00f94878e58408bd7378db8`. This is a test snapshot,
+not a release-branch commit or publication. The 15 changed source/script/test
+files match that snapshot byte-for-byte; sorted path/NUL/content/NUL SHA-256:
+`0e47e7af0fe84449a212456e987af2b09b1478eadebbe202ebfeef54036fb4e1`.
+
+Node 24.13.0 / npm 10.9.2 on macOS arm64. Evidence:
+
+- Build and typecheck pass.
+- Full assembled offline suite: **1,073 tests passed across 109 files**, no failures,
+  cancellations, skips or todos (`.photon-local/setup-snapshot-integration.tap`).
+- Owner-package suite: **49 passed** (`.photon-local/setup-package-final.tap`).
+- Installed archive journey passed all seven modes: provider failure, abort, cancel,
+  finite expiry, stall, cold restore and buffered output (`.photon-local/setup-artifact.tap`).
+  That initial combined artifact run also contained an old placeholder assertion;
+  the corrected owner-package file was rerun and passed all 49 tests separately.
+- Assembled-candidate digest check, configuration/profile schemas, production inventory,
+  skill drift, dependency-lock drift, ownership and documentation checks pass.
+- Manual diff review and `git diff --check` pass. Foundation manifest/tag unchanged.
+
+The new full-flow test uses real spawned discovery fixtures, configuration generation,
+exclusive persistence, validation, activation, SQLite, host lock and Unix socket with
+an offline SDK. It reaches readiness, restarts without re-resolving the route, and
+rejects repeat first-time setup without overwriting configuration. Ambiguous projects
+and Grok agents create no authority. Shared missing serving metadata succeeds while
+dedicated missing metadata fails. Generated owner authority validates after 48 hours;
+finite legacy authority still expires.
+
+Initial regressions reproduced the shared-number and finite-expiry defects. Removing
+the installer placeholder required fixture configurations to request mode 0600 explicitly.
+The existing contract-target regression archives committed HEAD but compares its digest
+to the working manifest, so the final aggregate was run from the isolated committed
+snapshot. A transient lifecycle timing failure in an earlier aggregate did not recur.
+Local socket tests ran with sandbox escalation; no live Photon/Grok account was used.
+These results are local/offline evidence, not Linux VM deployment, hosted CI, provider
+message delivery or device observation. No release was published or real installation activated.

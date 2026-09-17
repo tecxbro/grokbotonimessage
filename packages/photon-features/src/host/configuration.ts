@@ -8,6 +8,9 @@ import { z } from "zod";
 import { idSchema } from "../contracts/resources.js";
 import { operations } from "../contracts/actions.js";
 
+/** Permanent owner grant; finite delegated task expiry remains enforced. */
+export const INSTALLATION_OWNER_EXPIRES_AT = Number.MAX_SAFE_INTEGER;
+
 const operation = z.enum(operations as [typeof operations[number], ...typeof operations[number][]]);
 const absolutePath = z.string().min(1).max(1024).refine(isAbsolute, "absolute path required");
 const e164 = z.string().regex(/^\+[1-9]\d{6,14}$/);

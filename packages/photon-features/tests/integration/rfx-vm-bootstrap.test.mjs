@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { setupDiscovery } from '../../dist/src/cli/setup.js';
+import { setupDiscovery, setupAndRun } from '../../dist/src/cli/setup.js';
 import { setupCommandOptions } from '../../dist/src/cli/commands.js';
 import { formatCommandResult, formatSetupResult } from '../../dist/src/cli/output.js';
 import { main } from '../../dist/src/cli/main.js';
@@ -295,7 +295,7 @@ test('multiple Spectrum users or dedicated lines require choices; never fabricat
 test('missing assigned number does not substitute the owner phone; unsupported auth is explicit', async t => {
   const f = fixture(t, {noAuth:true,users:[{id:'u1',phoneNumber:'+14155550001'}]});
   const result = await runFixture(f);
-  assert.equal(result.spectrum.servingE164, null); assert.ok(result.unresolved.includes('spectrum.servingE164'));
+  assert.equal(result.spectrum.servingE164, null); assert.ok(!result.unresolved.includes('spectrum.servingE164'));
   assert.equal(result.photon.authStatus, 'unsupported'); assert.ok(result.unresolved.includes('photon.identity'));
 });
 
@@ -446,3 +446,21 @@ test('private credential symlinks cannot redirect a renewed login outside runtim
   await assert.rejects(runFixture(f), {code:'SETUP_UNSAFE_ROOT'});
   assert.equal(readFileSync(outside, 'utf8'), before); assert.equal(f.events().length, 0);
 });
+
+for (const mode of ['shared', 'dedicated']) test(`${mode} discovery handles missing serving metadata according to route requirements`, async t => {
+  const f = fixture(t, { users: [{ id: 'user-1', phoneNumber: '+14155550001' }],
+    lines: mode === 'dedicated' ? [{ id: 'line-1', platform: 'imessage' }] : [] });
+  const result = await runFixture(f);
+  assert.equal(result.status, mode === 'shared' ? 'discovered' : 'needs-input');
+  assert.equal(result.spectrum.servingE164, null);
+  assert.equal(result.unresolved.includes('spectrum.servingE164'), mode === 'dedicated');
+});
+
+for (const changes of [{ projects: [{ id: 'p1' }, { id: 'p2' }] }, { bots: [{ id: 'a1' }, { id: 'a2' }] }])
+  test('ambiguous one-command setup returns needs-input without creating authority', async t => {
+    const f = fixture(t, changes);
+    const result = await setupAndRun(f.options, f.services);
+    assert.equal(result.status, 'needs-input');
+    for (const name of ['configuration.json', 'local-token', 'state.sqlite', 'host.lock', 'runtime.sock'])
+      assert.equal(existsSync(join(f.options.installationRoot, 'runtime', name)), false, name);
+  });

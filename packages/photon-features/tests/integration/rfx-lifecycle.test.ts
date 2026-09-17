@@ -8,7 +8,7 @@ import { once } from "node:events";
 import { createConnection } from "node:net";
 import { setTimeout as delay } from "node:timers/promises";
 import { acquireHostOwnership, reconcileHostOwnership } from "../../src/host/owner-lock.js";
-import { loadProductionHostConfiguration } from "../../src/host/configuration.js";
+import { INSTALLATION_OWNER_EXPIRES_AT, loadProductionHostConfiguration } from "../../src/host/configuration.js";
 import { bootstrapOrValidateAuthority, configuredAuthority } from "../../src/host/authority.js";
 import { setupProductionInstallation, changeProductionActivation, validateProductionInstallation, processMain } from "../../src/host/process.js";
 import { supervisorGuidance } from "../../src/host/supervisor.js";
@@ -288,9 +288,12 @@ test("startup recovers a pending inbox event into one durable handoff across res
   }
 });
 
-test("setup CLI accepts prior activation authorization and prints supervisor guidance", async t => {
+test("setup CLI activates and attempts foreground startup; supervisor guidance remains available", async t => {
   const f = await fixture(t);
-  assert.equal(await processMain(["setup", "--installation-root", f.root, "--activate-after-validation"], f.releaseRoot), 0);
+  let starts = 0;
+  assert.equal(await processMain(["setup", "--installation-root", f.root, "--activate-after-validation"], f.releaseRoot,
+    { sdkFactory: async () => { starts++; throw new Error("OFFLINE_START_FAILURE"); } }), 1);
+  assert.equal(starts, 1);
   assert.equal((await loadProductionHostConfiguration(f.root)).activation, "enabled");
   assert.equal(await processMain(["supervisor", "--installation-root", f.root], f.releaseRoot), 0);
   assert.equal(await processMain(["reconcile", "--installation-root", f.root], f.releaseRoot), 0);
@@ -433,4 +436,18 @@ test("renewal safeguards: expired legacy authority is not auto-renewed or reseed
     assert.equal(store.transaction(tx => tx.get("handoffs", "retained-handoff"))?.state, "pending");
   } finally { store.close(); }
   assert.equal((await loadProductionHostConfiguration(f.root)).activation, "disabled");
+});
+
+test("permanent installation owner validates after 48 hours while finite legacy authority expires", async t => {
+  const f = await fixture(t);
+  const path = join(f.runtime, "configuration.json");
+  const legacy = JSON.parse(await readFile(path, "utf8"));
+  const now = Date.now();
+  const owner = { ...legacy, version: 3, ownerModel: "installation-owner", activateAfterValidation: false,
+    task: { ...legacy.task, issuedAt: now, expiresAt: INSTALLATION_OWNER_EXPIRES_AT } };
+  await writeFile(path, JSON.stringify(owner));
+  t.mock.method(Date, "now", () => now + 2 * 86_400_000);
+  assert.equal((await validateProductionInstallation(f.root, f.releaseRoot)).activation, "disabled");
+  await writeFile(path, JSON.stringify(legacy));
+  await assert.rejects(validateProductionInstallation(f.root, f.releaseRoot), /EXPIRED_TASK_BINDING/);
 });

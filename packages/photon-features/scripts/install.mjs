@@ -31,7 +31,8 @@ async function locked(root, task) {
       const s = await lstat(cfg); if (!s.isFile() || s.isSymbolicLink() || (s.mode & 0o077)) throw new Error('UNSAFE_CONFIGURATION');
       const config = JSON.parse(await readFile(cfg, 'utf8'));
       if (config.activation !== 'disabled') throw new Error('DEACTIVATION_REQUIRED');
-    } else await writeFile(cfg, JSON.stringify({ version: 1, activation: 'disabled' }) + '\n', { flag: 'wx', mode: 0o600 });
+    }
+    // Fresh installs have no configuration; setup creates the first real one.
     return await task();
   } finally { await lock.close(); await rm(lockPath); }
 }

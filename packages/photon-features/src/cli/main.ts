@@ -5,7 +5,7 @@ import { MAX_REQUEST_BYTES } from "../contracts/actions.js";
 import { executeCommand, setupCommandOptions } from "./commands.js";
 import { callRuntime } from "./local-client.js";
 import { discoverGrokCommandStyle } from "../host/grok-wake.js";
-import { setupDiscovery } from "./setup.js";
+import { setupAndRun } from "./setup.js";
 import { CliError, formatCommandResult, formatSetupResult } from "./output.js";
 export async function readJson(input: NodeJS.ReadableStream): Promise<unknown> {
   const chunks: Buffer[] = []; let size = 0;
@@ -22,7 +22,8 @@ export async function main(argv: string[] = process.argv.slice(2), env = process
   stdout: Pick<NodeJS.WriteStream, "write"> = process.stdout, stderr: Pick<NodeJS.WriteStream, "write"> = process.stderr): Promise<number> {
   try {
     if (argv[0] === "setup") {
-      const result = await setupDiscovery(setupCommandOptions(argv, env), { env, stderr, discoverGrokCommandStyle });
+      const result = await setupAndRun(setupCommandOptions(argv, env), { env, stderr, discoverGrokCommandStyle });
+      if (!result) return 0;
       const formatted = formatSetupResult(result);
       stdout.write(formatted.stdout);
       if (formatted.stderr) stderr.write(formatted.stderr);

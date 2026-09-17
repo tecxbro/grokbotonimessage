@@ -517,6 +517,15 @@
     {
       "path": "packages/photon-features/tests/lanes/wt-08/repair-media-import.test.ts",
       "purpose": "Completion regression or installed executable evidence for production wiring"
+    },
+    {
+      "path": "packages/photon-features/src/host/setup-configuration.ts",
+      "purpose": "Shared fresh owner configuration generation and exclusive persistence",
+      "symbols": [
+        "generateInitialOwnerConfiguration",
+        "writeInitialConfiguration",
+        "sharedLogicalLineId"
+      ]
     }
   ],
   "verifierRepairFiles": [
