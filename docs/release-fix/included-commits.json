@@ -76,6 +76,13 @@
       "reviewedCommit": "3f223bad52f8e17a22ec4a21c3df348f76bc18dd",
       "implementationCommit": "903041c0d468d74b72a23a364320b4020d8f2b86",
       "laneNote": "docs/release-fix/rfx-03-multi-conversation.md"
+    },
+    {
+      "lane": "RFX-08",
+      "branch": "codex/rfx-08-polls",
+      "reviewedCommit": "25b58bda4436ea4a592297d31e852eab6566bdc0",
+      "implementationCommit": "1d15daa32584991341f45930de12ebdffb64d241",
+      "laneNote": "docs/release-fix/RFX-08.md"
     }
   ],
   "pendingLanes": [
@@ -261,9 +268,9 @@
         "packages/photon-features/tests/lanes/wt-05/advanced-support.ts"
       ],
       "laneNote": "docs/release-fix/RFX-08.md",
-      "integrationStatus": "not-merged",
+      "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "testEvidence": "rfx08-focused",
       "postImplementationChanges": [
         "docs/release-fix/RFX-08.md"
       ]
