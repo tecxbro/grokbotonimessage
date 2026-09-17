@@ -280,3 +280,11 @@ Reviewed SHA: `59bf129238f0858fdc5644cce895bf71ad94e4c6`. Adopt the reviewed all
 - `packages/photon-features/src/cli/local-client.ts` — RFX-02: Adopt the reviewed allowlisted durable diagnostic in strict CLI handoff response validation. 29 tests passed, including SQLite restart, safe rebind, stale result fencing and production work retrieval. Covered by `rfx02-diagnostic` below.
 
 Command (pinned Node 24.13.0 / npm 10.9.2): `npm run photon:build && node --test --test-reporter=tap packages/photon-features/dist/tests/integration/rfx-wake-reliability.test.js packages/photon-features/dist/tests/integration/repair-production-journey.test.js`. Exit 0; tested HEAD `3a4bbb3726c739ca153baca25e5173e82c3b70b5` plus listed glue edits. Log: `.photon-local/rfx-00/rfx02-diagnostic.log`.
+
+## RFX-11 integration checkpoint
+
+Reviewed SHA: `9aea50ab2de1cd825909a61bf86e6d3b2fe0ffe1`. Resolve process.ts merge by retaining lifecycle ownership-before-validation with normalized v3 loading. Inject verified fake gateway style in lifecycle fixtures. 11 passed. Automatic authority renewal remains a substantive core-transition blocker returned by RFX-11, not a no-op success.
+
+- `packages/photon-features/tests/integration/rfx-lifecycle.test.ts` — RFX-11: Resolve process.ts merge by retaining lifecycle ownership-before-validation with normalized v3 loading. Inject verified fake gateway style in lifecycle fixtures. 11 passed. Automatic authority renewal remains a substantive core-transition blocker returned by RFX-11, not a no-op success. Covered by `rfx11-verified` below.
+
+Command (pinned Node 24.13.0 / npm 10.9.2): `npm run photon:build && node --test --test-reporter=tap packages/photon-features/dist/tests/integration/rfx-lifecycle.test.js`. Exit 0; tested HEAD `82611ab38b818e3f62bf221951a256a3ec30bbee` plus listed glue edits. Log: `.photon-local/rfx-00/rfx11-verified.log`.

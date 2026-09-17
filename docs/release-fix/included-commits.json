@@ -39,6 +39,13 @@
       "implementationCommit": "1589b7f23bce3b3fad1f7a3946053b3d27937433",
       "laneNote": "docs/release-fix/rfx-02-wake-reliability.md",
       "reason": "Persist bounded diagnostic under existing wake CAS; reviewed small follow-up."
+    },
+    {
+      "lane": "RFX-11",
+      "branch": "codex/rfx-11-lifecycle",
+      "reviewedCommit": "9aea50ab2de1cd825909a61bf86e6d3b2fe0ffe1",
+      "implementationCommit": "0f9e4db417c0011c308a5ba53f14860c9dc8f4ab",
+      "laneNote": "docs/release-fix/rfx-11-lifecycle.md"
     }
   ],
   "pendingLanes": [
@@ -292,9 +299,9 @@
         "packages/photon-features/tests/integration/rfx-lifecycle.test.ts"
       ],
       "laneNote": "docs/release-fix/rfx-11-lifecycle.md",
-      "integrationStatus": "not-merged",
+      "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "testEvidence": "rfx11-verified",
       "postImplementationChanges": [
         "docs/release-fix/rfx-11-lifecycle.md"
       ]

@@ -85,6 +85,7 @@ function host(t: Parameters<typeof privateTestRoot>[0], f: Awaited<ReturnType<ty
             stop: async () => { emit("sdk-stopping"); await new Promise(r => setTimeout(r, 100)); finish(); emit("sdk-stop");
               if (["stop-failure", "rollback-failure"].includes(${JSON.stringify(mode)})) throw new Error("OFFLINE_STOP_FAILURE"); } };
         },
+        grokCommandStyle: "gateway-flag",
         grokRunner: async () => { emit("wake"); return "failed"; }
       });
       emit("stopped");
