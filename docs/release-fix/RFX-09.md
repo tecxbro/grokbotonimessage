@@ -160,3 +160,11 @@ Local tests use fakes/captured contracts and local SQLite. No hosted CI, publica
 installation/activation, live Photon send, delivery/read or device evidence is claimed.
 The warm/module-restoration implementation is complete; full cold provider recovery
 and production capability wiring remain the explicit integration requests above.
+
+## Commit evidence
+
+Implementation and its tests: `d0c27bd18ebd4936fec1c68455ee29b4d6e9931d`.
+The final verification commands above ran against the exact implementation/test
+contents in that commit (before committing); this follow-up changes only this note.
+Integration should include that implementation commit plus this documentation-only
+follow-up. No push, merge, deployment or activation was performed by this lane.
