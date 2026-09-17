@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import {
   sameScope, type Action, type ExecutionServices, type OperationResult, type ResourceRef,
 } from "../../contracts/index.js";
+import { authorizedResource } from "../../runtime/core/conversation-routes.js";
 import { nativeSpace, requireNative, resolveReference, validatedMembers } from "./guards.js";
 import type { NativeBinding, NativeDispatch, NativeSpace } from "./sdk.js";
 
@@ -53,7 +54,14 @@ export async function createSpace(
     { phone: binding.phone },
   )), binding);
   requireNative(created.type === (members.length > 1 ? "group" : "dm"), "SCOPE_MISMATCH", "Created conversation type mismatch.");
-  result.references.push(register ? register(created, services) : remember("space", created.id, services, true));
+  const reference = register ? register(created, services) : remember("space", created.id, services, true);
+  // Creation grants follow-up use only through the exact persisted ownership row.
+  services.transactions.transaction(tx => {
+    requireNative(reference.kind === "space" && authorizedResource(tx, services.context, reference) &&
+      tx.get("references", reference.id)?.providerId === created.id,
+    "FORBIDDEN", "Created conversation ownership was not persisted.");
+  });
+  result.references.push(reference);
   if (action.arguments.name !== undefined)
     await dispatch(() => created.rename(action.arguments.name!));
 }

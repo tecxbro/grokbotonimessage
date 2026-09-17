@@ -74,6 +74,11 @@ export function sameScope(a: Scope, b: Scope): boolean {
     ["projectId", "provider", "accountId", "lineId", "spaceId"] as const
   ).every((k) => a[k] === b[k]);
 }
+/** Authenticated project/account/line identity, independent of conversation. */
+export function sameLineScope(a: Scope, b: Scope): boolean {
+  return (["projectId", "provider", "accountId", "lineId"] as const)
+    .every((key) => a[key] === b[key]);
+}
 /** Structural comparison only. WT-01 must resolve authoritative records before use. */
 export function assertScope(ref: ResourceRef, scope: Scope): void {
   if (!sameScope(ref.scope, scope)) throw new Error("SCOPE_MISMATCH");
