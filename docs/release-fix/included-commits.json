@@ -17,6 +17,13 @@
       "reviewedCommit": "59bf129238f0858fdc5644cce895bf71ad94e4c6",
       "implementationCommit": "d8c03433f922f243af30e89ea0bd79f074e41b42",
       "laneNote": "docs/release-fix/rfx-02-wake-reliability.md"
+    },
+    {
+      "lane": "RFX-04",
+      "branch": "codex/rfx-04-vm-bootstrap",
+      "reviewedCommit": "7247c799ea325d38ec685a653f9728c7f4ee8a94",
+      "implementationCommit": "e16664270856c106abc4c10c620e8e3752c9988e",
+      "laneNote": "docs/release-fix/rfx-04-vm-bootstrap.md"
     }
   ],
   "pendingLanes": [
@@ -109,9 +116,9 @@
         "packages/photon-features/tests/integration/rfx-vm-bootstrap.test.mjs"
       ],
       "laneNote": "docs/release-fix/rfx-04-vm-bootstrap.md",
-      "integrationStatus": "not-merged",
+      "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "testEvidence": "rfx04-focused",
       "postImplementationChanges": [
         "docs/release-fix/rfx-04-vm-bootstrap.md"
       ]

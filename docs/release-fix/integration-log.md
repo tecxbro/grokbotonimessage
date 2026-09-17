@@ -248,3 +248,10 @@ Reviewed SHA: `59bf129238f0858fdc5644cce895bf71ad94e4c6`. Wire the verified gate
 - `packages/photon-features/tests/lanes/wt-02/inbound.test.ts` — RFX-02: Wire the verified gateway style/help injection and actual target ID; adopt durable wake metadata in strict CLI responses and align retry fixtures to persisted deadlines. 97 passed. Durable diagnostic follow-up requested from owning RFX-02 task. Covered by `rfx02-focused-fixed` below.
 
 Command (pinned Node 24.13.0 / npm 10.9.2): `npm run photon:build && node --test --test-reporter=tap packages/photon-features/dist/tests/integration/rfx-wake-reliability.test.js packages/photon-features/dist/tests/lanes/wt-02/*.test.js packages/photon-features/dist/tests/integration/production-host.test.js packages/photon-features/dist/tests/integration/poll-answer-journey.test.js packages/photon-features/dist/tests/integration/repair-cards.test.js packages/photon-features/dist/tests/integration/repair-production-journey.test.js`. Exit 0; tested HEAD `d16a3fcfcab8c6a4c7bd0467c77c7f9dd25b397d` plus listed glue edits. Log: `.photon-local/rfx-00/rfx02-focused-fixed.log`.
+
+## RFX-04 integration checkpoint
+
+Reviewed SHA: `7247c799ea325d38ec685a653f9728c7f4ee8a94`. Merge reviewed VM discovery; 45 focused tests passed. Follow-up returned to RFX-04: authenticated CLI reuse currently invokes login unconditionally, and setup must return verified gateway invocation evidence.
+
+
+Command (pinned Node 24.13.0 / npm 10.9.2): `npm run photon:build && node --test --test-reporter=tap packages/photon-features/tests/integration/rfx-vm-bootstrap.test.mjs packages/photon-features/dist/tests/lanes/wt-08/*.test.js`. Exit 0; tested HEAD `876953e08b9cc35baaffb01241b5536e3e3c4505` plus listed glue edits. Log: `.photon-local/rfx-00/rfx04-focused.log`.
