@@ -275,8 +275,10 @@ export async function createProductionComposition(
   const providerRoutes = new ProviderContext(configuration.provider.projectId, [{
     accountId: configuration.provider.accountId,
     lineId: configuration.provider.lineId,
-    phone: configuration.provider.phone,
+    dedicated: configuration.provider.dedicated,
+    servingPhone: configuration.provider.phone,
   }]);
+  const providerRoutePhone = configuration.provider.dedicated ? configuration.provider.phone : "shared";
   const authority = configuredAuthority(configuration);
   const scope = authority.context.scope;
   const principal: AuthenticatedPrincipal = {
@@ -314,7 +316,7 @@ export async function createProductionComposition(
   const mediaProvider = async (trusted: TrustedContext) => {
     if (!sameScope(trusted.scope, scope)) throw new Error("SCOPE_MISMATCH");
     const provider = owner.provider();
-    return { scope, phone: configuration.provider.phone, conversationId: configuration.provider.conversationId,
+    return { scope, phone: providerRoutePhone, conversationId: configuration.provider.conversationId,
       provider, space: (reference: ResourceRef) => resources.space(reference, trusted),
       message: (reference: ResourceRef) => resources.message(reference, trusted) };
   };
@@ -329,7 +331,7 @@ export async function createProductionComposition(
     contexts,
     principal,
   });
-  const binding = () => ({ scope, phone: configuration.provider.phone, nativeSpaceId: configuration.provider.conversationId });
+  const binding = () => ({ scope, phone: providerRoutePhone, nativeSpaceId: configuration.provider.conversationId });
   const request = (action: Action, services: { context: TrustedContext }) => requestIdentity(action, services.context);
   const typing = new TypingLeases(
     { now },
@@ -352,13 +354,13 @@ export async function createProductionComposition(
   const typingBinding = new HostTypingBinding(claims, providerRoutes, {
     scope,
     conversationId: configuration.provider.conversationId,
-    phone: configuration.provider.phone,
+    phone: providerRoutePhone,
   });
   const publicTypingBind = (action: Extract<Action, { operation: "typing.begin" | "typing.end" }>,
     services: PublicExecutionServices) => typingBinding.bind(action, services);
   const legacyText = createTextMessageModule({ binding, requestId: request });
   const legacyMedia = createMediaModule({
-    bindings: async () => ({ scope, phone: configuration.provider.phone,
+    bindings: async () => ({ scope, phone: providerRoutePhone,
       conversationId: configuration.provider.conversationId, provider: owner.provider() }),
     voiceBehavior: "native",
   });
@@ -383,7 +385,7 @@ export async function createProductionComposition(
   const nativeDependencies = {
     registerCreatedSpaceForExecution: (space: import("../features/native/sdk.js").NativeSpace, services: PublicExecutionServices): ResourceRef => {
       services.assertActiveClaim();
-      if (space.phone !== configuration.provider.phone) throw new Error("SCOPE_MISMATCH");
+      if (space.phone !== providerRoutePhone) throw new Error("SCOPE_MISMATCH");
       const newScope = providerRoutes.inbound(space.phone, space.id);
       const reference: ResourceRef = { version: 1, kind: "space", id: newScope.spaceId, scope: newScope };
       store.transaction(tx => {
@@ -403,7 +405,7 @@ export async function createProductionComposition(
         metadata: { mimeType: image.mimeType, size: image.bytes.length } }, services.context),
     binding: async (trusted: TrustedContext) => {
       if (!sameScope(trusted.scope, scope)) throw new Error("SCOPE_MISMATCH");
-      return { scope, phone: configuration.provider.phone, dedicated: configuration.provider.dedicated,
+      return { scope, phone: providerRoutePhone, dedicated: configuration.provider.dedicated,
         accountReady: owner.ready(), availableOperations: configuration.provider.availableOperations,
         provider: owner.provider() };
     },
@@ -433,7 +435,7 @@ export async function createProductionComposition(
     resolveSpace: resources.space,
     binding: trusted => {
       if (!sameScope(trusted.scope, scope)) throw new Error("SCOPE_MISMATCH");
-      return { scope, phone: configuration.provider.phone, conversationId: configuration.provider.conversationId };
+      return { scope, phone: providerRoutePhone, conversationId: configuration.provider.conversationId };
     },
     ...(dependencies.pollManagement ? { management: dependencies.pollManagement } : {}),
   };

@@ -56,6 +56,7 @@ test('native lookup uses documented Space.getMessage and scoped imessage narrowi
     space: offline.space, content: {type: 'text', text: 'test'}, isDelivered: true, dateDelivered: new Date(200)} as unknown as Message;
   const owner = new SpectrumOwner({inbound: 'photon-stream', outbound: 'imessage', wake: 'existing-grok-task-handoff'}, routes,
     async () => ({messages: async function* () {}, space: async (id, route) => {
+      assert.ok(route, "dedicated fixture requires a route pin");
       selected.push(id, route.phone); return {getMessage: async (target: string) => {selected.push(target); return message;}} as Space;
     }, stop: async () => {}}));
   try {

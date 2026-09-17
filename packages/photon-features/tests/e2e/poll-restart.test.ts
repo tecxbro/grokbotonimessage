@@ -80,7 +80,7 @@ test('native add-option event creates one continuation without fabricating a vot
 
 test('missing vote correlation stays durable and unresolved across restart', async t => {
   const r=runtime();t.after(()=>r.close());
-  const routes=new ProviderContext('project-1',[{accountId:'account-1',lineId:'line-1',phone:'offline-line'}]);
+  const routes=new ProviderContext('project-1',[{accountId:'account-1',lineId:'line-1',dedicated: true, servingPhone:'offline-line'}]);
   const event=normalizeCaptured({id:'missing-vote',platform:'imessage',direction:'inbound',sender:{id:'voter-a'},
     space:{id:'offline-chat',platform:'imessage',phone:'offline-line'},
     content:{type:'poll_option',title:'Same',selected:true}},'capture-missing',routes,10000);

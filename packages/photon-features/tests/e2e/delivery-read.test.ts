@@ -145,7 +145,7 @@ test('pinned SDK exposes delivery as message metadata, not an invented delivered
   });
 
   const routes = new ProviderContext('project-1', [
-    { accountId: 'account-1', lineId: 'line-1', phone: 'offline-line' },
+    { accountId: 'account-1', lineId: 'line-1', dedicated: true, servingPhone: 'offline-line' },
   ]);
   const event = normalizeCaptured({
     id: 'provider-message-1',
@@ -162,7 +162,7 @@ test('actual inbound normalization and router dedupe receipts without conversati
   const r = runtime();
   t.after(() => r.close());
   const routes = new ProviderContext('project-1', [
-    { accountId: 'account-1', lineId: 'line-1', phone: 'offline-line' },
+    { accountId: 'account-1', lineId: 'line-1', dedicated: true, servingPhone: 'offline-line' },
   ]);
   const raw = {
     id: 'read-event-1',

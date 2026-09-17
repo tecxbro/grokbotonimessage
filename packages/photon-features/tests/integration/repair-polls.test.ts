@@ -180,7 +180,7 @@ test("production Spectrum snapshot becomes a conversational answer with optional
   const snapshot = snapshotMessage(message);
   assert.equal(JSON.stringify(snapshot).includes("optionIdentifier"), false);
   assert.equal(JSON.stringify(snapshot).includes("pollMessageGuid"), false);
-  const routes = new ProviderContext(scope.projectId, [{ accountId: scope.accountId, lineId: scope.lineId, phone: "line-phone" }]);
+  const routes = new ProviderContext(scope.projectId, [{ accountId: scope.accountId, lineId: scope.lineId, dedicated: true, servingPhone: "line-phone" }]);
   const conversational = normalizeCaptured(snapshot, "capture-1", routes, 10);
   assert.equal(conversational.type, "poll-answer");
   if (conversational.type !== "poll-answer") throw new Error("poll answer not normalized");
@@ -204,7 +204,7 @@ test("production Spectrum snapshot becomes a conversational answer with optional
 });
 
 test("conversational answers preserve deselection and explicit unknown question semantics", () => {
-  const routes = new ProviderContext(scope.projectId, [{ accountId: scope.accountId, lineId: scope.lineId, phone: "line-phone" }]);
+  const routes = new ProviderContext(scope.projectId, [{ accountId: scope.accountId, lineId: scope.lineId, dedicated: true, servingPhone: "line-phone" }]);
   const raw = {
     id: "vote-without-question", platform: "imessage", direction: "inbound",
     timestamp: new Date(2).toISOString(), sender: { id: "alice" },

@@ -6,7 +6,7 @@ import { ProviderContext } from '../../src/adapters/transport/provider-context.j
 import { runtime } from '../lanes/wt-09/harness.js';
 test('one host owner starts one SDK and rejects competing subscriptions',async()=>{
   let starts=0,stops=0,subscriptions=0;
-  const routes=new ProviderContext('project-1',[{accountId:'account-1',lineId:'line-1',phone:'fixture'}]);
+  const routes=new ProviderContext('project-1',[{accountId:'account-1',lineId:'line-1',dedicated: true, servingPhone:'fixture'}]);
   const owner=new SpectrumOwner({inbound:'photon-stream',outbound:'imessage',wake:'existing-grok-task-handoff'},routes,
     async()=>{starts++;return{messages:()=>{subscriptions++;return(async function*(){})();},space:async()=>{throw new Error('unused');},stop:async()=>{stops++;}};});
   await Promise.all([owner.start(),owner.start()]);assert.equal(starts,1);owner.stream('host');

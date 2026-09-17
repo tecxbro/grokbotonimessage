@@ -25,7 +25,7 @@ test('HMAC uses exact bytes and rejects missing, invalid, stale and future signa
 
 test('webhook awaits durable acceptance; database failure is 503 and alternate envelope is rejected', async t => {
   const r = runtime(); t.after(() => r.close());
-  const routes = new ProviderContext('project-1',[{accountId:'account-1',lineId:'line-1',phone:'offline-line'}]);
+  const routes = new ProviderContext('project-1',[{accountId:'account-1',lineId:'line-1',dedicated: true, servingPhone:'offline-line'}]);
   const owner = new SpectrumOwner({inbound:'photon-webhook',outbound:'imessage',wake:'existing-grok-task-handoff'}, routes,
     async () => ({messages: async function* () {}, space: async () => {throw new Error('offline');}, stop: async () => {}}));
   await owner.start(); t.after(() => owner.stop());

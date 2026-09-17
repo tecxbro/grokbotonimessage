@@ -80,7 +80,7 @@ export class HostTypingBinding {
     private readonly routes: ProviderContext,
     private readonly route: TypingRouteBinding,
   ) {
-    if (routes.outbound(route.scope, route.conversationId).phone !== route.phone)
+    if (!sameScope(routes.inbound(route.phone, route.conversationId), route.scope))
       fault("SCOPE_MISMATCH");
   }
 
@@ -305,10 +305,7 @@ export class HostTypingBinding {
       fault("SCOPE_MISMATCH");
     try {
       if (
-        this.routes.outbound(
-          binding.context.scope,
-          this.route.conversationId,
-        ).phone !== this.route.phone
+        !sameScope(this.routes.inbound(this.route.phone, this.route.conversationId), binding.context.scope)
       )
         fault("SCOPE_MISMATCH");
     } catch {

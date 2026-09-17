@@ -3,7 +3,15 @@
   "baseCommit": "b83e3afd7049a991de6daffedf831165890f0901",
   "integrationBranch": "codex/rfx-00-integration",
   "preflightHead": "ee867210952460113efdf09a1f5ea659079eb36e",
-  "includedCommits": [],
+  "includedCommits": [
+    {
+      "lane": "RFX-01",
+      "branch": "codex/rfx-01-shared-routing",
+      "reviewedCommit": "6c76d6537f6bf98a5603be8b6e0791bb5c67e2c9",
+      "implementationCommit": "ef607dd457515d9ea367d4c7bfa70935a9ae28ab",
+      "laneNote": "docs/release-fix/rfx-01-shared-routing.md"
+    }
+  ],
   "pendingLanes": [
     {
       "lane": "RFX-01",
@@ -19,9 +27,9 @@
         "packages/photon-features/tests/integration/rfx-shared-routing.test.ts"
       ],
       "laneNote": "docs/release-fix/rfx-01-shared-routing.md",
-      "integrationStatus": "not-merged",
+      "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "testEvidence": "rfx01-focused",
       "postImplementationChanges": [
         "docs/release-fix/rfx-01-shared-routing.md"
       ]

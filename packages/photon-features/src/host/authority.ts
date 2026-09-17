@@ -15,14 +15,14 @@ export function configuredAuthority(configuration: ProductionHostConfiguration):
   conversationId: string;
 } {
   const routes = new ProviderContext(configuration.provider.projectId, [{ accountId: configuration.provider.accountId,
-    lineId: configuration.provider.lineId, phone: configuration.provider.phone }]);
+    lineId: configuration.provider.lineId, dedicated: configuration.provider.dedicated, servingPhone: configuration.provider.phone }]);
   return {
     conversationId: configuration.provider.conversationId,
     context: {
       version: 1,
       contextId: configuration.task.contextId,
       principalId: configuration.local.principalId,
-      scope: routes.inbound(configuration.provider.phone, configuration.provider.conversationId),
+      scope: routes.inbound(configuration.provider.dedicated ? configuration.provider.phone : "shared", configuration.provider.conversationId),
       taskId: configuration.task.taskId,
       generation: configuration.task.generation,
       permissions: configuration.task.permissions,

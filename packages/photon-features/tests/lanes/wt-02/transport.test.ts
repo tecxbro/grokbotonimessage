@@ -41,7 +41,9 @@ function fakeSdk() {
       listeners++;
       return { async *[Symbol.asyncIterator]() {} };
     },
-    space: async (id, { phone }) => {
+    space: async (id, route) => {
+      assert.ok(route, "dedicated fixture requires a route pin");
+      const { phone } = route;
       selected.push({ id, phone });
       return space;
     },

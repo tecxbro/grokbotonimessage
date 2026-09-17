@@ -35,7 +35,7 @@ export async function lookupNativeMessageState(
     if (!message) return { status: "missing", reason: "target-not-found" };
     if (message.id !== target.providerTargetId || !imessage.is(message) ||
         message.space.id !== target.conversationId ||
-        imessage(message.space).phone !== owner.routes.outbound(target.scope, target.conversationId).phone)
+        scopeKey(owner.routes.inbound(imessage(message.space).phone, target.conversationId)) !== scopeKey(target.scope))
       throw new Error("NATIVE_TARGET_SCOPE_MISMATCH");
     return { status: "found", message: snapshotMessage(message) };
   })().catch((error: unknown): NativeState => ({

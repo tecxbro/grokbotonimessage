@@ -4,7 +4,7 @@ import { normalizeCaptured } from '../../src/runtime/inbound/normalize.js';
 import { InboundRouter } from '../../src/runtime/inbound/router.js';
 import { ProviderContext } from '../../src/adapters/transport/provider-context.js';
 import { runtime, context } from '../lanes/wt-09/harness.js';
-const routes = new ProviderContext('project-1',[{accountId:'account-1',lineId:'line-1',phone:'offline-line'}]);
+const routes = new ProviderContext('project-1',[{accountId:'account-1',lineId:'line-1',dedicated: true, servingPhone:'offline-line'}]);
 const raw = {id:'same-message',platform:'imessage',space:{id:'chat',platform:'imessage',phone:'offline-line'},direction:'inbound',sender:{id:'actor-1'}};
 
 test('attachment, vote/unvote, edit and read identities survive repeated message IDs', () => {

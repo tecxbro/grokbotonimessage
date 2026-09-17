@@ -61,7 +61,7 @@ async function fixture(t: TestContext) {
   const phone = "+15555550101";
   const conversationId = "conversation-1";
   const routes = new ProviderContext("project-1", [
-    { accountId: "account-1", lineId: "line-1", phone },
+    { accountId: "account-1", lineId: "line-1", dedicated: true, servingPhone: phone },
   ]);
   const scope = routes.inbound(phone, conversationId);
   const context: TrustedContext = {

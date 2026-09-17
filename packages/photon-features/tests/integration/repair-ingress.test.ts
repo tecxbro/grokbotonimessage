@@ -20,7 +20,7 @@ import { fixture, context, scope } from "../lanes/wt-01/fixture.js";
 
 const phone = "+15555550101";
 const routes = new ProviderContext(scope.projectId, [
-  { accountId: scope.accountId, lineId: scope.lineId, phone },
+  { accountId: scope.accountId, lineId: scope.lineId, dedicated: true, servingPhone: phone },
 ]);
 const inboundScope = routes.inbound(phone, scope.spaceId);
 const ingressContext = {

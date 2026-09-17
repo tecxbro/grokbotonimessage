@@ -6,8 +6,8 @@ import { FileCaptureStore } from "../../../src/adapters/transport/capture.js";
 import { normalizeCaptured } from "../../../src/runtime/inbound/normalize.js";
 import type { TimerPort } from "../../../src/runtime/typing/leases.js";
 export const routes = new ProviderContext("project-1", [
-  { accountId: "account-1", lineId: "line-1", phone: "+15555550101" },
-  { accountId: "account-2", lineId: "line-2", phone: "+15555550102" },
+  { accountId: "account-1", lineId: "line-1", dedicated: true, servingPhone: "+15555550101" },
+  { accountId: "account-2", lineId: "line-2", dedicated: true, servingPhone: "+15555550102" },
 ]);
 export const chat = "any;-;+15555550999";
 export const scope = routes.inbound("+15555550101", chat);
