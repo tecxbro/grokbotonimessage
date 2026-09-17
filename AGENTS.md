@@ -8,6 +8,20 @@ It is not a deployment or operating runbook. The assembled product's sole
 current deployment procedure is `packages/photon-features/DEPLOYMENT.md`; the
 installed Grok operating contract is `packages/photon-features/SKILL.md`.
 
+## Owner operation trigger
+
+If the owner says **“connect me to iMessage”** or makes an obviously equivalent
+request, this is an operating/deployment task, not a development assignment.
+Read and execute `CONNECT.md`, which routes that intent into
+`packages/photon-features/DEPLOYMENT.md` and the installed
+`packages/photon-features/SKILL.md`.
+
+For that explicit operating request, development-only restrictions below against
+installation, activation and live operation do not cancel the owner's request.
+The safeguards in `CONNECT.md`, the deployment runbook, current authorization
+and the installed skill still apply. Do not modify product source code merely to
+complete the connection request; report a real blocker instead.
+
 ## Isolation and ownership
 Repository of record: https://github.com/tecxbro/grokbotonimessage. Primary:
 `/Users/darshan/Documents/ChatGPT/grokbotonimessage/main`. WT-00 edits only its
