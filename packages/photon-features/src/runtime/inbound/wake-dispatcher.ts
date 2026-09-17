@@ -1,4 +1,4 @@
-import type { Clock, Scope, WakeAdapter } from "../../contracts/index.js";
+import { sameScope, type Clock, type Scope, type WakeAdapter } from "../../contracts/index.js";
 import type { ExistingGrokTaskHandoff } from "../../adapters/legacy/index.js";
 import type { TransactionStore } from "../../state/index.js";
 import { activeRoute, type TaskRoute } from "./router.js";
@@ -11,21 +11,35 @@ export class ExistingGrokWakeAdapter implements WakeAdapter {
     return { status: await this.existing.notifyExistingTask(pointer) };
   }
 }
+export const WAKE_RETRY_BASE_MS = 2_000;
+export const WAKE_RETRY_MAX_MS = 60_000;
+export const WAKE_ACCEPTED_QUIET_MS = 30_000;
+
+/** Delay following a one-based attempt. Clamp before exponentiation. */
+export function wakeRetryDelayMs(attempts: number): number {
+  if (!Number.isSafeInteger(attempts) || attempts < 1)
+    throw new Error("INVALID_WAKE_ATTEMPT");
+  return Math.min(WAKE_RETRY_MAX_MS, WAKE_RETRY_BASE_MS * 2 ** Math.min(attempts - 1, 5));
+}
+
+export interface WakeDispatchResult {
+  handoffId: string;
+  status: "accepted" | "failed" | "unknown";
+  diagnostic?: string;
+}
+
 export class WakeDispatcher {
   private running = false;
   constructor(
     private readonly store: TransactionStore,
     private readonly clock: Clock,
     private readonly wakeAdapter: WakeAdapter,
+    /** Deployment should bind the actual gateway agent; legacy callers use task identity. */
+    private readonly targetId?: string,
   ) {}
-  /** Retry on host scheduler ticks. Durable pending/expired claims are the retry
-   * ledger; acceptance alone never marks work acknowledged. Adapter must dedupe by ID. */
-  async tick(
-    scope: Scope,
-    route: TaskRoute,
-  ): Promise<
-    { handoffId: string; status: "accepted" | "failed" | "unknown" }[]
-  > {
+  /** Reserve durably before notifying. A crashed or uncertain call stays throttled;
+   * acceptance is only a pointer receipt, never work acknowledgement. */
+  async tick(scope: Scope, route: TaskRoute): Promise<WakeDispatchResult[]> {
     if (this.running) return [];
     this.running = true;
     try {
@@ -41,26 +55,71 @@ export class WakeDispatcher {
             )
           : [],
       );
-      const results = [];
+      const results: WakeDispatchResult[] = [];
       for (const row of rows) {
-        const valid = this.store.transaction((tx) => {
+        const reserved = this.store.transaction((tx) => {
           const current = tx.get("handoffs", row.id);
-          return (
-            activeRoute(tx, scope, route) && current?.revision === row.revision
-          );
+          const now = this.clock.now();
+          if (!current || !activeRoute(tx, scope, route) ||
+              !sameScope(current.scope, scope) ||
+              current.taskId !== route.taskId || current.generation !== route.generation ||
+              current.principalId !== route.principalId ||
+              !(current.state === "pending" ||
+                current.state === "claimed" && current.claim && current.claim.leaseUntil <= now) ||
+              current.claim && current.claim.leaseUntil > now ||
+              current.wake && current.wake.nextAttemptAt > now) return;
+          const attempts = (current.wake?.attempts ?? 0) + 1;
+          const next = {
+            ...current,
+            revision: current.revision + 1,
+            wake: {
+              targetId: this.targetId ?? route.taskId,
+              attempts,
+              lastAttemptAt: now,
+              nextAttemptAt: now + wakeRetryDelayMs(attempts),
+              // A crash after reservation cannot be mistaken for prior acceptance.
+              lastStatus: null,
+            },
+          };
+          tx.put("handoffs", next, current.revision);
+          return next;
         });
-        if (!valid) continue;
-        let status: "accepted" | "failed" | "unknown" = "unknown";
+        if (!reserved) continue;
+        let status: WakeDispatchResult["status"] = "unknown";
+        let diagnostic: string | undefined;
         try {
           ({ status } = await this.wakeAdapter.wake({
-            handoffId: row.id,
-            taskId: row.taskId,
-            generation: row.generation,
+            handoffId: reserved.id,
+            taskId: reserved.taskId,
+            generation: reserved.generation,
           }));
-        } catch {
+        } catch (error) {
           status = "failed";
+          // Only fixed public diagnostics cross this boundary; never stderr/prompts.
+          if (error instanceof Error && ["GROK_WAKE_TARGET_UNAVAILABLE",
+            "GROK_WAKE_COMMAND_STYLE_UNAVAILABLE"].includes(error.message))
+            diagnostic = error.message;
         }
-        results.push({ handoffId: row.id, status });
+        this.store.transaction((tx) => {
+          const current = tx.get("handoffs", reserved.id);
+          if (!current || current.revision !== reserved.revision ||
+              current.wake?.attempts !== reserved.wake.attempts ||
+              current.wake.targetId !== reserved.wake.targetId ||
+              !activeRoute(tx, scope, route)) return;
+          tx.put("handoffs", {
+            ...current,
+            revision: current.revision + 1,
+            wake: {
+              ...current.wake,
+              lastStatus: status,
+              // A slow call must also leave a quiet period after its result.
+              nextAttemptAt: Math.max(current.wake.nextAttemptAt, this.clock.now() +
+                Math.max(wakeRetryDelayMs(current.wake.attempts),
+                  status === "accepted" ? WAKE_ACCEPTED_QUIET_MS : 0)),
+            },
+          }, current.revision);
+        });
+        results.push({ handoffId: reserved.id, status, ...(diagnostic ? { diagnostic } : {}) });
       }
       return results;
     } finally {

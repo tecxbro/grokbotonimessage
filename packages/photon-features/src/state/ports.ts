@@ -68,6 +68,15 @@ export interface HandoffRecord extends StoredRecord {
   state: "pending" | "claimed" | "acknowledged" | "cancelled";
   claim: Claim | null;
   createdAt: number;
+  /** Notification ledger only; acceptance never claims or acknowledges user work.
+   * Optional so pre-existing handoff JSON remains readable without migration. */
+  wake?: {
+    targetId: string;
+    attempts: number;
+    lastAttemptAt: number | null;
+    nextAttemptAt: number;
+    lastStatus: "accepted" | "failed" | "unknown" | null;
+  };
 }
 export interface OutboxRecord extends StoredRecord {
   action: Action;

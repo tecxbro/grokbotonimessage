@@ -39,7 +39,12 @@ test('shared SQLite handoff is committed before wake and failed wakes retry by d
     }});
     const dispatcher = new WakeDispatcher(f.store, f.clock, wake);
     assert.equal((await dispatchWake(dispatcher, scope, taskRoute))[0]!.status, 'failed');
+    f.clock.advance(1000);
+    assert.deepEqual(await dispatchWake(dispatcher, scope, taskRoute), []);
+    f.clock.advance(1000);
     assert.equal((await dispatchWake(dispatcher, scope, taskRoute))[0]!.status, 'accepted');
+    f.clock.advance(1000);
+    assert.deepEqual(await dispatchWake(dispatcher, scope, taskRoute), []);
     assert.equal(f.store.transaction(tx => tx.get('handoffs', id!)!.state), 'pending');
     assert.equal(f.store.transaction(tx => tx.listWork(scope, taskRoute.principalId, taskRoute.taskId, 1, f.clock.now(), 10))[0]!.id, id);
     assert.throws(() => configuredGrokWake(), /GROK_WAKE_NOT_CONFIGURED/);
