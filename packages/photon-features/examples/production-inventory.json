@@ -1,6 +1,24 @@
 {
-  "version": 1,
+  "version": 2,
   "sdkVersion": "12.8.0",
+  "inventoryKind": "source-prerequisites",
+  "accountModes": {
+    "shared": {
+      "directMessages": true,
+      "groupCreation": false,
+      "inboundGroupEvents": false
+    },
+    "dedicated": {
+      "directMessages": true,
+      "groupCreation": true,
+      "inboundGroupEvents": true
+    }
+  },
+  "capabilityEvidence": {
+    "state": "capability-state/v1",
+    "note": "capability-note/v1",
+    "encoding": "JSON in evidence.reference; sdk-contract tier means local evaluation, not execution proof"
+  },
   "operations": [
     {
       "operation": "typing.begin",
@@ -18,7 +36,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -31,7 +50,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "typing.end",
@@ -49,7 +83,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -62,7 +97,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "text.send",
@@ -80,7 +130,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -93,7 +144,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "text.stream",
@@ -111,7 +177,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
         "authorized stream.open/append/close producer; complete thoughts; 30s lifetime/5s stall/8192 queued bytes; no restart replay"
       ],
       "requiredResourceReferences": [
@@ -126,7 +193,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "markdown.send",
@@ -144,7 +226,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -157,7 +240,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "link.send",
@@ -175,7 +273,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -188,7 +287,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "content.group",
@@ -206,7 +320,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -219,7 +334,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "content.compose",
@@ -237,7 +367,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -250,7 +381,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "message.get",
@@ -268,7 +414,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "message"
@@ -281,7 +428,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "message.reply",
@@ -299,7 +461,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "message"
@@ -312,7 +475,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "message.react",
@@ -330,7 +508,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "message"
@@ -343,7 +522,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "reaction.remove",
@@ -361,7 +555,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "reaction"
@@ -374,9 +569,25 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": [
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": [
         {
-          "kind": "missing-public-sdk-surface",
+          "kind": "request-resource",
+          "when": "original reaction content handle is unavailable",
           "detail": "Warm owner SDK cache supplies the real reaction handle. After cold lookup Spectrum retains reactionRecord metadata but rebuilds text content; native reaction removal requires a real reaction content handle. No cast or re-send is permitted."
         }
       ]
@@ -397,7 +608,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "message"
@@ -410,7 +622,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "message.unsend",
@@ -428,7 +655,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "message"
@@ -441,7 +669,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "message.markRead",
@@ -459,7 +702,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "message"
@@ -472,7 +716,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "attachment.send",
@@ -490,7 +749,9 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "media staging binding for this request; text-only composition does not require it"
       ],
       "requiredResourceReferences": [
         "space",
@@ -504,7 +765,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "attachment.fetch",
@@ -522,7 +798,9 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "media staging binding for this request; text-only composition does not require it"
       ],
       "requiredResourceReferences": [
         "attachment"
@@ -535,7 +813,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "voice.send",
@@ -553,7 +846,9 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "media staging binding for this request; text-only composition does not require it"
       ],
       "requiredResourceReferences": [
         "space",
@@ -567,7 +862,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "contact.send",
@@ -585,7 +895,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -598,7 +909,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "poll.create",
@@ -616,7 +942,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -629,13 +956,28 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "poll.get",
       "handler": "src/features/polls/module.ts",
       "implementationFile": "src/features/polls/operations.ts",
-      "sdkCall": "PollManagement.get: NO PUBLIC SHARED-OWNER SDK IMPLEMENTATION",
+      "sdkCall": "host-bound PollManagement.get",
       "productionDependencies": [
         "spectrum-ts@12.8.0",
         "zod@4.5.4",
@@ -647,7 +989,9 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "actual approved shared-owner poll-management binding; absence blocks management only"
       ],
       "requiredResourceReferences": [
         "poll"
@@ -657,13 +1001,29 @@
         "registration": "registered",
         "unit": "tests/lanes/wt-05/ (executed by photon:test:integration)",
         "sdkContract": "tests/lanes/wt-05/sdk-contract.test.ts (public contract; fixtures do not prove provider)",
-        "productionIntegration": "injected-management tests only; normal startup explicitly unavailable",
+        "productionIntegration": "injected-management tests; normal startup must supply the actual management binding before advertising readiness",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": [
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "unimplemented",
+        "implemented": false,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": [
         {
-          "kind": "missing-public-sdk-surface",
-          "detail": "spectrum-ts/providers/imessage public PlatformInstance exposes no polls or client; latest registry version remains 12.8.0. Optional tests inject PollManagement, normal startup cannot construct it."
+          "kind": "host-binding",
+          "when": "approved poll-management binding is absent",
+          "detail": "Requires the actual shared-owner PollManagement dependency. Registration and provider support do not establish host wiring."
         }
       ]
     },
@@ -671,7 +1031,7 @@
       "operation": "poll.vote",
       "handler": "src/features/polls/module.ts",
       "implementationFile": "src/features/polls/operations.ts",
-      "sdkCall": "PollManagement.vote: NO PUBLIC SHARED-OWNER SDK IMPLEMENTATION",
+      "sdkCall": "host-bound PollManagement.vote",
       "productionDependencies": [
         "spectrum-ts@12.8.0",
         "zod@4.5.4",
@@ -683,7 +1043,9 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "actual approved shared-owner poll-management binding; absence blocks management only"
       ],
       "requiredResourceReferences": [
         "poll",
@@ -694,13 +1056,29 @@
         "registration": "registered",
         "unit": "tests/lanes/wt-05/ (executed by photon:test:integration)",
         "sdkContract": "tests/lanes/wt-05/sdk-contract.test.ts (public contract; fixtures do not prove provider)",
-        "productionIntegration": "injected-management tests only; normal startup explicitly unavailable",
+        "productionIntegration": "injected-management tests; normal startup must supply the actual management binding before advertising readiness",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": [
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "unimplemented",
+        "implemented": false,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": [
         {
-          "kind": "missing-public-sdk-surface",
-          "detail": "spectrum-ts/providers/imessage public PlatformInstance exposes no polls or client; latest registry version remains 12.8.0. Optional tests inject PollManagement, normal startup cannot construct it."
+          "kind": "host-binding",
+          "when": "approved poll-management binding is absent",
+          "detail": "Requires the actual shared-owner PollManagement dependency. Registration and provider support do not establish host wiring."
         }
       ]
     },
@@ -708,7 +1086,7 @@
       "operation": "poll.unvote",
       "handler": "src/features/polls/module.ts",
       "implementationFile": "src/features/polls/operations.ts",
-      "sdkCall": "PollManagement.unvote: NO PUBLIC SHARED-OWNER SDK IMPLEMENTATION",
+      "sdkCall": "host-bound PollManagement.unvote",
       "productionDependencies": [
         "spectrum-ts@12.8.0",
         "zod@4.5.4",
@@ -720,7 +1098,9 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "actual approved shared-owner poll-management binding; absence blocks management only"
       ],
       "requiredResourceReferences": [
         "poll",
@@ -731,13 +1111,29 @@
         "registration": "registered",
         "unit": "tests/lanes/wt-05/ (executed by photon:test:integration)",
         "sdkContract": "tests/lanes/wt-05/sdk-contract.test.ts (public contract; fixtures do not prove provider)",
-        "productionIntegration": "injected-management tests only; normal startup explicitly unavailable",
+        "productionIntegration": "injected-management tests; normal startup must supply the actual management binding before advertising readiness",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": [
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "unimplemented",
+        "implemented": false,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": [
         {
-          "kind": "missing-public-sdk-surface",
-          "detail": "spectrum-ts/providers/imessage public PlatformInstance exposes no polls or client; latest registry version remains 12.8.0. Optional tests inject PollManagement, normal startup cannot construct it."
+          "kind": "host-binding",
+          "when": "approved poll-management binding is absent",
+          "detail": "Requires the actual shared-owner PollManagement dependency. Registration and provider support do not establish host wiring."
         }
       ]
     },
@@ -745,7 +1141,7 @@
       "operation": "poll.addOption",
       "handler": "src/features/polls/module.ts",
       "implementationFile": "src/features/polls/operations.ts",
-      "sdkCall": "PollManagement.addOption: NO PUBLIC SHARED-OWNER SDK IMPLEMENTATION",
+      "sdkCall": "host-bound PollManagement.addOption",
       "productionDependencies": [
         "spectrum-ts@12.8.0",
         "zod@4.5.4",
@@ -757,7 +1153,9 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "actual approved shared-owner poll-management binding; absence blocks management only"
       ],
       "requiredResourceReferences": [
         "poll"
@@ -767,13 +1165,29 @@
         "registration": "registered",
         "unit": "tests/lanes/wt-05/ (executed by photon:test:integration)",
         "sdkContract": "tests/lanes/wt-05/sdk-contract.test.ts (public contract; fixtures do not prove provider)",
-        "productionIntegration": "injected-management tests only; normal startup explicitly unavailable",
+        "productionIntegration": "injected-management tests; normal startup must supply the actual management binding before advertising readiness",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": [
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "unimplemented",
+        "implemented": false,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": [
         {
-          "kind": "missing-public-sdk-surface",
-          "detail": "spectrum-ts/providers/imessage public PlatformInstance exposes no polls or client; latest registry version remains 12.8.0. Optional tests inject PollManagement, normal startup cannot construct it."
+          "kind": "host-binding",
+          "when": "approved poll-management binding is absent",
+          "detail": "Requires the actual shared-owner PollManagement dependency. Registration and provider support do not establish host wiring."
         }
       ]
     },
@@ -781,7 +1195,7 @@
       "operation": "app.send",
       "handler": "src/features/cards/module.ts",
       "implementationFile": "src/features/cards/operations.ts",
-      "sdkCall": "app(HTTPS URL) -> space.send; configured signed-card-v1 URL/page backend",
+      "sdkCall": "app(HTTPS URL) -> space.send; static URL card; backend needed only for configured backend features",
       "productionDependencies": [
         "spectrum-ts@12.8.0",
         "zod@4.5.4",
@@ -789,12 +1203,13 @@
         "private shared SQLite and credential files"
       ],
       "startup": "bin/grok-photon-host -> host/process.ts -> createProductionComposition (no injected dependencies) -> one SpectrumOwner, shared resource ports and public feature factory",
-      "featureConstruction": "production.ts constructs SignedCardBackend and trusted template functions from JSON; process owns separate callback listener",
+      "featureConstruction": "production.ts constructs trusted templates and, when configured, SignedCardBackend; callback listener is separate",
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
-        "matching template ID/kind/HTTPS origin; customized: actual Apple identifiers; universal updates: cardBackend signed-card-v1; callbacks: separately enrolled participant public keys"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "matching template ID/kind/HTTPS origin; static app.send needs no live extension; customized requires actual Apple identifiers; requested live rendering requires extension evidence; universal layout updates require a bound backend; callbacks require a separate enrolled backend contract"
       ],
       "requiredResourceReferences": [
         "space"
@@ -807,7 +1222,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "app.sendCustomized",
@@ -821,12 +1251,13 @@
         "private shared SQLite and credential files"
       ],
       "startup": "bin/grok-photon-host -> host/process.ts -> createProductionComposition (no injected dependencies) -> one SpectrumOwner, shared resource ports and public feature factory",
-      "featureConstruction": "production.ts constructs SignedCardBackend and trusted template functions from JSON; process owns separate callback listener",
+      "featureConstruction": "production.ts constructs trusted templates and, when configured, SignedCardBackend; callback listener is separate",
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
-        "matching template ID/kind/HTTPS origin; customized: actual Apple identifiers; universal updates: cardBackend signed-card-v1; callbacks: separately enrolled participant public keys"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "matching template ID/kind/HTTPS origin; static app.send needs no live extension; customized requires actual Apple identifiers; requested live rendering requires extension evidence; universal layout updates require a bound backend; callbacks require a separate enrolled backend contract"
       ],
       "requiredResourceReferences": [
         "space"
@@ -839,7 +1270,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "app.update",
@@ -853,12 +1299,13 @@
         "private shared SQLite and credential files"
       ],
       "startup": "bin/grok-photon-host -> host/process.ts -> createProductionComposition (no injected dependencies) -> one SpectrumOwner, shared resource ports and public feature factory",
-      "featureConstruction": "production.ts constructs SignedCardBackend and trusted template functions from JSON; process owns separate callback listener",
+      "featureConstruction": "production.ts constructs trusted templates and, when configured, SignedCardBackend; callback listener is separate",
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
-        "matching template ID/kind/HTTPS origin; customized: actual Apple identifiers; universal updates: cardBackend signed-card-v1; callbacks: separately enrolled participant public keys"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "matching template ID/kind/HTTPS origin; static app.send needs no live extension; customized requires actual Apple identifiers; requested live rendering requires extension evidence; universal layout updates require a bound backend; callbacks require a separate enrolled backend contract"
       ],
       "requiredResourceReferences": [
         "card",
@@ -872,9 +1319,25 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": [
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": [
         {
-          "kind": "missing-public-sdk-surface",
+          "kind": "request-resource",
+          "when": "original SDK card session or admission revision is unavailable",
           "detail": "Cold original-card SDK session restoration unavailable. Checkpoints restore callback state only; update after restart blocks without a replacement bubble."
         }
       ]
@@ -895,7 +1358,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -908,7 +1372,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.create",
@@ -926,9 +1405,10 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
         "exact administrativeOperations grant; membership/create require explicit allowedRecipients",
-        "new chat reference grants no follow-up context; current release has only one configured route"
+        "shared Free/Pro supports DM creation only; multiple members require dedicated mode; new reference does not itself grant a follow-up context"
       ],
       "requiredResourceReferences": [],
       "launcher": "bin/grok-photon-task --installation-root ROOT --task-id TASK --generation N execute --json-stdin; scoped capabilities/status/cancel use same launcher",
@@ -939,7 +1419,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.getName",
@@ -957,7 +1452,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -970,7 +1466,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.rename",
@@ -988,7 +1499,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
         "exact administrativeOperations grant; membership/create require explicit allowedRecipients"
       ],
       "requiredResourceReferences": [
@@ -1002,7 +1514,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.getMembers",
@@ -1020,7 +1547,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -1033,7 +1561,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.addMembers",
@@ -1051,7 +1594,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
         "exact administrativeOperations grant; membership/create require explicit allowedRecipients"
       ],
       "requiredResourceReferences": [
@@ -1065,7 +1609,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.removeMembers",
@@ -1083,7 +1642,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
         "exact administrativeOperations grant; membership/create require explicit allowedRecipients"
       ],
       "requiredResourceReferences": [
@@ -1097,7 +1657,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.leave",
@@ -1115,7 +1690,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
         "exact administrativeOperations grant; membership/create require explicit allowedRecipients"
       ],
       "requiredResourceReferences": [
@@ -1129,7 +1705,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.getAvatar",
@@ -1147,7 +1738,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "space"
@@ -1160,7 +1752,22 @@
         "productionIntegration": "tests/helpers/completion-installed-runner.mjs: fresh artifact + actual adapter + controlled gRPC/HTTP boundary",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.setAvatar",
@@ -1178,8 +1785,10 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
-        "exact administrativeOperations grant; membership/create require explicit allowedRecipients"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "exact administrativeOperations grant; membership/create require explicit allowedRecipients",
+        "media staging binding for this request; text-only composition does not require it"
       ],
       "requiredResourceReferences": [
         "space",
@@ -1193,7 +1802,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.clearAvatar",
@@ -1211,7 +1835,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
         "exact administrativeOperations grant; membership/create require explicit allowedRecipients"
       ],
       "requiredResourceReferences": [
@@ -1225,7 +1850,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.setBackground",
@@ -1243,8 +1883,10 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
-        "exact administrativeOperations grant; membership/create require explicit allowedRecipients"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
+        "exact administrativeOperations grant; membership/create require explicit allowedRecipients",
+        "media staging binding for this request; text-only composition does not require it"
       ],
       "requiredResourceReferences": [
         "space",
@@ -1258,7 +1900,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "space.clearBackground",
@@ -1276,7 +1933,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
         "exact administrativeOperations grant; membership/create require explicit allowedRecipients"
       ],
       "requiredResourceReferences": [
@@ -1290,7 +1948,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "account.shareContact",
@@ -1308,7 +1981,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
         "exact administrativeOperations grant; membership/create require explicit allowedRecipients"
       ],
       "requiredResourceReferences": [
@@ -1322,7 +1996,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "effect.send",
@@ -1340,7 +2029,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
         "allowNativeContent; compilers authorize nested content"
       ],
       "requiredResourceReferences": [
@@ -1354,7 +2044,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "metadata.get",
@@ -1372,7 +2077,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone"
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope"
       ],
       "requiredResourceReferences": [
         "message"
@@ -1385,7 +2091,22 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     },
     {
       "operation": "custom.send",
@@ -1403,7 +2124,8 @@
       "prerequisites": [
         "provider.availableOperations AND task.permissions include this operation",
         "active durable context with exact project/account/line/conversation/task/generation",
-        "existing configured Spectrum account/serving phone",
+        "owner ready AND actual shared/dedicated route ready",
+        "registered handler AND declared implementation; required resource references resolve in this scope",
         "only native-account-contact-v1 codec; actual card resource from template of that ID; account.shareContact permission and intent; allowNativeContent"
       ],
       "requiredResourceReferences": [
@@ -1418,8 +2140,23 @@
         "productionIntegration": "production construction inspected; existing lane/production composition tests; no dedicated installed operation journey",
         "live": "PENDING: no live external messages authorized"
       },
-      "blockers": []
+      "state": {
+        "handlerRegistered": true,
+        "implementation": "implemented",
+        "implemented": true,
+        "configured": "not-evaluated",
+        "runtimeReady": "not-evaluated",
+        "providerAccepted": "not-observed",
+        "deviceObserved": "not-observed",
+        "liveVerified": false
+      },
+      "verificationNotes": [
+        "Source inventory only; runtime dependencies and action resources must be evaluated by productionCapability.",
+        "Provider acceptance, device observation and live verification require separate scoped evidence."
+      ],
+      "blockers": [],
+      "conditionalBlockers": []
     }
   ],
-  "releaseGate": "BLOCKED: four poll operations, cold card restoration and cold reaction-handle restoration require an upstream public API; approved artifact and target/live evidence remain separate."
+  "releaseGate": "NOT_EVALUATED: runtime bindings, request resources, approved artifact and target/live evidence require independent verification."
 }
