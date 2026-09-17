@@ -99,3 +99,5 @@ Ignored detailed logs: `.photon-local/rfx-07/final-focused.log`, `final-integrat
 - `packages/photon-features/src/host/capabilities.ts`: SHA-256 `5496259055478d0a0a01299af02a6b2a655946ce8c92af0fe9104af2f941c546`.
 - `packages/photon-features/src/host/configuration-inventory.ts`: SHA-256 `56a39c8bc3d87a8d32e1a51df23340fcdd39585f727b4a953382007b217ef891`.
 - `packages/photon-features/tests/integration/rfx-capability-truth.test.ts`: SHA-256 `75689087b2c8016ac7b16b217e41308eb6b1db258a8c8762179b4744477e63a8`.
+
+Implementation commit: `8f51e364acb5cb9f35736da263a31b2e4372a630`. All five implementation/test/generated file hashes match the tested content above. The subsequent documentation-only commit records this exact existing SHA; it makes no implementation changes.
