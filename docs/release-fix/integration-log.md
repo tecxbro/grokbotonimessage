@@ -272,3 +272,11 @@ Reviewed SHA: `f07cf5973b9c11a9deccc4a19f87bbe7092b1cea`. Adopt normalized v3 co
 - `packages/photon-features/tests/integration/rfx-shared-routing.test.ts` — RFX-05: Adopt normalized v3 configuration and private secret descriptors in host/launcher/authority; preserve activation version and legacy credential boundaries. Optional shared serving metadata stays separate from route identity; native conversation remains required until authenticated resolution. Generated v3 schema is synchronized. 34 tests passed. Covered by `rfx05-wiring-verified` below.
 
 Command (pinned Node 24.13.0 / npm 10.9.2): `node packages/photon-features/scripts/generate-configuration.mjs --profiles && node --test --test-reporter=tap packages/photon-features/tests/integration/completion-configuration.test.mjs packages/photon-features/dist/tests/integration/rfx-shared-routing.test.js packages/photon-features/dist/tests/integration/production-authority.test.js packages/photon-features/dist/tests/integration/production-host.test.js`. Exit 0; tested HEAD `768e31bbbc13498d3294bf2b1351c3e213be3bfb` plus listed glue edits. Log: `.photon-local/rfx-00/rfx05-wiring-verified.log`.
+
+## RFX-02 integration checkpoint
+
+Reviewed SHA: `59bf129238f0858fdc5644cce895bf71ad94e4c6`. Adopt the reviewed allowlisted durable diagnostic in strict CLI handoff response validation. 29 tests passed, including SQLite restart, safe rebind, stale result fencing and production work retrieval.
+
+- `packages/photon-features/src/cli/local-client.ts` — RFX-02: Adopt the reviewed allowlisted durable diagnostic in strict CLI handoff response validation. 29 tests passed, including SQLite restart, safe rebind, stale result fencing and production work retrieval. Covered by `rfx02-diagnostic` below.
+
+Command (pinned Node 24.13.0 / npm 10.9.2): `npm run photon:build && node --test --test-reporter=tap packages/photon-features/dist/tests/integration/rfx-wake-reliability.test.js packages/photon-features/dist/tests/integration/repair-production-journey.test.js`. Exit 0; tested HEAD `3a4bbb3726c739ca153baca25e5173e82c3b70b5` plus listed glue edits. Log: `.photon-local/rfx-00/rfx02-diagnostic.log`.

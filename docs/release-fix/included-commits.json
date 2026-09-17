@@ -31,6 +31,14 @@
       "reviewedCommit": "f07cf5973b9c11a9deccc4a19f87bbe7092b1cea",
       "implementationCommit": "54f90b99e2a325759b52639bca8c43716850f7e7",
       "laneNote": "docs/release-fix/rfx-05-config-simplify.md"
+    },
+    {
+      "lane": "RFX-02",
+      "branch": "codex/rfx-02-wake-reliability",
+      "reviewedCommit": "74c7d9c265e0267cc13faee0a18410f3718fe44f",
+      "implementationCommit": "1589b7f23bce3b3fad1f7a3946053b3d27937433",
+      "laneNote": "docs/release-fix/rfx-02-wake-reliability.md",
+      "reason": "Persist bounded diagnostic under existing wake CAS; reviewed small follow-up."
     }
   ],
   "pendingLanes": [
@@ -74,7 +82,7 @@
       "laneNote": "docs/release-fix/rfx-02-wake-reliability.md",
       "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "rfx02-focused-fixed",
+      "testEvidence": "rfx02-diagnostic",
       "postImplementationChanges": [
         "docs/release-fix/rfx-02-wake-reliability.md"
       ]

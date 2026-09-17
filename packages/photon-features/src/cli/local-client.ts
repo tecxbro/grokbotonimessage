@@ -22,7 +22,8 @@ const count = z.number().int().nonnegative();
 const handoff = z.strictObject({ id: idSchema, scope: scopeSchema, revision: count, taskId: idSchema,
   generation: count, principalId: idSchema, eventIds: z.array(idSchema),
   wake: z.strictObject({ targetId: z.string().min(1), attempts: count.min(1), lastAttemptAt: count.nullable(),
-    nextAttemptAt: count, lastStatus: z.enum(["accepted", "failed", "unknown"]).nullable() }).optional(), state: z.enum(["pending", "claimed", "acknowledged", "cancelled"]),
+    nextAttemptAt: count, lastStatus: z.enum(["accepted", "failed", "unknown"]).nullable(),
+    diagnostic: z.enum(["GROK_WAKE_TARGET_UNAVAILABLE", "GROK_WAKE_COMMAND_STYLE_UNAVAILABLE"]).optional() }).optional(), state: z.enum(["pending", "claimed", "acknowledged", "cancelled"]),
   claim: z.strictObject({ owner: idSchema, leaseUntil: count, fence: count, generation: count }).nullable(), createdAt: count });
 const failure = z.strictObject({ version: z.literal(1), ok: z.literal(false), error: z.strictObject({ code: z.string().regex(/^[A-Z_]+$/).max(80), requestId: idSchema.optional() }) });
 export function validateResponse(input: unknown, request: LocalRequest): CliResponse {
