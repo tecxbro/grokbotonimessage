@@ -45,7 +45,7 @@ export class InboundPump {
           this.batcher.tick(scope);
           const dispatched = await this.wake.tick(scope, task);
           for (const result of dispatched)
-            if (result.status !== "accepted") this.report("WAKE_RETRY_PENDING");
+            if (result.status !== "accepted") this.report(result.diagnostic ?? "WAKE_RETRY_PENDING");
         } catch {
           this.report("INBOUND_RECOVERY_PENDING");
         }
