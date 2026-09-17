@@ -2,6 +2,12 @@
 
 This repository contains the deterministic Photon Feature Runtime for the Grok Bot cloud VM. Photon owns transport, durable inbox/outbox state and iMessage operations. Grok owns reasoning and bot-to-bot coordination. The legacy root `gbot`/`grok-bot` CLI has been removed; the supported command-line surface is the private `@grokbot/photon-features` workspace and its `grok-photon` tool.
 
+## Owner shortcut
+
+If the owner says **“connect me to iMessage”**, follow [`CONNECT.md`](CONNECT.md).
+
+That one request is the owner-facing bootstrap for the shipped product: use the deployment runbook, authenticate/configure Photon when required, discover and privately bind the current Grok Bot as the wake target, start the single shared runtime, then wait for the owner's first real inbound iMessage. Do not ask the owner for internal Grok Bot IDs or make them manually reproduce the deployment instructions.
+
 ## Grok bot topology
 
 The setup prompt creates or reuses three shallow Grok roles:
