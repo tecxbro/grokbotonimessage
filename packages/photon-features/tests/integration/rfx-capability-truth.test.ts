@@ -15,7 +15,7 @@ const space = { version: 1 as const, kind: "space" as const, id: scope.spaceId, 
 const message = { version: 1 as const, kind: "message" as const, id: "message-1", scope };
 const staticTemplate = { id: "static", kind: "universal" as const, origins: ["https://example.com"] };
 const configuration = productionHostConfigurationSchema.parse(JSON.parse(readFileSync(
-  "packages/photon-features/examples/configuration-input.json", "utf8")).configuration);
+  "packages/photon-features/examples/minimal-text.configuration.json", "utf8")));
 function inventory(patch: Partial<ProductionCapabilityInventory> = {}): ProductionCapabilityInventory {
   return { scope, ownerReady: true, configuredOperations: new Set(operations), registeredHandlers: new Set(operations),
     administrativeOperations: new Set(operations), allowNativeContent: true, configuredCardTemplates: 1,

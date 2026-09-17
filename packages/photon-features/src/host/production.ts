@@ -17,7 +17,7 @@ import type { FeatureModule } from "../contracts/feature.js";
 import type { LocalResponse } from "./protocol.js";
 import type { ExecutionServices as PublicExecutionServices } from "../contracts/services.js";
 import type { ResourceResolver } from "../contracts/ports.js";
-import { sameScope } from "../contracts/resources.js";
+import { resourceRefSchema, sameScope } from "../contracts/resources.js";
 import { registerFeatureModules } from "../registry/modules.js";
 import { createRuntimeHost, type LocalExecutor } from "./main.js";
 import { DurableSQLiteStore } from "../adapters/state/sqlite.js";
@@ -60,6 +60,7 @@ import { requireRoutedConfiguration, providerRoutePhone as configuredRoutePhone,
 import { readPrivateFile } from "./configuration.js";
 import { GrokGatewayTaskHandoff, type GrokCommandRunner, type GrokCommandStyle, type GrokHelpInspector } from "./grok-wake.js";
 import { bootstrapOrValidateAuthority, configuredAuthority } from "./authority.js";
+import type { Transaction } from "../state/ports.js";
 import type { BindExecutionResources } from "../runtime/core/execution-services.js";
 import { ProductionStreamRegistry } from "./stream-registry.js";
 import { ProductionResourcePorts } from "./resource-ports.js";
@@ -74,8 +75,8 @@ const adminOperations = new Set<Operation>([
   "space.setAvatar", "space.clearAvatar", "space.setBackground", "space.clearBackground", "account.shareContact",
 ]);
 
-function rowFor(store: DurableSQLiteStore, reference: ResourceRef, context: TrustedContext) {
-  const row = store.transaction(tx => tx.get("references", reference.id));
+function rowFor(store: DurableSQLiteStore, reference: ResourceRef, context: TrustedContext, tx?: Transaction) {
+  const row = tx ? tx.get("references", reference.id) : store.transaction(tx => tx.get("references", reference.id));
   if (!row || !sameScope(row.scope, context.scope) || !isDeepStrictEqual(row.reference, reference) ||
     row.ownedByPrincipalId !== context.principalId || row.taskId !== context.taskId ||
     row.generation !== context.generation || !row.providerId) throw new Error("RESOURCE_NOT_FOUND");
@@ -132,7 +133,7 @@ class ProductionLocalExecutor implements LocalExecutor {
     private readonly providerRoutes: ProviderContext,
     private readonly resources: ResourceResolver,
     private readonly bindResources: (requestId: string) => BindExecutionResources,
-    private readonly capability: (operation: Operation, context: TrustedContext, action?: Action) => Capability,
+    private readonly capability: (operation: Operation, context: TrustedContext, action?: Action, tx?: Transaction) => Capability,
     private readonly correlations: Correlations,
     private readonly captureProcessing: {
       owner: SpectrumOwner;
@@ -207,7 +208,7 @@ class ProductionLocalExecutor implements LocalExecutor {
             claims: this.claims,
             requestId: row.id,
             handler,
-            capability: (context, action) => this.capability(row.action.operation, context, action),
+            capability: (context, action, tx) => this.capability(row.action.operation, context, action, tx),
             resources: this.resources,
             bindResources: this.bindResources(row.id),
             onRunning: (requestId, abort) => {
@@ -512,11 +513,32 @@ export async function createProductionComposition(
   const configured = new Set(configuration.provider.availableOperations);
   const declared = new Map(compatibilityModules.flatMap(module => module.capabilities).map(capability => [capability.operation as Operation, capability]));
   const registeredHandlers = new Set(assembled.publicRegistry.handlers.keys());
-  const capability = (operation: Operation, trusted: TrustedContext, action?: Action): Capability => productionCapability(
+  const requestReferences = (value: unknown): ResourceRef[] => {
+    if (!value || typeof value !== "object") return [];
+    const parsed = resourceRefSchema.safeParse(value);
+    return parsed.success ? [parsed.data] : Object.values(value).flatMap(requestReferences);
+  };
+  const capability = (operation: Operation, trusted: TrustedContext, action?: Action, tx?: Transaction): Capability => {
+    const snapshot = { routeMode: configuration.provider.dedicated ? "dedicated" as const : "shared" as const,
+      routeReady: owner.ready(), pollManagement: pollManagementAvailable,
+      cardTemplates: configuration.cards, cardBackendReady: Boolean(backend ?? dependencies.cardBackend) };
+    return productionCapability(
     operation,
     trusted,
     {
       scope,
+      ...snapshot,
+      requestResources: action ? requestReferences(action.arguments).map(reference => {
+        let available = false;
+        try {
+          if (reference.kind === "stream") {
+            const row = tx ? tx.get("streams", reference.id) : store.transaction(tx => tx.get("streams", reference.id));
+            available = !!row && sameScope(row.scope, trusted.scope) && isDeepStrictEqual(row.reference, reference) &&
+              row.principalId === trusted.principalId && row.taskId === trusted.taskId && reference.generation === trusted.generation;
+          } else { rowFor(store, reference, trusted, tx); available = true; }
+        } catch { /* An absent authorized local row remains an execution blocker. */ }
+        return { reference, available };
+      }) : undefined,
       ownerReady: owner.ready(),
       configuredOperations: configured,
       registeredHandlers,
@@ -528,7 +550,7 @@ export async function createProductionComposition(
       streams: true,
       checkedAt: now(),
       operationBlockers: {
-        ...configurationBlockers(configuration),
+        ...configurationBlockers(configuration, snapshot, action),
         "poll.get": pollManagementAvailable ? [] :
           ["The configured Spectrum owner has no approved public native poll-management adapter."],
         "poll.vote": pollManagementAvailable ? [] :
@@ -553,6 +575,7 @@ export async function createProductionComposition(
     } : declared.get(operation),
     action,
   );
+  };
 
   const router = new InboundRouter(store, { now }, {
     route: (event, tx) => {

@@ -29,7 +29,8 @@ test("production capability dependency inventory is shared, action-aware, and pr
   const restored = productionCapability("content.compose", context, inventory(), base, mediaAction);
   assert.equal(restored.availability.conversation, "available");
   assert.ok(!restored.blockers.some(value => value.includes("Host registration")));
-  assert.ok(restored.blockers.some(value => value.includes("not provider delivery")));
+  assert.ok(!restored.blockers.some(value => value.includes("not provider delivery")));
+  assert.ok(restored.evidence.some(value => value.reference.includes("not provider delivery")));
 
   const missingMedia = productionCapability("content.compose", context, inventory({ media: false }), base, mediaAction);
   assert.equal(missingMedia.availability.conversation, "unavailable");
@@ -62,5 +63,6 @@ test("partial implementations and configured dependency blockers cannot advertis
     inventory({ operationBlockers: { "content.compose": ["Required production dependency absent."] } }), base);
   assert.equal(report.implementation, "implemented");
   assert.equal(report.availability.conversation, "unavailable");
-  assert.deepEqual(report.evidence, []);
+  assert.ok(report.evidence.some(value => value.reference.includes("capability-state/v1")));
+  assert.ok(report.evidence.every(value => value.tier !== "live"));
 });

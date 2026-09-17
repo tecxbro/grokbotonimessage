@@ -46,6 +46,13 @@
       "reviewedCommit": "9aea50ab2de1cd825909a61bf86e6d3b2fe0ffe1",
       "implementationCommit": "0f9e4db417c0011c308a5ba53f14860c9dc8f4ab",
       "laneNote": "docs/release-fix/rfx-11-lifecycle.md"
+    },
+    {
+      "lane": "RFX-07",
+      "branch": "codex/rfx-07-capability-truth",
+      "reviewedCommit": "0d3a3f7197ccccbd98ac26ab0f8c74ad03ed2503",
+      "implementationCommit": "8f51e364acb5cb9f35736da263a31b2e4372a630",
+      "laneNote": "docs/release-fix/RFX-07.md"
     }
   ],
   "pendingLanes": [
@@ -207,9 +214,9 @@
         "packages/photon-features/tests/integration/rfx-capability-truth.test.ts"
       ],
       "laneNote": "docs/release-fix/RFX-07.md",
-      "integrationStatus": "not-merged",
+      "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "testEvidence": "phase-a-core-transaction",
       "postImplementationChanges": [
         "docs/release-fix/RFX-07.md"
       ]

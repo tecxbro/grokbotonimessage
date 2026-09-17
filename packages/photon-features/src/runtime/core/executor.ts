@@ -12,6 +12,7 @@ import type {
   RegisteredStreams,
   ResourceResolver,
 } from "../../contracts/ports.js";
+import type { Transaction } from "../../state/ports.js";
 import type { Claim } from "../../state/index.js";
 import { ExecutionClaims } from "./claims.js";
 import { servicesFor, type FeatureDependencies } from "./feature-services.js";
@@ -36,7 +37,7 @@ export interface ExecuteOperationOptions {
     action: Action,
     services: PublicExecutionServices,
   ): Promise<OperationResult>;
-  capability(context: PublicExecutionServices["context"], action?: Action): Capability;
+  capability(context: PublicExecutionServices["context"], action?: Action, tx?: Transaction): Capability;
   resources: ResourceResolver;
   media?: MediaStager;
   streams?: RegisteredStreams;
@@ -74,7 +75,7 @@ export async function executeOperation(
         options.requestId,
         claim,
       );
-      const capability = capabilitySchema.parse(options.capability(context, row.action));
+      const capability = capabilitySchema.parse(options.capability(context, row.action, tx));
       if (
         capability.operation !== row.action.operation ||
         capability.implementation !== "implemented"

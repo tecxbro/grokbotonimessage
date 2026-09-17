@@ -79,7 +79,8 @@ test("typing declarations make only the implemented operations capability-consum
     }, module.capabilities.find(value => value.operation === operation));
     assert.equal(capability.implementation, "implemented");
     assert.equal(capability.availability.conversation, "available");
-    assert.deepEqual(capability.evidence, []);
+    assert.ok(capability.evidence.some(value => value.reference.includes("capability-state/v1")));
+    assert.ok(capability.evidence.every(value => value.tier !== "live"));
   }
   leases.shutdown();
 });
