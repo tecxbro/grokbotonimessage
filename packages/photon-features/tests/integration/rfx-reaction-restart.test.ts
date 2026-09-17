@@ -249,6 +249,7 @@ async function fixture(t: TestContext) {
     createProductionComposition(configuration, root, root, {
       now: () => now,
       sdkFactory,
+      grokCommandStyle: "gateway-flag",
       grokRunner: async () => {
         throw new Error("no Grok calls permitted");
       },
@@ -554,8 +555,9 @@ for (const mode of ["missing", "metadata-only"] as const) {
     const result = await f.remove(ref);
     assert.equal(result.status, "blocked", JSON.stringify(result));
     assert.equal(result.error?.code, "UNAVAILABLE");
-    // RFX-00 integration request: shared cleanResult currently strips precise blocker metadata.
-    assert.equal(result.error?.blockerId, undefined);
+    // RFX-00 preserves only the allowlisted public blocker and its fixed explanation.
+    assert.equal(result.error?.blockerId, "REACTION_COLD_RECOVERY_UNAVAILABLE");
+    assert.equal(result.error?.message, "Public provider lookup cannot restore the original bot reaction and its exact parent target.");
     assert.equal(f.removals.length, 0);
     const rows = f.store((db) => db.scan("children"));
     assert.equal(

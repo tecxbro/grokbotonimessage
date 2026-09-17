@@ -90,6 +90,13 @@
       "reviewedCommit": "1823103e4b204790664fa48f1eaa79abbd8660b7",
       "implementationCommit": "d0c27bd18ebd4936fec1c68455ee29b4d6e9931d",
       "laneNote": "docs/release-fix/RFX-09.md"
+    },
+    {
+      "lane": "RFX-10",
+      "branch": "codex/rfx-10-reactions",
+      "reviewedCommit": "3ed9131b55457c0bfdbfe0e665c96e0212cbd9fa",
+      "implementationCommit": "44e7ee9488ab7012bb740f4005fdc1dd6429f574",
+      "laneNote": "docs/release-fix/RFX-10.md"
     }
   ],
   "pendingLanes": [
@@ -320,9 +327,9 @@
         "packages/photon-features/tests/integration/rfx-reaction-restart.test.ts"
       ],
       "laneNote": "docs/release-fix/RFX-10.md",
-      "integrationStatus": "not-merged",
+      "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "testEvidence": "rfx10-verified",
       "postImplementationChanges": [
         "docs/release-fix/RFX-10.md"
       ]
