@@ -16,12 +16,13 @@ export const requiredChecks = Object.freeze([
   'npm test', 'npm run photon:test', 'npm run photon:check', 'npm run photon:test:integration',
   'node scripts/generate-skill.mjs --check', ...completionChecks,
 ]);
+export const releaseDependencies = Object.freeze({"@grpc/grpc-js": "1.14.4", "@photon-ai/advanced-imessage": "2.1.0", "nice-grpc": "2.1.17", "nice-grpc-common": "2.0.4", "spectrum-ts": "12.8.0", "zod": "4.5.4"});
 export const provenanceModes = Object.freeze(['published-approved', 'owner-local-tested']);
 const workflowRun = value => typeof value === 'string' && /^https:\/\/github\.com\/tecxbro\/grokbotonimessage\/actions\/runs\/[1-9][0-9]*(?:\/attempts\/[1-9][0-9]*)?$/.test(value);
 export const packageSupportFiles = Object.freeze([
   'package.json', 'SKILL.md', 'DEPLOYMENT.md', 'INSTALL.md', 'README.md',
   'scripts/generate-skill.mjs', 'scripts/install.mjs', 'scripts/package.mjs',
-  'scripts/rollback.mjs', 'scripts/smoke-test.mjs', 'scripts/generate-configuration.mjs',
+  'scripts/rollback.mjs', 'scripts/install-photon-cli.mjs', 'scripts/smoke-test.mjs', 'scripts/generate-configuration.mjs',
   'scripts/prepare-npm-lock.mjs', 'scripts/generate-production-inventory.mjs', 'npm-shrinkwrap.json',
 ]);
 export const packagePayloadDirectories = Object.freeze([
@@ -66,7 +67,7 @@ export function validateMetadata(m) {
     !['darwin', 'linux'].includes(m.platform) || !['arm64', 'x64'].includes(m.arch)) throw new Error('UNTESTED_OR_INCOMPATIBLE_ARTIFACT');
   // Both modes attest to the same complete local checks, never a live verification.
   if (m.releaseContract !== 2 || m.completionContract !== 1) throw new Error('UNTESTED_OR_INCOMPATIBLE_ARTIFACT');
-  if (m.releaseContract === 2 && (!/^\d+\.\d+\.\d+(?:[-+].+)?$/.test(m.version) || m.dependencies?.['spectrum-ts'] !== '12.8.0' || m.dependencies?.zod !== '4.5.4' || Object.keys(m.dependencies).sort().join() !== 'spectrum-ts,zod')) throw new Error('UNTESTED_OR_INCOMPATIBLE_ARTIFACT');
+  if (m.releaseContract === 2 && (!/^\d+\.\d+\.\d+(?:[-+].+)?$/.test(m.version) || !m.dependencies || Object.keys(m.dependencies).sort().join() !== Object.keys(releaseDependencies).sort().join() || Object.entries(releaseDependencies).some(([name, version]) => m.dependencies[name] !== version))) throw new Error('UNTESTED_OR_INCOMPATIBLE_ARTIFACT');
 }
 function validateDependencyLock(bytes) {
   const lock = JSON.parse(bytes.toString('utf8'));

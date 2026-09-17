@@ -7,14 +7,14 @@ import { join } from "node:path";
 // @ts-ignore no declaration file is required for the executable test seam.
 import { validateExamples } from "../../../../scripts/generate-skill.mjs";
 // @ts-ignore no declaration file is required for the executable test seam.
-import { encodeArchive, packageSupportFiles, sha256, validateMetadata } from "../../../../scripts/package.mjs";
+import { requiredChecks, releaseDependencies, encodeArchive, packageSupportFiles, sha256, validateMetadata } from "../../../../scripts/package.mjs";
 // @ts-ignore no declaration file is required for the executable test seam.
 import { installPackage } from "../../../../scripts/install.mjs";
 // @ts-ignore no declaration file is required for the executable test seam.
 import { rollbackInstallation } from "../../../../scripts/rollback.mjs";
 
 const metadata = {
-  kind: "assembled-tested-candidate",
+  kind: "assembled-tested-candidate", provenanceMode: "owner-local-tested", releaseContract: 2, completionContract: 1, version: "0.1.0", dependencies: releaseDependencies,
   commit: "a".repeat(40),
   f0Digest: "b".repeat(64),
   node: "24.13.0",
@@ -23,9 +23,10 @@ const metadata = {
   compatibleStateSchemas: [1],
   platform: process.platform,
   arch: process.arch,
-  tests: ["npm test", "npm run photon:test", "npm run photon:check", "npm run photon:test:integration", "node scripts/generate-skill.mjs --check"].map(command => ({ command, exitCode: 0 })),
+  tests: requiredChecks.map((command: string) => ({ command, exitCode: 0 })),
 };
 const releaseFiles = {
+  ...Object.fromEntries(["dist/src/host/text-producer.js", "dist/src/host/card-backend.js", "dist/src/host/card-browser.js", "dist/src/host/authority-admin.js", "schemas/host-configuration-v2.json", "schemas/authority-transition-v1.json", "schemas/stream.open.json", "schemas/stream.append.json", "schemas/stream.close.json", "schemas/stream.abort.json", "examples/production-inventory.json", "scripts/generate-configuration.mjs", "npm-shrinkwrap.json"].map(path => [path, "offline fixture"])),
   "dist/src/cli/main.js": "console.log('fixture')",
   "dist/src/host/process.js": "export async function processMain() { return 2; }",
   "dist/src/host/task-launcher.js": "export async function taskLauncherMain() { return 2; }",
@@ -57,8 +58,8 @@ test("release contract requires exact runtime dependencies and all lifecycle too
     assert.ok(packageSupportFiles.includes(name));
   }
   assert.throws(() => validateMetadata({ ...metadata, releaseContract: 3 }), /UNTESTED_OR_INCOMPATIBLE_ARTIFACT/);
-  assert.throws(() => validateMetadata({ ...metadata, releaseContract: 2, version: "0.1.0", dependencies: { "spectrum-ts": "12.8.1", zod: "4.5.4" } }), /UNTESTED_OR_INCOMPATIBLE_ARTIFACT/);
-  assert.doesNotThrow(() => validateMetadata({ ...metadata, releaseContract: 2, version: "0.1.0", dependencies: { "spectrum-ts": "12.8.0", zod: "4.5.4" } }));
+  assert.throws(() => validateMetadata({ ...metadata, releaseContract: 2, version: "0.1.0", dependencies: { ...releaseDependencies, "spectrum-ts": "12.8.1" } }), /UNTESTED_OR_INCOMPATIBLE_ARTIFACT/);
+  assert.doesNotThrow(() => validateMetadata({ ...metadata, releaseContract: 2, version: "0.1.0", dependencies: releaseDependencies }));
 });
 
 test("repeat inactive install and standalone rollback preserve unrelated data", async () => {

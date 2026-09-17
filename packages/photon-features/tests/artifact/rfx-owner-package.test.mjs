@@ -7,14 +7,14 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
-import { packageCandidate, parsePackageArgs, requiredChecks, packageSupportFiles, packagePayloadDirectories,
+import { releaseDependencies, packageCandidate, parsePackageArgs, requiredChecks, packageSupportFiles, packagePayloadDirectories,
   validateMetadata, encodeArchive, decodeArchive, sha256 } from '../../scripts/package.mjs';
 import { installRelease } from '../../scripts/install.mjs';
 import { rollbackInstallation } from '../../scripts/rollback.mjs';
 
 const workspace = fileURLToPath(new URL('../../../../', import.meta.url));
 const originalSpawn = childProcess.spawnSync;
-const dependencies = { 'spectrum-ts': '12.8.0', zod: '4.5.4' };
+const dependencies = releaseDependencies;
 const digest = 'b'.repeat(64);
 const workflow = 'https://github.com/tecxbro/grokbotonimessage/actions/runs/123';
 const npmCommands = [

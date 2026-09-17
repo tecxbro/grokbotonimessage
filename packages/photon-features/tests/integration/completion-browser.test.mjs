@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createContext, runInContext } from 'node:vm';
 import { webcrypto, randomUUID, verify, createPublicKey } from 'node:crypto';
 import { cardBrowserScript } from '../../dist/src/host/card-browser.js';
-import { completionChecks, validateMetadata } from '../../scripts/package.mjs';
+import { releaseDependencies, completionChecks, validateMetadata } from '../../scripts/package.mjs';
 
 test('shipped browser producer signs exact wire bytes with a persisted nonextractable key and retries one event', async () => {
   const keys = new Map(), storage = new Map(); let opens = 0, closes = 0;
@@ -46,10 +46,10 @@ test('shipped browser producer signs exact wire bytes with a persisted nonextrac
 
 test('completion release metadata requires every new executable and generated-contract check', () => {
   const required = ['npm test', 'npm run photon:test', 'npm run photon:check', 'npm run photon:test:integration', 'node scripts/generate-skill.mjs --check', ...completionChecks];
-  const metadata = { kind: 'assembled-tested-candidate', releaseContract: 2, completionContract: 1,
+  const metadata = { kind: 'assembled-tested-candidate', provenanceMode: 'owner-local-tested', releaseContract: 2, completionContract: 1,
     commit: 'a'.repeat(40), f0Digest: 'b'.repeat(64), node: '24.13.0', npm: '10.9.2',
     stateSchemaVersion: 1, compatibleStateSchemas: [1], platform: process.platform, arch: process.arch,
-    version: '0.1.0', dependencies: { 'spectrum-ts': '12.8.0', zod: '4.5.4' }, tests: required.map(command => ({ command, exitCode: 0 })) };
+    version: '0.1.0', dependencies: releaseDependencies, tests: required.map(command => ({ command, exitCode: 0 })) };
   assert.doesNotThrow(() => validateMetadata(metadata));
   for (const missing of completionChecks) assert.throws(() => validateMetadata({ ...metadata, tests: metadata.tests.filter(row => row.command !== missing) }), /UNTESTED_OR_INCOMPATIBLE_ARTIFACT/);
   assert.throws(() => validateMetadata({ ...metadata, completionContract: 2 }), /UNTESTED_OR_INCOMPATIBLE_ARTIFACT/);

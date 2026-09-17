@@ -97,6 +97,13 @@
       "reviewedCommit": "3ed9131b55457c0bfdbfe0e665c96e0212cbd9fa",
       "implementationCommit": "44e7ee9488ab7012bb740f4005fdc1dd6429f574",
       "laneNote": "docs/release-fix/RFX-10.md"
+    },
+    {
+      "lane": "RFX-06",
+      "branch": "codex/rfx-06-packaging",
+      "reviewedCommit": "b9be4107fbe013602964124242604fc176582262",
+      "implementationCommit": "1476e17f51a657f9941860c19a6ae5a27d232a7d",
+      "laneNote": "docs/release-fix/RFX-06.md"
     }
   ],
   "pendingLanes": [
@@ -235,9 +242,9 @@
         "packages/photon-features/tests/artifact/rfx-owner-package.test.mjs"
       ],
       "laneNote": "docs/release-fix/RFX-06.md",
-      "integrationStatus": "not-merged",
+      "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "testEvidence": "rfx06-verified",
       "postImplementationChanges": [
         "docs/release-fix/RFX-06.md"
       ]

@@ -10,15 +10,15 @@ const packagingUrl=new URL('../../../scripts/package.mjs',import.meta.url).href;
 const installerUrl=new URL('../../../scripts/install.mjs',import.meta.url).href;
 
 test('real installer with explicit offline archive fixture: clean/repeat install, inactive rollback, pending/unknown preservation',async t=>{
-  const r=runtime();t.after(()=>r.close());const {encodeArchive,sha256}=await import(packagingUrl);const {installRelease,rollbackRelease}=await import(installerUrl);
+  const r=runtime();t.after(()=>r.close());const {encodeArchive,sha256,requiredChecks,releaseDependencies}=await import(packagingUrl);const {installRelease,rollbackRelease}=await import(installerUrl);
   // Synthetic archive tests installer mechanics only. It is never candidate, package, or activation proof.
-  const files={...Object.fromEntries(['dist/src/cli/main.js','dist/src/host/process.js','dist/src/host/task-launcher.js','dist/src/index.d.ts','schemas/protocol.json','SKILL.md','DEPLOYMENT.md','INSTALL.md','package.json','dependency-lock.json','node_modules/zod/package.json'].map(p=>[p,'offline fixture\n'])),
+  const files={...Object.fromEntries(["dist/src/host/text-producer.js", "dist/src/host/card-backend.js", "dist/src/host/card-browser.js", "dist/src/host/authority-admin.js", "schemas/host-configuration-v2.json", "schemas/authority-transition-v1.json", "schemas/stream.open.json", "schemas/stream.append.json", "schemas/stream.close.json", "schemas/stream.abort.json", "examples/production-inventory.json", "scripts/generate-configuration.mjs", "npm-shrinkwrap.json"].map(path => [path, "offline fixture"])),...Object.fromEntries(['dist/src/cli/main.js','dist/src/host/process.js','dist/src/host/task-launcher.js','dist/src/index.d.ts','schemas/protocol.json','SKILL.md','DEPLOYMENT.md','INSTALL.md','package.json','dependency-lock.json','node_modules/zod/package.json'].map(p=>[p,'offline fixture\n'])),
     'bin/grok-photon':{content:'#!/usr/bin/env node\n',mode:0o700},
     'bin/grok-photon-host':{content:'#!/usr/bin/env node\n',mode:0o700},
     'bin/grok-photon-task':{content:'#!/usr/bin/env node\n',mode:0o700}};
-  const metadata={kind:'assembled-tested-candidate',commit:'0'.repeat(40),f0Digest:'0'.repeat(64),node:'24.13.0',npm:'10.9.2',platform:process.platform,arch:process.arch,
+  const metadata={kind:'assembled-tested-candidate',provenanceMode:'owner-local-tested',releaseContract:2,completionContract:1,version:'0.1.0',dependencies:releaseDependencies,commit:'0'.repeat(40),f0Digest:'0'.repeat(64),node:'24.13.0',npm:'10.9.2',platform:process.platform,arch:process.arch,
     stateSchemaVersion:1,compatibleStateSchemas:[1],offlineFixture:true,
-    tests:['npm test','npm run photon:test','npm run photon:check','npm run photon:test:integration','node scripts/generate-skill.mjs --check'].map(command=>({command,exitCode:0}))};
+    tests:requiredChecks.map((command: string)=>({command,exitCode:0}))};
   const archive=encodeArchive(files,metadata),checksum=sha256(archive),archivePath=join(r.dir,'fixture.gz'),root=join(r.dir,'install');writeFileSync(archivePath,archive);
   assert.equal((await installRelease({archivePath,checksum,root})).activation,'disabled');
   const path=join(root,'runtime/state.sqlite');writeFileSync(path,'',{mode:0o600});const store=new SQLiteStore(path);

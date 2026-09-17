@@ -6,13 +6,14 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { execFileSync } from 'node:child_process';
-import { encodeArchive, decodeArchive, sha256, packageCandidate, packagePayloadDirectories } from '../../../scripts/package.mjs';
+import { requiredChecks, releaseDependencies, encodeArchive, decodeArchive, sha256, packageCandidate, packagePayloadDirectories } from '../../../scripts/package.mjs';
 import { installRelease, rollbackRelease } from '../../../scripts/install.mjs';
 import { generateSkill } from '../../../scripts/generate-skill.mjs';
 import { smoke } from '../../../scripts/smoke-test.mjs';
 // Synthetic in-memory release metadata for installer tests, not an integration attestation.
-const metadata = { kind: 'assembled-tested-candidate', commit: 'a'.repeat(40), f0Digest: 'b'.repeat(64), node: '24.13.0', npm: '10.9.2', stateSchemaVersion: 1, compatibleStateSchemas: [1], platform: process.platform, arch: process.arch, tests: ['npm test', 'npm run photon:test', 'npm run photon:check', 'npm run photon:test:integration', 'node scripts/generate-skill.mjs --check'].map(command => ({ command, exitCode: 0 })) };
+const metadata = { kind: 'assembled-tested-candidate', provenanceMode: 'owner-local-tested', releaseContract: 2, completionContract: 1, version: '0.1.0', dependencies: releaseDependencies, commit: 'a'.repeat(40), f0Digest: 'b'.repeat(64), node: '24.13.0', npm: '10.9.2', stateSchemaVersion: 1, compatibleStateSchemas: [1], platform: process.platform, arch: process.arch, tests: requiredChecks.map(command => ({ command, exitCode: 0 })) };
 const files = {
+  ...Object.fromEntries(["dist/src/host/text-producer.js", "dist/src/host/card-backend.js", "dist/src/host/card-browser.js", "dist/src/host/authority-admin.js", "schemas/host-configuration-v2.json", "schemas/authority-transition-v1.json", "schemas/stream.open.json", "schemas/stream.append.json", "schemas/stream.close.json", "schemas/stream.abort.json", "examples/production-inventory.json", "scripts/generate-configuration.mjs", "npm-shrinkwrap.json"].map(path => [path, "offline fixture"])),
   'dist/src/cli/main.js': 'console.log("fixture only")',
   'dist/src/host/process.js': 'export async function processMain() { return 2; }',
   'dist/src/host/task-launcher.js': 'export async function taskLauncherMain() { return 2; }',
