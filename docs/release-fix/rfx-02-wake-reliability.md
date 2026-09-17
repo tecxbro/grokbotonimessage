@@ -188,3 +188,59 @@ Changed production/test files, sorted by path and hashed as
 `a0e74a4431f1dcca60c9fb59bb97ce261d83df383f7a0315d3f5adc5e1671873`.
 This follow-up changes only this task note to record the immutable implementation
 identity; it does not alter the tested code. Integrate both lane commits.
+
+## Integration-returned diagnostic persistence fix
+
+Reviewed starting HEAD: `59bf129238f0858fdc5644cce895bf71ad94e4c6`.
+Implementation commit: `1589b7f23bce3b3fad1f7a3946053b3d27937433`.
+
+RFX-00 identified that returned wake diagnostics disappeared on restart because
+the handoff only persisted status. This follow-up adds optional
+`wake.diagnostic` to the existing JSON record, limited both by its TypeScript
+union and a runtime allowlist to `GROK_WAKE_TARGET_UNAVAILABLE` or
+`GROK_WAKE_COMMAND_STYLE_UNAVAILABLE`. No raw error text is stored. A completed
+result replaces or clears the diagnostic only under the existing revision,
+attempt, target and active-route CAS checks. A late failure cannot overwrite
+newer acceptance, and late acceptance cannot clear a newer failure.
+
+A same-target retry retains the last completed diagnostic while its new status
+is pending, including if that retry crashes. Explicit rebinding retains the
+existing retry deadline and attempt count, then clears the old target's
+diagnostic when reserving an attempt for the new target. A subsequent accepted
+or unclassified result clears the prior diagnostic under the result CAS.
+Concurrent work claim/ack wins without result bookkeeping rewriting its row.
+There is no second ledger, automatic rebinding, constructor change, provider
+call, configuration change, or additional production integration binding.
+
+Files changed by the implementation commit:
+
+- `packages/photon-features/src/state/ports.ts`
+- `packages/photon-features/src/runtime/inbound/wake-dispatcher.ts`
+- `packages/photon-features/tests/integration/rfx-wake-reliability.test.ts`
+
+Verification used Node `v24.13.0` and npm `10.9.2` in this lane only:
+
+```sh
+export PATH=/Users/darshan/.npm/_npx/cee224165f95995d/node_modules/node/bin:$PATH
+npm run photon:build
+node --test --test-reporter=tap --test-name-pattern='^durable diagnostic' packages/photon-features/dist/tests/integration/rfx-wake-reliability.test.js
+node --test --test-reporter=tap packages/photon-features/dist/tests/integration/rfx-wake-reliability.test.js packages/photon-features/dist/tests/lanes/wt-02/integration.test.js
+git diff --check
+```
+
+Before changing the dispatcher, the seven new cases produced 5 expected
+missing-diagnostic failures and 2 passing existing claim/ack fencing checks
+(`.photon-local/diagnostic-red.tap`). After the fix, build passed and the full
+focused invocation passed **35/35**, zero failures, skips or cancellations
+(`.photon-local/diagnostic-focused.tap`). This includes both diagnostic codes
+across SQLite reopen, pending same-target retry recovery, arbitrary-error
+exclusion, old-result races with explicit later rebinding, and concurrent
+claim/ack. Manual diff review and whitespace validation passed; no deletions.
+
+The earlier aggregate results above remain historical evidence and were not
+rerun or relabeled as passing. RFX-00 owns its ongoing independent integration
+checks and candidate digest refresh; this change modifies the owned state
+contract again and must be included in that final digest. No RFX-00 files or
+other worktrees were edited, and no reset, rebase, push or live operation ran.
+This documentation-only commit records the immutable follow-up implementation
+SHA; integrate it together with `1589b7f23bce3b3fad1f7a3946053b3d27937433`.

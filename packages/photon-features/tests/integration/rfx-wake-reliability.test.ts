@@ -313,3 +313,102 @@ test("deleted target preserves work, reports stable diagnostic through pump and 
     await pump.stop();
   } finally { f.close(); }
 });
+
+for (const diagnostic of ["GROK_WAKE_TARGET_UNAVAILABLE", "GROK_WAKE_COMMAND_STYLE_UNAVAILABLE"] as const) {
+  test(`durable diagnostic ${diagnostic} survives restart and an unfinished same-target retry`, async () => {
+    const f = fixture(); const gate = deferred<{ status: "accepted" }>();
+    let retry: ReturnType<WakeDispatcher["tick"]> | undefined;
+    try {
+      const result = await f.dispatcher({ async wake() { throw new Error(diagnostic); } }).tick(scope, route);
+      assert.equal(result[0]?.diagnostic, diagnostic);
+      assert.equal(f.row().wake?.diagnostic, diagnostic);
+      const failed = f.row();
+      f.reopen();
+      assert.deepEqual(f.row(), failed);
+      assert.deepEqual(await f.dispatcher({ wake: () => gate.promise }).tick(scope, route), []);
+      f.clock.advance(failed.wake!.nextAttemptAt - f.clock.now());
+      retry = f.dispatcher({ wake: () => gate.promise }).tick(scope, route);
+      assert.equal(f.row().wake?.diagnostic, diagnostic);
+      assert.equal(f.row().wake?.lastStatus, null);
+      // Reopen while I/O is pending: the latest known failure is still durable.
+      const observer = new SQLiteStore(f.path);
+      try {
+        assert.equal(observer.transaction(tx => tx.get("handoffs", "handoff-1"))?.wake?.diagnostic, diagnostic);
+      } finally { observer.close(); }
+      gate.resolve({ status: "accepted" }); await retry;
+      assert.equal(f.row().wake?.diagnostic, undefined);
+      assert.equal(f.row().wake?.attempts, 2);
+      f.reopen();
+      assert.equal(f.row().wake?.diagnostic, undefined);
+    } finally { gate.resolve({ status: "accepted" }); await retry; f.close(); }
+  });
+}
+
+test("durable diagnostic never stores arbitrary error text and clears on an unclassified result", async () => {
+  const f = fixture();
+  try {
+    await f.dispatcher({ async wake() { throw new Error("GROK_WAKE_TARGET_UNAVAILABLE"); } }).tick(scope, route);
+    assert.equal(f.row().wake?.diagnostic, "GROK_WAKE_TARGET_UNAVAILABLE");
+    f.clock.advance(2000);
+    await f.dispatcher({ async wake() { throw new Error("GROK_WAKE_TARGET_UNAVAILABLE: private stderr"); } }).tick(scope, route);
+    assert.equal(f.row().wake?.lastStatus, "failed");
+    assert.equal(f.row().wake?.diagnostic, undefined);
+    assert.doesNotMatch(JSON.stringify(f.row()), /private stderr/);
+    f.reopen();
+    assert.equal(f.row().wake?.diagnostic, undefined);
+  } finally { f.close(); }
+});
+
+for (const lateDiagnostic of [false, true]) {
+  test(`durable diagnostic fences stale ${lateDiagnostic ? "failure" : "acceptance"} after explicit rebind`, async () => {
+    const f = fixture(); const gate = deferred<{ status: "accepted" }>();
+    let pending: ReturnType<WakeDispatcher["tick"]> | undefined;
+    try {
+      await f.dispatcher({ async wake() { throw new Error("GROK_WAKE_TARGET_UNAVAILABLE"); } }).tick(scope, route);
+      assert.equal(f.row().wake?.diagnostic, "GROK_WAKE_TARGET_UNAVAILABLE");
+      f.clock.advance(2000);
+      pending = f.dispatcher({ wake: () => gate.promise }).tick(scope, route);
+      const deadline = f.row().wake!.nextAttemptAt;
+      let newCalls = 0;
+      const rebound = new WakeDispatcher(f.store, f.clock, { async wake() {
+        newCalls++;
+        assert.equal(f.row().wake?.targetId, "agent-2");
+        assert.equal(f.row().wake?.diagnostic, undefined);
+        if (!lateDiagnostic) throw new Error("GROK_WAKE_COMMAND_STYLE_UNAVAILABLE");
+        return { status: "accepted" };
+      } }, "agent-2");
+      assert.deepEqual(await rebound.tick(scope, route), []);
+      assert.equal(newCalls, 0); // Rebinding cannot bypass durable backoff.
+      assert.equal(f.row().wake?.targetId, "agent-1");
+      f.clock.advance(deadline - f.clock.now());
+      await rebound.tick(scope, route);
+      const current = f.row();
+      assert.equal(current.wake?.attempts, 3);
+      assert.equal(current.wake?.diagnostic, lateDiagnostic ? undefined : "GROK_WAKE_COMMAND_STYLE_UNAVAILABLE");
+      if (lateDiagnostic) gate.reject(new Error("GROK_WAKE_TARGET_UNAVAILABLE"));
+      else gate.resolve({ status: "accepted" });
+      await pending;
+      assert.deepEqual(f.row(), current);
+      f.reopen();
+      assert.deepEqual(f.row(), current);
+      assert.equal(f.row().state, "pending");
+    } finally { gate.resolve({ status: "accepted" }); await pending; f.close(); }
+  });
+}
+
+for (const acknowledge of [false, true]) {
+  test(`durable diagnostic cannot overwrite a concurrent ${acknowledge ? "ack" : "claim"}`, async () => {
+    const f = fixture(); let claimed: HandoffRecord | undefined;
+    try {
+      await f.dispatcher({ async wake() {
+        claimed = f.work.change(context, "handoff-1", "claim", undefined, 60000).handoff;
+        if (acknowledge) claimed = f.work.change(context, claimed.id, "ack", claimed.claim!.fence).handoff;
+        throw new Error("GROK_WAKE_TARGET_UNAVAILABLE");
+      } }).tick(scope, route);
+      assert.deepEqual(f.row(), claimed);
+      f.reopen();
+      assert.deepEqual(f.row(), claimed);
+      assert.equal(f.row().wake?.diagnostic, undefined);
+    } finally { f.close(); }
+  });
+}

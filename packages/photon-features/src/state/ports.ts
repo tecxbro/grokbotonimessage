@@ -76,6 +76,8 @@ export interface HandoffRecord extends StoredRecord {
     lastAttemptAt: number | null;
     nextAttemptAt: number;
     lastStatus: "accepted" | "failed" | "unknown" | null;
+    /** Last completed attempt's bounded diagnostic for this target; never raw errors. */
+    diagnostic?: "GROK_WAKE_TARGET_UNAVAILABLE" | "GROK_WAKE_COMMAND_STYLE_UNAVAILABLE";
   };
 }
 export interface OutboxRecord extends StoredRecord {

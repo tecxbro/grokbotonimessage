@@ -1,6 +1,6 @@
 import { sameScope, type Clock, type Scope, type WakeAdapter } from "../../contracts/index.js";
 import type { ExistingGrokTaskHandoff } from "../../adapters/legacy/index.js";
-import type { TransactionStore } from "../../state/index.js";
+import type { HandoffRecord, TransactionStore } from "../../state/index.js";
 import { activeRoute, type TaskRoute } from "./router.js";
 
 /** Binding is supplied by the existing orchestrator's verified deployment.
@@ -25,7 +25,13 @@ export function wakeRetryDelayMs(attempts: number): number {
 export interface WakeDispatchResult {
   handoffId: string;
   status: "accepted" | "failed" | "unknown";
-  diagnostic?: string;
+  diagnostic?: NonNullable<HandoffRecord["wake"]>["diagnostic"];
+}
+
+/** Bound both persisted and reported diagnostics to fixed, non-sensitive codes. */
+function wakeDiagnostic(value: unknown): WakeDispatchResult["diagnostic"] {
+  return value === "GROK_WAKE_TARGET_UNAVAILABLE" || value === "GROK_WAKE_COMMAND_STYLE_UNAVAILABLE"
+    ? value : undefined;
 }
 
 export class WakeDispatcher {
@@ -69,11 +75,16 @@ export class WakeDispatcher {
               current.claim && current.claim.leaseUntil > now ||
               current.wake && current.wake.nextAttemptAt > now) return;
           const attempts = (current.wake?.attempts ?? 0) + 1;
+          const targetId = this.targetId ?? route.taskId;
           const next = {
             ...current,
             revision: current.revision + 1,
             wake: {
-              targetId: this.targetId ?? route.taskId,
+              targetId,
+              // Retain the last completed diagnostic through a crashed retry,
+              // but never attribute the previous target's failure to a new one.
+              diagnostic: current.wake?.targetId === targetId
+                ? wakeDiagnostic(current.wake.diagnostic) : undefined,
               attempts,
               lastAttemptAt: now,
               nextAttemptAt: now + wakeRetryDelayMs(attempts),
@@ -86,7 +97,7 @@ export class WakeDispatcher {
         });
         if (!reserved) continue;
         let status: WakeDispatchResult["status"] = "unknown";
-        let diagnostic: string | undefined;
+        let diagnostic: WakeDispatchResult["diagnostic"];
         try {
           ({ status } = await this.wakeAdapter.wake({
             handoffId: reserved.id,
@@ -96,9 +107,7 @@ export class WakeDispatcher {
         } catch (error) {
           status = "failed";
           // Only fixed public diagnostics cross this boundary; never stderr/prompts.
-          if (error instanceof Error && ["GROK_WAKE_TARGET_UNAVAILABLE",
-            "GROK_WAKE_COMMAND_STYLE_UNAVAILABLE"].includes(error.message))
-            diagnostic = error.message;
+          diagnostic = wakeDiagnostic(error instanceof Error ? error.message : undefined);
         }
         this.store.transaction((tx) => {
           const current = tx.get("handoffs", reserved.id);
@@ -112,6 +121,8 @@ export class WakeDispatcher {
             wake: {
               ...current.wake,
               lastStatus: status,
+              // Only this attempt's CAS may replace/clear the completed diagnostic.
+              diagnostic,
               // A slow call must also leave a quiet period after its result.
               nextAttemptAt: Math.max(current.wake.nextAttemptAt, this.clock.now() +
                 Math.max(wakeRetryDelayMs(current.wake.attempts),
