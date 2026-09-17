@@ -50,6 +50,8 @@ Acceptance evidence: warm creation/removal persists multipart identity; fresh SD
 
 Logs are ignored local artifacts under `.photon-local/rfx-10/`: `focused.log`, `integration.log`, `baseline-regression.log`, and `contracts-docs.log`. Tested source was the implementation delta over `b83e3afd7049a991de6daffedf831165890f0901`; the implementation commit below freezes that delta. Initial fixture compile/setup failures were corrected; no existing tests were weakened.
 
+Tested source/test content digest: SHA256 `fa3944c064a830d2d7afba3a1db9a2f12201c4ddadbf24ddd25df5342b290709` (sort the four owned TypeScript paths; hash each UTF-8 path, NUL, file bytes, NUL). Full-suite log SHA256: `4a9dcec566d979021e03fc57e0a027eec988feb055d3e73bb6a0f78a602ca4b9`.
+
 ## Integration requests and limits
 
 RFX-00: retain a precise cold-recovery blocker for 12.8.0. Upstream must expose a public restored reaction Message with real target metadata before claiming cloud restart removal. Do not mark all reactions unsupported. No dependency upgrade requested because no compatible newer release was found.
@@ -60,4 +62,6 @@ All planned evidence is offline; no Photon activation, live messages, deployment
 
 ## Commit
 
-Implementation commit: pending.
+Implementation commit: `44e7ee9488ab7012bb740f4005fdc1dd6429f574`.
+
+A following documentation-only commit records this already-created SHA and evidence digest. Both commits remain local on `codex/rfx-10-reactions`; no publication or live validation was performed.
