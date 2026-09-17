@@ -18,23 +18,29 @@ export const scopeKey = (s: Scope): string =>
   JSON.stringify([s.projectId, s.provider, s.accountId, s.lineId, s.spaceId]);
 export interface LineBinding {
   accountId: string;
+  /** Application/durable identity, independent of the provider route phone. */
   lineId: string;
-  phone: string;
+  dedicated: boolean;
+  /** User-facing serving number; never the provider's shared sentinel. */
+  servingPhone: string;
 }
+/** Shared spaces use the SDK's shared identity without a dedicated phone pin. */
+export type SpaceRoute = { phone: string } | undefined;
+// Spectrum v12.8.0 packages/imessage/src/types.ts; not a public package export.
+const SHARED_PHONE = "shared";
+const providerPhone = (line: LineBinding): string =>
+  line.dedicated ? line.servingPhone : SHARED_PHONE;
+
 export class ProviderContext {
   private readonly lines: readonly LineBinding[];
   constructor(
     readonly projectId: string,
     lines: readonly LineBinding[],
   ) {
-    if (
-      !lines.length ||
-      new Set(lines.map((l) => l.phone)).size !== lines.length ||
-      new Set(lines.map((l) => l.lineId)).size !== lines.length
-    )
-      throw new Error("AMBIGUOUS_LINE_BINDINGS");
     for (const line of lines) {
-      if (!line.phone) throw new Error("MISSING_PHONE");
+      if (typeof line.dedicated !== "boolean") throw new Error("INVALID_LINE_MODE");
+      if (!line.servingPhone || line.servingPhone === SHARED_PHONE)
+        throw new Error("INVALID_SERVING_PHONE");
       scopeSchema.parse({
         projectId,
         provider: "imessage",
@@ -42,11 +48,20 @@ export class ProviderContext {
         spaceId: "validation",
       });
     }
+    if (
+      !lines.length ||
+      new Set(lines.map(providerPhone)).size !== lines.length ||
+      new Set(lines.map((l) => l.lineId)).size !== lines.length
+    )
+      throw new Error("AMBIGUOUS_LINE_BINDINGS");
     this.lines = lines.map((l) => Object.freeze({ ...l }));
   }
+  /** Match the authenticated provider identity, never a configured substitution. */
   inbound(phone: string, conversationId: string): Scope {
-    const line = this.lines.find((l) => l.phone === phone);
-    if (!line || !conversationId) throw new Error("UNBOUND_PROVIDER_ROUTE");
+    const candidates = this.lines.filter((line) => providerPhone(line) === phone);
+    const line = candidates[0];
+    if (candidates.length !== 1 || !line || !conversationId)
+      throw new Error("UNBOUND_PROVIDER_ROUTE");
     return {
       projectId: this.projectId,
       provider: "imessage",
@@ -55,18 +70,19 @@ export class ProviderContext {
       spaceId: opaqueId("space", conversationId),
     };
   }
-  outbound(scope: Scope, conversationId: string): { phone: string } {
+  outbound(scope: Scope, conversationId: string): SpaceRoute {
     const line = this.lines.find(
       (l) => l.lineId === scope.lineId && l.accountId === scope.accountId,
     );
     if (
       !line ||
+      !conversationId ||
       scope.provider !== "imessage" ||
       scope.projectId !== this.projectId ||
       scope.spaceId !== opaqueId("space", conversationId)
     )
       throw new Error("SCOPE_MISMATCH");
-    return { phone: line.phone };
+    return line.dedicated ? { phone: line.servingPhone } : undefined;
   }
   evidence() {
     return this.lines.map(({ accountId, lineId }) => ({ accountId, lineId }));
