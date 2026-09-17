@@ -1,168 +1,85 @@
 # Grok Photon deployment and owner operations
 
-This is the authoritative runbook for the `fix-1` completion candidate based on
-`55b1821216cefe341e611518e1b125552346a115`. INSTALL.md points here; SKILL.md is the
-operating manual for an already authorized task. The release has one existing
-Grok orchestrator, one shared Spectrum owner, one SQLite inbox/outbox, and one
-configured project/account/line/conversation/task route. Creating a chat does
-not add a second route or authorize follow-up messages there.
+This runbook describes the RFX-00 assembled release. Install and run on the **Grok Bot cloud VM, not the user's Mac**. The target is Linux x86_64 / amd64 (Node calls this x64). Codex builds and tests the artifact only; it does not activate the real account, operate the real VM, send a live iMessage, allocate a line or change billing.
 
-**Handoff remains blocked.** Spectrum 12.8.0 has no public shared-owner native
-poll-management API (`poll.get`, `poll.vote`, `poll.unvote`, `poll.addOption`) and
-no public mechanism for restoring an original mini-app SDK update session after
-a process restart. Cold reaction lookup also loses the reaction content handle;
-removal works through the warm SDK cache but remains blocked after cold lookup. These operations stay in the 44-operation inventory.
-`app.update` works repeatedly during the owning process lifetime; a cold update
-blocks without sending a replacement. See examples/production-inventory.json.
-No target activation or device delivery is established by offline tests.
+The program contains one Photon messaging host. Grok remains the reasoning/orchestration layer; Photon remains transport/tooling. One Spectrum owner supplies ingress and outbound operations, and one SQLite database owns inbox, handoffs and outbox. No new model, orchestrator, transcript poller or sender is introduced.
 
-## Preflight and release gate
+## Artifact and prerequisites
 
-The tested toolchain is Node **24.13.0**, npm **10.9.2**, spectrum-ts **12.8.0**,
-and zod **4.5.4**. There is no SDK version change or local SDK patch. Use this
-Node on PATH for every launcher and the configured Grok executable. Native
-`node:sqlite` is required. Dependencies install with scripts disabled. Existing
-CI retains Linux and macOS jobs; a local macOS result is not a Linux CI result.
+Use the owner-local-tested archive and matching SHA-256/provenance sidecars produced from the exact clean integration commit. This mode runs the same required offline checks as published-approved mode; it needs no workflow approval JSON. Published-approved mode still requires a commit-bound genuine workflow-run URL. Neither mode establishes provider/device evidence.
 
-Before deployment the owner must establish:
+Node **24.13.0**, npm **10.9.2**, spectrum-ts **12.8.0**, zod **4.5.4**, @photon-ai/advanced-imessage **2.1.0**, @grpc/grpc-js **1.14.4**, nice-grpc **2.1.17**, nice-grpc-common **2.0.4** are pinned. Runtime dependencies are included. The installer verifies Linux/x64, Node, complete metadata, archive/file hashes and state schema compatibility **[1]**. A macOS artifact cannot be relabelled as Linux. Keep the sidecar/checksum and source commit for audit.
 
-- Supported Linux/macOS architecture and a writable private local filesystem
-  with Unix sockets, SQLite locking/WAL, atomic rename and fsync. NFS, Windows,
-  and container/socket arrangements are not verified deployment modes.
-- A stable process supervisor, restart/shutdown behavior, disk capacity and
-  backups appropriate to that environment. Foreground execution and signal
-  shutdown are tested offline. This runbook assumes neither sudo nor systemd.
-  launchd/systemd/user-supervisor installation on the Grok VM is an unverified
-  environment prerequisite; do not invent paths or install a competing worker.
-- The existing `gbot`/Grok CLI absolute executable and existing agent ID. Check
-  its installed help/version and gateway authentication under the service OS
-  user. Its established invocation is `--gateway send AGENT POINTER_PROMPT`;
-  the host does not add a model or read transcripts. Gateway URL/token setup
-  belongs to the existing Grok installation, not the Photon task credential.
-- Existing Spectrum project secret, account ID, line ID, real E.164 serving
-  phone, dedicated/shared mode and exact native conversation ID. No provisioning,
-  platform approval, billing or test messages are part of this procedure.
-- Real task/context/principal IDs, generation, issue/expiry times and selected
-  permissions. The owner grants exact recipients and administration separately.
+Use a stable private local filesystem with Unix sockets, SQLite WAL/locking, atomic rename and fsync. Keep the installation path short enough for the OS Unix-socket limit (ROOT/runtime/runtime.sock). Use the existing VM OS user and supervisor; no sudo, launchd or Mac access is required. The release helper prints guidance for the available VM supervisor but does not install a service. Do not run two foreground/supervised hosts against one root.
 
-An approved release requires a **clean tested commit**, the frozen F0 digest,
-and real approval/workflow evidence for that commit. `scripts/package.mjs`
-requires an owner-supplied JSON object with `kind: assembled-candidate-approval`,
-`approved: true`, exact `commit`, exact `f0Digest`, and the actual GitHub Actions
-`workflowRun` URL. Do not create synthetic approval. `photon:verify-all` still
-validates the registered integration-worktree identity; running it from fix-1
-must not impersonate that worktree. Component results and that blocker are
-reported separately. Current upstream gates must be resolved before handoff.
-
-From the approved candidate using the pinned toolchain:
+In commands below ROOT, RELEASE, ARTIFACT and SHA256 mean the actual private installation path, selected release directory, archive path and supplied checksum. Run under the existing Grok VM service user with pinned Node on PATH. Deliver install.mjs and its package.mjs import from the same tested commit alongside the archive, as provided in the artifact handoff.
 
 ```sh
-node packages/photon-features/scripts/package.mjs /absolute/candidate /absolute/approval.json /absolute/artifacts/release.gpf.gz
-node /absolute/tools/install.mjs install /absolute/artifacts/release.gpf.gz SHA256 /absolute/private-root
+node /absolute/handoff/install.mjs install ARTIFACT SHA256 ROOT
 ```
 
-Use the supplied artifact checksum. The installer verifies target/toolchain,
-metadata, hashes, private paths and compatible state, and selects it inactive.
-It includes runtime dependencies. Repeated install is verified without replacing
-runtime state. A diagnostic npm `.tgz` with its standalone shrinkwrap is useful
-for offline testing (`npm ci --omit=dev --ignore-scripts --no-audit --no-fund`),
-but is **not** an approved `.gpf.gz` release and supplies no workflow approval.
-Do not copy the tests' synthetic selected-release metadata into production.
+Installation selects `ROOT/releases/SHA256` inactive and preserves runtime state on repeat installs. Never overwrite a configured root to rerun first-time generation. Historical inactive-install evidence is retained in Git; an npm dry-run alone is not an installed-artifact test.
 
-New approved artifacts carry completionContract 1. The packager requires the
-installed-executable matrix, workspace typecheck and configuration/inventory/
-standalone-lock drift checks in addition to the existing component tests. It
-captures production dependencies after testing. Historical compatible archives
-remain eligible for inactive rollback; they do not gain the new features.
+## First-time discovery and configuration
 
-## Configuration and feature profiles
-
-The owner controls ROOT and ROOT/runtime (0700); all secret/configuration files
-are regular single-link 0600 files owned by that OS user. Create private
-`captures`, `staging`, and `imports` directories. Configuration paths must be
-absolute beneath ROOT/runtime; socket and database are exactly
-ROOT/runtime/runtime.sock and ROOT/runtime/state.sqlite. Keep canonical paths;
-symlinked directories and unsafe files are rejected.
-
-Use `schemas/host-configuration-v2.json` plus runtime validation. JSON schema
-cannot express all cross-field refinements; the executable is authoritative.
-`examples/profiles/{minimal-text,messaging,administrative}.json` are generated
-selection profiles with **no default grants**. Messaging lists the complete
-supported non-administrative set; administrative adds explicitly permissioned
-operations. The four native poll-management blockers are recorded separately.
-
-Prepare owner-input.json with exactly `version:1`, `profile`, `enable` (the
-explicit operation list), and `configuration` (a complete version-2 owner-authored
-configuration). The generator requires every selected operation already in that
-configuration's task permission list, rejects operations outside the profile,
-checks constructed-dependency prerequisites, and always disables activation:
+Photon CLI authentication/device-login happens on the Grok Bot cloud VM. Setup reuses an authenticated VM CLI session and verifies it; if missing or expired, it performs one headless `photon login --no-browser`. Surface the **real verification URL and fresh code** streamed on stderr to the owner. Never invent a code or ask the user to paste a project secret in normal chat: the authenticated CLI retrieves it into private runtime storage. Setup output contains identities and decisions, never the secret. Discovery is Linux-only.
 
 ```sh
-node RELEASE/scripts/generate-configuration.mjs /absolute/owner-input.json /absolute/new-configuration.json
+umask 077
+node RELEASE/bin/grok-photon setup --installation-root ROOT --grok-executable /absolute/existing/gbot --json > ROOT/runtime/discovery.json
 ```
 
-`enable` becomes both provider.availableOperations and task.permissions. It
-never adds recipients, administrative intent or native-content permission.
-Copy the reviewed output to ROOT/runtime/configuration.json while stopped.
-Start with `text.send`/`message.reply` and the required resource/typing operations;
-select broader permissions only for the intended workflow. Schema paths identify
-required provider, local, task, grok, authorization, cards and runtime fields.
-Use actual values; reserved `.invalid` examples and test IDs are not deployment
-inputs. A valid schema does not prove an account supports every operation.
+Setup discovers the Photon executable (or installs it in its private tool root), authenticated project/user/route and live Grok roster. If a project is ambiguous, rerun with `--project ID` from returned candidates. If an agent or initial address remains ambiguous, select only the relevant candidate/address in the small choices object. Inspect unresolved fields; nonzero incomplete discovery is not readiness. No chat is made writable just because its ID looks valid.
 
-Normal startup constructs the provider, media stager, bounded producer,
-resources and configured card backend. `validate` returns exact static operation
-blockers; scoped `capabilities` combines these with the constructed dependencies,
-handler declaration and runtime readiness. An unavailable operation cannot pass
-execution preflight. Do not suppress blockers by removing the inventory.
+Build the generator input from the actual discovery JSON. With Node, for example:
+
+```sh
+node --input-type=module -e 'import {readFileSync,writeFileSync} from "node:fs"; const root=process.argv[1]; const discovery=JSON.parse(readFileSync(root+"/runtime/discovery.json","utf8")); writeFileSync(root+"/runtime/setup-input.json",JSON.stringify({version:2,discovery,activateAfterValidation:true}),{flag:"wx",mode:0o600});' ROOT
+node RELEASE/scripts/generate-configuration.mjs ROOT/runtime/setup-input.json ROOT/runtime/configuration.json
+node RELEASE/bin/grok-photon-host validate --installation-root ROOT
+node RELEASE/bin/grok-photon-host setup --installation-root ROOT
+```
+
+The explicit `activateAfterValidation:true` carries the owner's already-given activation intent once. Omit it or use false to generate inactive configuration; later `grok-photon-host enable --installation-root ROOT` is an explicit activation action. Validation alone never enables. Do not execute these real activation steps from Codex.
+
+New setup uses version-3 installation-owner configuration with full owner operation permission intent; actual provider capabilities, exact resource ownership, recipients, prerequisites and fencing still restrict execution. Internal principal/context/task IDs and local credentials are generated. No manual permission-profile ceremony or pasted secret is required. Legacy version-2 configuration and v1 generator inputs remain supported for existing installations; their historical profiles are compatibility examples, not the normal setup path.
+
+The verified installed Grok help determines `gateway-flag` or `gateway-subcommand`, stored with its evidence. Validation rechecks that shape without sending. No hard-coded historical argument order or live send probe is used.
+
+Shared/free/Pro DMs use provider route identity **"shared"**. A human E.164 number is display metadata or recipient identity, not the shared provider line identity. Missing displayed serving metadata is valid. Dedicated routes use their actual serving line and expose dedicated-only features separately. Shared group creation and group-change ingress remain unavailable.
+
+A fresh unresolved initialAddress is validated offline without seeding SQLite. After enabled startup holds the exclusive host lock, the same authenticated owner resolves it through public space.create/get and persists only the exact peer-verified native DM ID. Unknown native formats fail closed. This SDK resolution is not proof of server-side chat creation, message delivery or an independent receipt. Existing state is never reseeded; subsequent startup reuses the saved route.
 
 ## Start, stop, recovery and existing Grok wake
 
-RELEASE is ROOT/releases/SELECTED_SHA256, selected by selected-release.json.
-For a configured installation:
-
 ```sh
-node RELEASE/bin/grok-photon-host validate --installation-root ROOT
-node RELEASE/scripts/smoke-test.mjs RELEASE
-```
-
-Validation is local and preserves bootstrap-or-validate authority: a fresh
-installation seeds one binding; an existing database must match. It never
-renews expired authority, revives revoked work or widens permissions.
-
-**Only after separate activation authorization and release gates are met:**
-
-```sh
-node RELEASE/bin/grok-photon-host enable --installation-root ROOT
 node RELEASE/bin/grok-photon-host run --installation-root ROOT
+node RELEASE/bin/grok-photon-host supervisor --installation-root ROOT
 ```
 
-The run command stays foreground. Configure the environment's chosen supervisor
-to preserve the same OS user, pinned Node PATH, existing gateway authentication,
-and state directory. Send SIGTERM/SIGINT and wait for exit before restarting,
-changing authority or selecting an archive. The host drains work/typing, stops
-its callback listener and socket, closes the single SDK owner, and releases its
-lock. The pinned SDK's automatically installed process-exit signal handlers are
-removed during sole-owner construction via public Node listener APIs so they
-cannot preempt this cleanup; unrelated preexisting handlers are preserved.
-
-After stopping, `node RELEASE/bin/grok-photon-host disable --installation-root ROOT`
-changes activation only. Never delete state to clear authority or unknown work.
-A leftover lock/socket is a reconcile-first incident; verify owner liveness and
-inspect the failure before any operator recovery. Unknown/blocked predecessors
-continue fencing later actions in that conversation, including after renewal.
-
-The existing Grok wake contains a handoff pointer and the exact release skill
-and launcher paths. The installed program already implements retrieval, claim,
-heartbeat, reply and ack. It never asks Grok to implement an adapter.
+Use the supervisor output's actual argv in the VM's existing service manager. One process owns the lock, stream receiver, typing lifecycle, SQLite and local socket. Send SIGTERM to the exact host process or stop its supervisor unit; shutdown drains and closes resources. A cleanup failure retains the lock. For stale ownership:
 
 ```sh
-node RELEASE/bin/grok-photon-task --installation-root ROOT --task-id TASK --generation N capabilities --json
-node RELEASE/bin/grok-photon-task --installation-root ROOT --task-id TASK --generation N work.list --limit 20 --json
+node RELEASE/bin/grok-photon-host reconcile --installation-root ROOT
+node RELEASE/bin/grok-photon-host recover-stale --installation-root ROOT
 ```
 
-Use returned handoff IDs/fences. Every task command uses this launcher prefix.
-SKILL.md documents execute/status/cancel and durable acceptance/ack behavior.
+Recover only when reported stale and the previous process is dead; the tool fails on an active owner. Then restart the same root. Never remove SQLite, reset generation or delete unknown work. For disabled activation use `grok-photon-host disable --installation-root ROOT` while stopped.
+
+One inbound event is captured durably, normalized, batched into one handoff and wakes the existing Grok task with a pointer. Accepted wakes are not resent one second later. Failed/unknown wakes retain conservative retry/backoff across restart; claim suppresses repeats and acknowledgement closes the lifecycle. A stale/deleted target records a bounded diagnostic rather than a one-second loop. Repair a target only through the existing owner-authorized binding, preserving original handoff/events.
+
+The wake includes exact release SKILL.md and grok-photon-task paths. Use that launcher with the actual task ID/generation for work.list, work.claim, work.heartbeat, work.ack and execute. Read original events after claim and reply to their originating authorized conversation. A task-created secondary DM is usable by the same principal/task/generation through its persisted grant; guessed chats, another task's references and stale generations fail. Streams and staged media remain tied to the original task authority.
+
+## Operation-specific limitations
+
+- `poll.get/vote/unvote/addOption`: public Advanced adapter is implemented and dependency-tested, but default Spectrum cloud ownership exports no authoritative endpoint/token bridge. No management connection is guessed or created. Poll creation and conversational answers remain separate supported paths.
+- `app.send`: built-in `universal-static` accepts an ordinary HTTPS URL without custom extension/backend configuration. Live rendering, customized extension sends, authenticated callback backend and updates are separate capabilities.
+- `app.update`: original public provider session and admitted revision must be available; otherwise reports requires_original_session or the exact URL/template/reconciliation blocker. Never sends a replacement card.
+- `reaction.remove`: exact bot reaction and parent/part must be restored publicly; cold recovery otherwise reports REACTION_COLD_RECOVERY_UNAVAILABLE. Never infer a removable handle from matching emoji.
+- Shared group administration: respects dedicated-line-only support. No provider limitation is bypassed.
+- All operations after authority expiry: unavailable pending explicit safe owner transition; multi-day automatic renewal remains unresolved below.
+
+Capabilities distinguish implementation, configuration, provider/account support, runtime dependencies, current resource/route authorization, actual blockers and informational notes. Provider acceptance, device observation and live verification are independent evidence. Handoff remains blocked for the operation whose required dependency/resource is missing, not merely because live verification has not occurred.
 
 ## Media and progressive text
 
@@ -231,15 +148,13 @@ claims under a used replay identity are rejected, as are revoked generations. Un
 sessions stay unresolved. Transaction failure is HTTP 503; rejected claims are
 403. Callback authentication never grants local command access.
 
-Checkpoint restart restores callback/replay state. It cannot manufacture the
-missing SDK original Message/session. A cold app.update is an explicit release
-blocker; never cast checkpoint JSON or send a replacement card to bypass it.
+Checkpoint restart restores callback/replay state. An update after restart additionally requires the original public SDK Message/session to be recoverable by public lookup. Otherwise app.update reports requires_original_session and sends no replacement. A checkpoint never becomes an SDK object.
 
-## Explicit owner authority renewal or replacement
+## Explicit owner authority transition and expiry limitation
 
-Ordinary task credentials cannot administer authority. Configure a separate
-ownerAdministration principalId and 0600 credentialFile containing a distinct
-random 32-byte hexadecimal token. Same-OS-user processes can read each other's
+Generated authority currently expires after 24 hours. RFX-11 proved that same-context expiry extension is rejected; a successor generation invalidates prior resource/handoff ownership. There is no safe automatic renewal or uninterrupted multi-day guarantee in this release. Stop before expiry and reconcile pending/unknown work before an explicit owner transition. Never edit timestamps, reset SQLite, or silently reseed authority. This is a remaining lifecycle blocker, independent of supervisor availability.
+
+New version-3 installation-owner configuration uses the same private owner credential for explicit administration. Historical version-2 configuration retains its separate ownerAdministration principalId and distinct 0600 credentialFile. Do not synthesize a new owner token for a v3 install. Same-OS-user processes can read each other's
 files and are one trust domain; this is not isolation from a hostile process
 running as that user. Keep the owner credential out of task prompts/arguments.
 
@@ -279,8 +194,8 @@ producer/backend commands; retain the current skill with its selected release
 and do not promise feature parity across rollback. No approved compatible prior
 release is fabricated for testing.
 
-Keep code completion, offline production-path verification, approved artifact
+Keep code completion, offline production-path verification, tested artifact
 verification, installed/activated target, and live/device verification as separate
 states. The completion assignment authorizes neither production activation nor
-live messages. Integration TEST-EVIDENCE.md records commands, failures, checksums
+live messages. docs/release-fix/test-evidence.md records commands, failures, checksums
 and the exact remaining gates.

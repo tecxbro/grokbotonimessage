@@ -5,28 +5,9 @@ existing Grok orchestrator. Normal startup supplies one Spectrum messaging
 owner, durable SQLite inbox/outbox, typing, scoped media, progressive text
 producer, and the configured application-owned card backend.
 
-Read [DEPLOYMENT.md](DEPLOYMENT.md) for the sole current release, configuration,
-startup, shutdown, skill-binding, and rollback procedure. Read
-[SKILL.md](SKILL.md) only for operating an installed and activated release in
-response to real incoming work. [INSTALL.md](INSTALL.md) is preserved historical
-inactive-install evidence, not a current deployment runbook. The `grok-photon`
-commands belong to this package; they are separate from the Photon
-account-management CLI. The root workspace is private and no longer contains the
-legacy `gbot`/`grok-bot` CLI.
-Use [DEPLOYMENT.md](DEPLOYMENT.md) for owner setup and lifecycle;
-[SKILL.md](SKILL.md) for operating authorized tasks. The complete
-[44-operation inventory](examples/production-inventory.json) records handlers,
-SDK calls, construction, prerequisites and separate evidence tiers. Generated
-[profiles](examples/profiles/messaging.json) require explicit owner permission
-selection and enable no operations by default. The root workspace is private and
-does not contain the legacy `gbot`/`grok-bot` CLI.
+Install on the **Grok Bot cloud VM, not the user's Mac**. [INSTALL.md](INSTALL.md) links the current [deployment runbook](DEPLOYMENT.md); [SKILL.md](SKILL.md) governs real authorized incoming work after activation. First-time setup reuses authenticated Photon CLI state or surfaces a real headless verification URL/code, discovers the live Grok target, and generates owner configuration without pasted project secrets or permission profiles. Shared routing uses "shared" and an exact durable conversation grant.
 
-Native poll management (four operations), cold original-card update-session
-restoration and cold reaction-handle restoration remain upstream public-SDK
-release blockers in Spectrum 12.8.0.
-Poll creation/conversational answers and repeated original-card updates in the
-owning process are separate supported paths. Do not hand off an unfinished
-capability as implementation work for Grok.
+[The operation inventory](examples/production-inventory.json) distinguishes handlers, provider support, runtime prerequisites and evidence. Static cards need no custom extension; original card/reaction cold recovery is conditional. Native poll management stays blocked in default cloud composition until an authoritative public connection bridge is available. Authority currently expires after 24 hours; no automatic seamless renewal is promised. See the runbook for exact blockers and owner transitions.
 
 From the repository root with Node 24.13.0 and npm 10.9.2:
 
@@ -51,6 +32,5 @@ release-maintenance command. The archive includes standalone pinned shrinkwrap,
 compiled runtime, bin launchers, schemas, migrations, backend/browser producer,
 profiles and operating instructions. Installed tests exercise actual SDK adapters
 with controlled external boundaries, without source files or development-only
-runtime dependencies. Approved packaging still requires clean-commit and actual
-approval/workflow evidence. No production or live/device claim follows from these
+runtime dependencies. Owner-local-tested packaging requires a clean commit and complete actual checks; published-approved mode additionally requires approval/workflow evidence. No production or live/device claim follows from these
 checks.

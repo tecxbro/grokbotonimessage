@@ -56,7 +56,7 @@ Exit codes: 0 means a successful protocol response with no reported adverse outc
 
 Read scoped capabilities before committing to an operation. Check implementation, account and conversation availability, provider support, blockers and evidence tier separately. Unimplemented, unavailable or unknown support is not permission to attempt a substitute. Only use a documented fallback reported by the runtime and acceptable to the user's intent. A warn-and-skip or accepted no-op does not prove an effect.
 
-Resolve people and conversations through existing task context and persisted resource references. Do not invent reference IDs or scopes from phone numbers, names or raw strings. References contain `version`, `kind`, `id`, `scope` and kind-specific parent IDs. The host revalidates scope, ownership, parent identity and generation. If the target is ambiguous, ask one short clarification question. A newly created space requires a new scoped context before follow-up operations. Media must use host-staged bytes or authorized attachment references; stream/template/codec IDs must already be registered. If the task lacks a resource or grant, report the blocker through the existing orchestrator.
+Resolve people and conversations through existing task context and persisted resource references. Do not invent reference IDs or scopes from phone numbers, names or raw strings. References contain `version`, `kind`, `id`, `scope` and kind-specific parent IDs. The host revalidates scope, ownership, parent identity and generation. If the target is ambiguous, ask one short clarification question. A newly created space may be used by the same task only when its exact durable grant proves the same principal/task/generation and provider line. Use the returned reference; no new context is required and arbitrary same-line chats remain forbidden. Media must use host-staged bytes or authorized attachment references; stream/template/codec IDs must already be registered. If the task lacks a resource or grant, report the blocker through the existing orchestrator.
 
 Keep a stable idempotency key for the same intended action and identical arguments. Persist it with the host-returned request ID. Never change the key just to bypass an error. Reusing a key with changed arguments is an idempotency conflict. Scope/task/generation are also part of runtime identity; a new generation must be resolved by the orchestrator.
 
@@ -318,26 +318,24 @@ shared-owner implementation in Spectrum 12.8.0. Treat the reported upstream
 blocker as unresolved; do not start another SDK client or ask Grok to build one.
 Poll creation and human conversational answers are independent working paths.
 
-For cards, use only configured template IDs and the original returned card and
-session references. Normal startup constructs the signed-card-v1 backend when
+For static cards, the built-in universal-static template accepts ordinary HTTPS URLs without a custom extension/backend. Other card templates require their declared configuration. For updates use the original returned card and session references. Normal startup constructs the signed-card-v1 backend when
 configured. Its signed web interactions use separately owner-enrolled participant
 keys; an address field or forwarded link does not prove who tapped in iMessage.
 Static preview, installed extension/live rendering, updates and authenticated
 web callbacks are separate capabilities. This backend is application-owned,
 not a Photon-native callback protocol. Callback continuation and replay state
-survive restart. The SDK original update-session object does not: a cold update
-remains blocked, never replaced by another bubble or a cast JSON session.
+survive restart. Original card update readiness is checked separately through public lookup. If the original SDK session is unavailable, a cold update remains blocked; never replace it with another bubble or cast JSON into a session.
 
-Reaction removal uses the actual SDK reaction handle. Cold provider lookup cannot
-restore that content handle in this pinned SDK; report the blocker, never
-reconstruct a reaction from labels or send another tapback.
+Reaction removal uses the actual SDK reaction handle. Cold recovery requires public restoration of the exact original reaction and parent target. Report REACTION_COLD_RECOVERY_UNAVAILABLE when that proof is missing; never reconstruct a reaction from labels or send another tapback.
 
 Authority expiry/revocation is an owner operation described in DEPLOYMENT.md.
 Ordinary task credentials must not renew themselves or restore cancelled work.
 
+Shared/free DMs use provider route identity "shared". A human number is not that route identity. Dedicated-only group capabilities remain separate. Run only on the Grok Bot cloud VM, not the user's Mac. Grok is the sole reasoning/orchestration layer; Photon is deterministic transport/tooling. Initial setup's real VM device-login URL/code is the only owner login step when no authenticated session is reusable; never solicit a project secret in chat.
+
 ## Work after a wake
 
-A wake is only a notification. Retrieve `work.list`, claim a returned handoff, and consume the actual persisted typed `events` in the claim response. Persist task acceptance idempotently by handoff ID through the existing Grok task handoff before acknowledging. Heartbeat within the lease using the exact returned fence while accepting work. `work.ack` means the task accepted responsibility, not that outbound messaging finished. Never ack work you have not accepted durably.
+A wake is only a notification. Accepted delivery is deduplicated; failed/unknown delivery is backed off durably, including stale/deleted targets. Do not manually repeat notifications to bypass this state. Retrieve `work.list`, claim a returned handoff, and consume the actual persisted typed `events` in the claim response. Persist task acceptance idempotently by handoff ID through the existing Grok task handoff before acknowledging. Heartbeat within the lease using the exact returned fence while accepting work. `work.ack` means the task accepted responsibility, not that outbound messaging finished. Never ack work you have not accepted durably.
 
 The internal `poll-answer` event has the ordinary event envelope (`version`,
 `eventId`, optional `providerEventId`, `direction`, `scope`, `occurredAt`,

@@ -239,6 +239,8 @@ class ProductionLocalExecutor implements LocalExecutor {
 
 export interface ProductionCompositionDependencies {
   sdkFactory?: SdkFactory;
+  /** Internal lifecycle handoff: reuses the same owner after first-address resolution. */
+  startedOwner?: SpectrumOwner;
   grokRunner?: GrokCommandRunner;
   grokCommandStyle?: GrokCommandStyle;
   grokHelpInspector?: GrokHelpInspector;
@@ -327,11 +329,13 @@ export async function createProductionComposition(
     return scopes;
   };
   const work = new DurableWork(store, contexts, conversationScopes);
-  const owner = new SpectrumOwner(
+  const owner = dependencies.startedOwner ?? new SpectrumOwner(
     { inbound: "photon-stream", outbound: "imessage", wake: "existing-grok-task-handoff" },
     providerRoutes,
     dependencies.sdkFactory ?? cloudSdkFactory({ projectId: configuration.provider.projectId, projectSecret }),
   );
+  if (dependencies.startedOwner && (!owner.ready() || owner.routes.projectId !== providerRoutes.projectId ||
+      !isDeepStrictEqual(owner.routes.evidence(), providerRoutes.evidence()))) throw new Error("PROVIDER_OWNER_MISMATCH");
   const resources = createResources(store, owner, now);
   const mediaProvider = async (trusted: TrustedContext, target = trusted.scope) => {
     if (!sameScope(trusted.scope, scope)) throw new Error("SCOPE_MISMATCH");

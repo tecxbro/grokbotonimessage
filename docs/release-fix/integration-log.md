@@ -439,3 +439,21 @@ Exact command: `npm run photon:build && node --test --test-reporter=tap packages
 ### Assembled registry verification
 
 `packages/photon-features/tests/foundation/verification-tools.test.ts` now compares candidate file count to the reviewed candidate manifest and corrupts that count by +1; all drift/foundation assertions remain. `docs/worktrees/integration/candidate-contract.json` was regenerated for the assembled source only (58 files at this checkpoint). `scripts/run-integration-tests.mjs` now reports a child error/signal before retaining its existing fail-closed result check. Covered by `assembled-diagnostic`: exact `npm run photon:test:integration`, HEAD fba068fa9797d2c12b17c17e751b948d00bf6ebd, 1052 passed, 0 failed/skipped, 108 files. Earlier assembled-first failed and its log remains; there was no complete TAP count.
+
+## RFX-05 / RFX-11 fresh installation lifecycle integration
+
+Reviewed followup 7f0e51c7ce3b351788745ece93772143dc669319 (implementation 57c5f94ea8365ffa2d84e5a38e1fb8214449752c) merges the narrow initial-conversation resolver and tests.
+
+- `packages/photon-features/src/host/process.ts` — RFX-04/05/11: Adopt prerequisite-only validation before a native conversation exists, preserve omitted activation option, verify observed Grok help shape, resolve only after activation/lock, and retain failure cleanup. Covered by `initial-host-final`.
+
+- `packages/photon-features/src/host/production.ts` — RFX-04/05/11: Reuse the same started SpectrumOwner from initial resolution, checking provider route identity; no second owner or receiver. Covered by `initial-host-final`.
+
+- `packages/photon-features/tests/integration/completion-configuration.test.mjs` — RFX-04/05/11: Resolve additive test merge and migrate new helper owner fixtures to RFX-01 explicit dedicated/servingPhone bindings. Covered by `initial-host-final`.
+
+- `packages/photon-features/tests/integration/release-fix-setup-packaging.test.mjs` — RFX-04/05/11: Exercise actual generation/validation/setup/run/SQLite/lock and repeated startup with controlled SDK boundaries, no inbound message or wake; use private short socket paths. Covered by `initial-host-final`.
+
+Exact command: `node --test --test-reporter=tap packages/photon-features/tests/integration/release-fix-setup-packaging.test.mjs packages/photon-features/tests/integration/completion-configuration.test.mjs packages/photon-features/dist/tests/integration/production-lifecycle.test.js packages/photon-features/dist/tests/integration/rfx-lifecycle.test.js packages/photon-features/dist/tests/integration/release-fix-shared-roundtrip.test.js`. Exit 0; 56 passed, 0 failed/skipped; tested HEAD `f296f22f00144d9629794a61e4021a72926e4ffb` plus listed glue. Prior failures were an incomplete synthetic selected-release pointer and an overlong fixture socket path; assertions and runtime checks were retained.
+
+## Release documentation and exact ownership registration
+
+RFX-00 updates `README.md`, `agent.md`, `architecthure.md`, `packages/photon-features/README.md`, `packages/photon-features/INSTALL.md`, `packages/photon-features/DEPLOYMENT.md` and the non-generated sections of `packages/photon-features/SKILL.md` to describe the assembled VM setup, shared/secondary route, owner intent, lifecycle and truthful feature limitations. Generated skill/configuration/inventory checks and `node scripts/verify-docs.mjs integration` cover these contracts. `docs/worktrees/ownership.json` gains an exact release maintenance assignment at the immutable release base, with `docs/release-fix/FILES.json`; historical owners and prior repair records remain intact. `node scripts/verify-ownership.mjs integration` covers exact registration. All new integration source/test edits and each merge have focused tests above.

@@ -1062,6 +1062,12 @@
       "manifest": "docs/worktrees/fix-1-repair/FILES.json",
       "coordinator": "fix-1",
       "rule": "Exact maintenance file owners supersede historical lane owners only for this repair. Historical owner arrays and evidence remain intact."
+    },
+    "rfx-00-release": {
+      "base": "b83e3afd7049a991de6daffedf831165890f0901",
+      "manifest": "docs/release-fix/FILES.json",
+      "coordinator": "RFX-00",
+      "rule": "Exact release-wave paths at immutable base; required reviewed integration glue is explicitly authorized. Historical owner and repair manifests remain intact."
     }
   }
 }

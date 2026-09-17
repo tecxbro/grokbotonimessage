@@ -1,0 +1,507 @@
+{
+  "version": 1,
+  "repairBase": "b83e3afd7049a991de6daffedf831165890f0901",
+  "policy": "Exact RFX release delta paths not already assigned in the preserved prior maintenance manifest. Ownership does not authorize unrelated redesign or new features. Each glue change is explained and tested in integration-log.md.",
+  "files": [
+    {
+      "path": "README.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "agent.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "architecthure.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/FILES.json",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/RFX-06.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/RFX-07.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/RFX-08.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/RFX-09.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/RFX-10.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/acceptance.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/included-commits.json",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/integration-log.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/ownership.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/parallel-plan.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/rfx-01-shared-routing.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/rfx-02-wake-reliability.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/rfx-03-multi-conversation.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/rfx-04-vm-bootstrap.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/rfx-05-config-simplify.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/rfx-11-lifecycle.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "docs/release-fix/test-evidence.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "package-lock.json",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/DEPLOYMENT.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/INSTALL.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/README.md",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/examples/configuration-input.json",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/examples/production-inventory.json",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/examples/profiles/administrative.json",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/examples/profiles/messaging.json",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/examples/profiles/minimal-text.json",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/npm-shrinkwrap.json",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/package.json",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/schemas/host-configuration-v3.json",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/scripts/generate-configuration.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/scripts/generate-production-inventory.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/scripts/install-photon-cli.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/scripts/package.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/scripts/smoke-test.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/adapters/state/unit-of-work.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/adapters/transport/native-state.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/adapters/transport/provider-context.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/adapters/transport/spectrum-owner.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/cli/setup.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/contracts/resources.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/features/media/sdk.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/features/media/staging.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/features/native/guards.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/features/native/module.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/features/native/spaces.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/features/polls/advanced-adapter.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/features/text-messages/reactions.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/features/text-messages/sdk.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/features/text-messages/targets.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/host/authority-admin.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/host/authority.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/host/configuration-inventory.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/host/grok-discovery.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/host/grok-wake.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/host/initial-conversation.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/host/owner-lock.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/host/process.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/host/supervisor.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/host/task-launcher.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/host/typing-binding.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/authorization.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/child-journal.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/children.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/conversation-routes.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/errors.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/executor.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/outcomes.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/runtime/core/work-handoff.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/src/runtime/inbound/wake-dispatcher.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/artifact/rfx-owner-package.test.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/e2e/delivery-read.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/e2e/install-rollback.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/e2e/poll-restart.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/e2e/single-ownership.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/foundation/verification-tools.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-browser.test.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/completion-configuration.test.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/release-fix-setup-packaging.test.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/release-fix-shared-roundtrip.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/rfx-capability-truth.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/rfx-card-restart.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/rfx-lifecycle.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/rfx-multi-conversation.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/rfx-poll-management.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/rfx-reaction-restart.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/rfx-shared-routing.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/rfx-vm-bootstrap.test.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/rfx-wake-reliability.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/typing-start-lifetime.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-05/advanced-adapter.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-05/advanced-support.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-07/unit.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-08/distribution.test.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/lanes/wt-08/regression.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "packages/photon-features/tests/security/webhook-auth.test.ts",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    },
+    {
+      "path": "scripts/run-integration-tests.mjs",
+      "owner": "RFX-00 integration of reviewed lanes",
+      "justification": "Reviewed release lane delta or required interface/routing/resource/composition/fixture/docs synchronization; see integration-log.md and included-commits.json."
+    }
+  ]
+}

@@ -1,9 +1,5 @@
 # Installation
 
-[DEPLOYMENT.md](DEPLOYMENT.md) is the sole current installation, configuration,
-owner-administration, lifecycle and rollback procedure for `fix-1`.
+Install the tested **owner-local-tested Linux x64** archive on the **Grok Bot cloud VM, not the user's Mac**. Use its SHA-256 and provenance sidecars and Node 24.13.0. [DEPLOYMENT.md](DEPLOYMENT.md) contains exact install, VM discovery/device-login, configuration, validation, activation-intent, run, stop and recovery commands.
 
-The earlier inactive-install checkpoint is preserved in Git history. Its
-foundation-era branch, paths, sudo/systemd examples and missing-adapter notes
-are not current operating instructions. An npm dry-run is not an installed
-release test, and an offline diagnostic archive is not an approved release.
+The earlier inactive-install checkpoint is preserved in Git history. Current owner-local packaging retains clean-commit, full-test, dependency, checksum and compatible-state checks without requiring workflow approval paperwork. Published-approved mode remains available separately. Installation/activation and live phone/provider/device verification are not performed by Codex.

@@ -14,6 +14,10 @@ import {
   writeActivation,
 } from "./configuration.js";
 import { createProductionComposition, type ProductionCompositionDependencies } from "./production.js";
+import { validateInitialConversationPrerequisites, resolveInitialConversation, activationAfterValidationRequested } from "./initial-conversation.js";
+import { SpectrumOwner, cloudSdkFactory } from "../adapters/transport/spectrum-owner.js";
+import { ProviderContext } from "../adapters/transport/provider-context.js";
+import { discoverGrokCommandStyle, type GrokHelpInspector } from "./grok-wake.js";
 import { supervisorGuidance } from "./supervisor.js";
 import { assertSelectedRelease } from "./selected-release.js";
 import { DurableSQLiteStore } from "../adapters/state/sqlite.js";
@@ -21,16 +25,17 @@ import { bootstrapOrValidateAuthority, configuredAuthority } from "./authority.j
 
 type HostCommand = "validate" | "enable" | "disable" | "run" | "setup" | "supervisor" | "reconcile" | "recover-stale";
 
-function parse(argv: readonly string[]): { command: HostCommand; root: string; activateAfterValidation: boolean } {
+function parse(argv: readonly string[]): { command: HostCommand; root: string; activateAfterValidation: boolean | undefined } {
   const [command, flag, root, ...extra] = argv;
   if (!(["validate", "enable", "disable", "run", "setup", "supervisor", "reconcile", "recover-stale"] as const).includes(command as HostCommand) ||
     flag !== "--installation-root" || !root || (extra.length > 0 &&
       !(command === "setup" && extra.length === 1 && extra[0] === "--activate-after-validation")))
     throw new Error("USAGE_COMMAND_INSTALLATION_ROOT");
-  return { command: command as HostCommand, root: resolve(root), activateAfterValidation: extra.length === 1 };
+  return { command: command as HostCommand, root: resolve(root), activateAfterValidation: extra.length === 1 ? true : undefined };
 }
 
-export async function validateProductionInstallation(root: string, releaseRoot: string): Promise<{
+export async function validateProductionInstallation(root: string, releaseRoot: string,
+  dependencies: { grokHelpInspector?: GrokHelpInspector } = {}): Promise<{
   release: string;
   activation: "disabled" | "enabled";
   taskId: string;
@@ -50,12 +55,19 @@ export async function validateProductionInstallation(root: string, releaseRoot: 
   const now = Date.now();
   if (configuration.task.issuedAt > now || configuration.task.expiresAt <= now)
     throw new Error("EXPIRED_TASK_BINDING");
+  await validateInitialConversationPrerequisites(configuration, now);
+  if (configuration.ownerModel === "installation-owner" && configuration.grok.commandStyle) {
+    const style = await discoverGrokCommandStyle(executable, configuration.grok.timeoutMs, dependencies.grokHelpInspector);
+    if (style !== configuration.grok.commandStyle) throw new Error("GROK_WAKE_COMMAND_STYLE_CHANGED");
+  }
+  if (configuration.provider.conversationId) {
   const authority = configuredAuthority(configuration);
   const store = new DurableSQLiteStore(configuration.runtime.statePath, () => now);
   try {
     bootstrapOrValidateAuthority(store, authority.context, authority.conversationId, now);
   } finally {
     store.close();
+  }
   }
   return {
     release: selected.release,
@@ -94,9 +106,10 @@ export async function changeProductionActivation(
 /** Caller authorization is carried once, explicitly. Validation never grants
  * activation by itself; start revalidates and acquires the same owner lock. */
 export async function setupProductionInstallation(root: string, releaseRoot: string,
-  options: { activateAfterValidation: boolean }) {
+  options: { activateAfterValidation?: boolean } = {}) {
   const validated = await validateProductionInstallation(root, releaseRoot);
-  const activation = options.activateAfterValidation === true
+  const configuration = await loadNormalizedHostConfiguration(root);
+  const activation = activationAfterValidationRequested(configuration, options.activateAfterValidation)
     ? await changeProductionActivation(root, releaseRoot, "enabled") : validated.activation;
   return { ...validated, activation, supervisor: supervisorGuidance(root, releaseRoot),
     start: () => runProductionHost(root, releaseRoot) };
@@ -108,6 +121,7 @@ export async function runProductionHost(root: string, releaseRoot: string,
   dependencies: ProductionCompositionDependencies = {}): Promise<void> {
   const selected = await assertSelectedRelease(root, releaseRoot);
   const ownership = await acquireHostOwnership(join(root, "runtime"), selected.release);
+  let initialOwner: SpectrumOwner | undefined;
   let cardBackend: { close(): Promise<void> } | undefined;
   let local: { close(): Promise<void> } | undefined;
   let composition: Awaited<ReturnType<typeof createProductionComposition>> | undefined;
@@ -124,18 +138,32 @@ export async function runProductionHost(root: string, releaseRoot: string,
     if (cardBackend) try { await cardBackend.close(); } catch (error) { failures.push(error); }
     if (local) try { await local.close(); } catch (error) { failures.push(error); }
     if (composition) try { await composition.runtime.stop(); } catch (error) { failures.push(error); }
+    if (initialOwner) try { await initialOwner.stop(); } catch (error) { failures.push(error); }
     // Failed cleanup retains ownership so a supervisor cannot create a second
     // owner while a provider or local interface might still be alive.
     if (!failures.length) try { await ownership.release(); } catch (error) { failures.push(error); }
     if (failures.length) throw new AggregateError(failures, "HOST_SHUTDOWN_FAILED");
   };
   try {
-    const validated = await validateProductionInstallation(root, releaseRoot);
-    const configuration = await loadNormalizedHostConfiguration(root);
+    const validated = await validateProductionInstallation(root, releaseRoot, dependencies);
+    let configuration = await loadNormalizedHostConfiguration(root);
     if (validated.activation !== "enabled" || configuration.activation !== "enabled") throw new Error("ACTIVATION_REQUIRED");
     if (signalRequested) return;
+    if (!configuration.provider.conversationId) {
+      initialOwner = new SpectrumOwner(
+        { inbound: "photon-stream", outbound: "imessage", wake: "existing-grok-task-handoff" },
+        new ProviderContext(configuration.provider.projectId, [{ accountId: configuration.provider.accountId,
+          lineId: configuration.provider.lineId, dedicated: configuration.provider.dedicated, servingPhone: configuration.provider.phone }]),
+        dependencies.sdkFactory ?? cloudSdkFactory({ projectId: configuration.provider.projectId,
+          projectSecret: await readConfiguredProjectSecret(configuration) }));
+      await initialOwner.start();
+      configuration = await resolveInitialConversation(root, configuration, initialOwner, ownership);
+      if (signalRequested) return;
+    }
     composition = await createProductionComposition(configuration, root, releaseRoot,
-      { report: code => process.stderr.write(`grok-photon-host: ${code}\n`), ...dependencies });
+      { report: code => process.stderr.write(`grok-photon-host: ${code}\n`), ...dependencies,
+        ...(initialOwner ? { startedOwner: initialOwner } : {}) });
+    initialOwner = undefined; // Composition now owns cleanup of this same instance.
     try { await composition.runtime.start(); }
     catch (error) {
       // Runtime.start rolls back itself. Its aggregate includes the original

@@ -104,6 +104,15 @@
       "reviewedCommit": "b9be4107fbe013602964124242604fc176582262",
       "implementationCommit": "1476e17f51a657f9941860c19a6ae5a27d232a7d",
       "laneNote": "docs/release-fix/RFX-06.md"
+    },
+    {
+      "lane": "RFX-05",
+      "branch": "codex/rfx-05-config-simplify",
+      "implementationCommit": "57c5f94ea8365ffa2d84e5a38e1fb8214449752c",
+      "reviewedCommit": "7f0e51c7ce3b351788745ece93772143dc669319",
+      "evidenceCommit": "3521adab3ee9badb03bdb8e9f93f62d5a0e52e49",
+      "laneNote": "docs/release-fix/rfx-05-config-simplify.md",
+      "reason": "Resolve fresh initial-address configuration through the same activated owner; preserve authority and exact private config."
     }
   ],
   "pendingLanes": [

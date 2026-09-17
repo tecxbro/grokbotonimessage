@@ -1,6 +1,6 @@
 # Agent working guide
 
-Last reviewed: 2026-09-08, against the committed F0 foundation.
+Release integration reviewed: 2026-09-17 UTC; historical F0 instructions are subordinate to the explicit release assignment.
 Read this file and [architecthure.md](architecthure.md) when starting a lane assignment.
 
 ## Mission and boundaries
@@ -12,6 +12,14 @@ Read this file and [architecthure.md](architecthure.md) when starting a lane ass
 - Do not add another reasoning model, keyword router, Grok API integration or transcript polling.
 - Do not migrate hosting, modify iMessage-agent-render or select the macOS local provider because development runs on a Mac.
 - Do not provision lines, change billing/approval settings, activate services or send live messages without explicit task authorization.
+
+## Release-fix operating boundary
+
+RFX-00 is integration owner for reviewed RFX-01 through RFX-11. Required interface/type, routing, resource authority, composition, imports, fixture, registry/schema and merge glue may cross historical lane ownership; log each exact file, affected lanes, reason and tests in docs/release-fix/integration-log.md. Return substantive feature defects to their owning lane. There is no RFX-12.
+
+Preserve the registered rfx-00-integration worktree, codex/rfx-00-integration branch and exact base b83e3afd7049a991de6daffedf831165890f0901. Preserve original integration documentation. Never reset/recreate the checkout, rewrite immutable F0, mutate main, deploy, activate real Photon, send live messages or operate the real Grok VM from this task. Local isolated build/test environments use controlled external doubles only.
+
+The deliverable is a tested clean-commit owner-local Linux x64 artifact, SHA-256, provenance and VM instructions. Install/run belongs on the Grok Bot cloud VM, not the user's Mac. Photon CLI retrieves private project secrets after existing-session verification or a real headless device-login URL/code. Grok remains the only reasoning/orchestration layer; no instruction/orchestration redesign belongs in this wave.
 
 ## Checkout and ownership
 
@@ -42,8 +50,8 @@ Use Node 24.13.0 and npm 10.9.2 on PATH; exact dependency versions and compatibi
 | Workspace tests | `npm test` |
 | Package compilation and public SDK probes | `npm run photon:build` |
 | F0 foundation tests | `npm run photon:test` |
-| Schema and foundation digest drift | `npm run photon:check` |
-| Regenerate shared schemas, WT-00 only | `npm run generate --workspace=@grokbot/photon-features` |
+| Explicit assembled candidate drift | `npm run photon:check` |
+| Regenerate shared schemas, WT-00 only | `node scripts/generate-contracts.mjs --target assembled-candidate` |
 
 For one lane, run `npm run test:lane -- dist/tests/lanes/wt-NN/*.test.js` inside `packages/photon-features`; it compiles the package, then selects that lane's tests. Run relevant checks after changes and record their actual results.
 

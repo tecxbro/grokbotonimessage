@@ -1,13 +1,21 @@
 # Photon Feature Runtime architecture
 
-Living architecture overview. Last reviewed: 2026-09-08.
+Living architecture overview. Release integration reviewed: 2026-09-17 UTC.
 Working rules: [agent.md](agent.md). Detailed behavior: [runtime contract](docs/photon-features/runtime-contract.md).
 
 ## Purpose
 
 A user communicates through iMessage. The existing Grok Bot orchestrator decides what to do and delegates substantive work to existing worker Bots. The Photon Feature Runtime validates, authorizes, persists and executes messaging operations deterministically. Codex builds the package and its operating skill; normal Grok operation consumes that package without generating integration code.
 
-## Verified checkpoint
+## RFX-00 integrated flow
+
+One Grok Bot cloud VM host owns Spectrum, ingress, SQLite inbox/outbox, resource authority, and wake dispatch. Shared/free provider route identity is "shared"; displayed E.164 and recipient addresses are distinct metadata. Fresh setup validates offline, then enabled locked startup resolves an exact native DM through the same SDK owner before seeding authority. No Mac provider or access is required.
+
+Authenticated shared inbound → durable capture/inbox → one handoff → deduplicated/backed-off pointer wake → current task claim → original event → authorized outbound reply to that conversation. Task-created secondary conversations use exact same-principal/task/generation grants; leaf and parent identities are checked without changing task scope. Unknown inbound remains unresolved. One public SDK owner and receiver serve the complete flow.
+
+[Acceptance](docs/release-fix/acceptance.md) and [test evidence](docs/release-fix/test-evidence.md) separate code, integration, packaging, target installation and live/device proof. Static cards, customized extensions/live rendering, signed callbacks, original-card recovery and native poll management have independent prerequisites. The 24-hour initial authority expiration remains a lifecycle limitation; no unsafe reseeding or automatic renewal is introduced.
+
+## Historical verified checkpoint
 
 F0 commit: `57e40736be8a59047b776654c766fbe8bfd10c9e`.
 Contract version, digest, exact dependencies and validation logs: [foundation.json](docs/photon-features/foundation.json).
@@ -65,7 +73,7 @@ flowchart TB
 
 **Incoming work:** explicitly select Photon stream or webhook ingress, verify authenticity and scope, normalize typed events, and persist inbox/reducer/handoff state transactionally before upstream acknowledgement. Wake the existing task after commit. The bot then uses `work.list`, `work.claim`, `work.heartbeat` and `work.ack` to retrieve and manage actual durable work. The wake body is neither the work record nor authorization.
 
-**Outgoing operations:** the executable submits a strict versioned action through local IPC. The runtime resolves the authenticated principal, context and resource scope, checks current generation/permissions/capabilities, and records idempotent outbox work. A claimed executor invokes an injected feature handler through the single SDK owner, then persists results and recovery state. WT-01 still needs to implement this integrated execution path.
+**Outgoing operations:** the executable submits a strict versioned action through local IPC. The runtime resolves the authenticated principal, context and resource scope, checks current generation/permissions/capabilities, and records idempotent outbox work. A claimed executor invokes an injected feature handler through the single SDK owner, then persists results and recovery state. The RFX-00 assembly wires this execution path; the F0 table above remains historical evidence.
 
 **Recovery:** leases and fences prevent stale database writes. Multipart children have stable identities and checkpoints. A provider call whose outcome was not persisted can remain unknown; retry requires verified deduplication or reconciliation support. A successful void operation does not need an invented message reference. Delivery/read receipts are correlated observations, distinct from executor completion or provider acceptance.
 
