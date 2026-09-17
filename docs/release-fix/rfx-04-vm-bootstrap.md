@@ -409,3 +409,7 @@ failures/skips/cancellations. Broader suite failures remain recorded above.
 
 - `.photon-local/rfx-auth-reuse-focused.tap` SHA-256 `ec418ad2c529692625e4e999d8306197f8b4a7a91109e156f6a444ae960c2173`.
 - `.photon-local/rfx-auth-reuse-integration.tap` SHA-256 `8b73844cebe9d467ca7924da0fd946cb0af6280721dac9cddb8ef3417d94a5a0`.
+
+Follow-up implementation commit: `e15fc7e0d4554c812075837ce988b28feff9c93c`
+(parent `7247c799ea325d38ec685a653f9728c7f4ee8a94`). The following commit only records
+this exact identity in the lane note; tested production and test bytes are unchanged.
