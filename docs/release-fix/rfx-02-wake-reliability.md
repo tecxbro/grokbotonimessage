@@ -181,4 +181,10 @@ Grok syntax or live delivery was tested. No push, deployment, activation, live
 message, or VM/Mac operation was performed. This lane is ready for review, with
 aggregate integration checks blocked on the explicit requests above.
 
-Implementation commit: to be recorded in a documentation-only follow-up commit.
+Implementation commit: `d8c03433f922f243af30e89ea0bd79f074e41b42`.
+The final focused rerun passed 28/28 with the source/test content in this commit.
+Changed production/test files, sorted by path and hashed as
+`path + NUL + bytes + NUL`, SHA-256:
+`a0e74a4431f1dcca60c9fb59bb97ce261d83df383f7a0315d3f5adc5e1671873`.
+This follow-up changes only this task note to record the immutable implementation
+identity; it does not alter the tested code. Integrate both lane commits.
