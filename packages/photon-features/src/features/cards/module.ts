@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { idSchema, type FeatureModule, type Capability } from '../../index.js';
 import { CardOperations } from './operations.js';
 import { templateFor, type CardOptions } from './configuration.js';
-import { cardContent } from './sdk.js';
+import { cardContent, resolveCardTemplate, STATIC_CARD_TEMPLATE_ID } from './sdk.js';
 import { recoveryCodec, SESSION_CODEC } from './session-codec.js';
 import { unverifiedInteractionReducer } from './reducer.js';
 import type { FeatureModule as PublicFeatureModule } from '../../contracts/feature.js';
@@ -17,16 +17,21 @@ export function cardCapabilities(): Capability[] {
     evidence: [], sdkVersion: '12.8.0', sources: [source],
     blockers: operation === 'app.sendCustomized' ? ['Host extension registration required; device rendering unverified.'] :
       operation === 'app.update' ? ['Original SDK session and admission revision binding required. Universal layout changes need a configured backend URL mapping.'] :
-        ['Host template registration required; device rendering unverified.'] }));
+        ['Static HTTPS cards use templateId universal-static; device rendering unverified.'] }));
 }
 /** Separate report: a URL preview, static card, live extension and backend callback
  * are independent capabilities and none is promoted by provider acceptance. */
 export function cardCapabilityReport(options: CardOptions) {
+  const configured = options.templates.filter(template => {
+    try { templateFor(options, template.id); return true; } catch { return false; }
+  });
   return { richLinkPreview: { owner: 'wt-03', liveVerified: false },
-    staticCard: { implemented: true, liveVerified: false },
-    liveRendering: { implemented: true, configuredTemplates: options.templates.filter(t => t.live?.installedExtensionVerified).map(t => t.id), liveVerified: false },
+    staticCard: { implemented: true, builtInTemplateId: STATIC_CARD_TEMPLATE_ID, requiresExtension: false, requiresBackend: false, liveVerified: false },
+    customizedCard: { implemented: true, configuredTemplates: configured.filter(t => t.kind === 'customized' && t.extension).map(t => t.id), liveVerified: false },
+    liveRendering: { implemented: true, configuredTemplates: configured.filter(t => t.live?.installedExtensionVerified).map(t => t.id), liveVerified: false },
     authenticatedCallback: { adapterImplemented: true, backendConfigured: false, liveVerified: false },
-    restartRestoration: { supportedFromCheckpointAlone: false, blockerId: 'requires_original_session' } };
+    restartRestoration: { supportedFromCheckpointAlone: false, publicRefetchSupported: true,
+      coldProviderSessionGuaranteed: false, blockerId: 'requires_original_session' } };
 }
 export function createCardsModule(options: CardOptions): FeatureModule {
   const handlers = new CardOperations(options);
@@ -36,7 +41,7 @@ export function createCardsModule(options: CardOptions): FeatureModule {
       recoveryCodec: operation === 'app.update' ? SESSION_CODEC : { id: 'wt06.card-dispatch', version: 1 } })),
     compilers: [{ family: 'app', async compile(content, services) {
       if (content.type !== 'app') throw new Error('CARD_COMPILER_FAMILY_MISMATCH');
-      const template = templateFor(options, content.templateId);
+      const template = resolveCardTemplate(options, content.templateId, content.url);
       return cardContent(template, content.url, content.layout, services);
     } }],
     reducers: [unverifiedInteractionReducer], capabilities: cardCapabilities(),

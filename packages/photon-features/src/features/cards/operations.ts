@@ -3,8 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { ZodError } from 'zod';
 import type { Message } from 'spectrum-ts';
 import { parseAction, type Action, type ActionFor, type ExecutionServices, type OperationResult, type ResourceRef } from '../../index.js';
-import { CardError, requireCard, templateFor, approvedUrl, type CardOptions } from './configuration.js';
-import { cardContent, checkSpace, checkMessage, preparedSend, preparedEdit } from './sdk.js';
+import { CardError, requireCard, approvedUrl, type CardOptions } from './configuration.js';
+import { cardContent, checkSpace, checkMessage, preparedSend, preparedEdit, resolveCardTemplate } from './sdk.js';
 import { restoreOriginal, sessionMetadata, type CardSession } from './session-codec.js';
 import { CardOrdering, fence } from './update-ordering.js';
 import { key, ownedReference, loadSession, saveSession, assertSession } from './state.js';
@@ -13,7 +13,7 @@ import type { Space } from 'spectrum-ts';
 import type { CardTemplate } from './configuration.js';
 import { createHash } from 'node:crypto';
 import { mapCardOperation } from './sdk.js';
-import { encodeCardSession, restoreCardSession } from './session-codec.js';
+import { decodeSession, encodeCardSession, restoreCardSession } from './session-codec.js';
 import { assertCurrentCardRevision } from './update-ordering.js';
 import { imessage as nativeIMessage } from 'spectrum-ts/providers/imessage';
 
@@ -52,7 +52,7 @@ export class CardOperations {
       observations: [{ kind: 'unknown', source: 'sdk-return', at: s.clock.now() }] };
   }
   private async send(action: Exclude<CardAction, ActionFor<'app.update'>>, requestId: string, s: ExecutionServices): Promise<OperationResult> {
-    const { arguments: args } = action, template = templateFor(this.options, args.templateId);
+    const { arguments: args } = action, template = resolveCardTemplate(this.options, args.templateId, args.url);
     requireCard(template.kind === (action.operation === 'app.send' ? 'universal' : 'customized'), 'INVALID_REQUEST', 'Operation does not match the registered template kind.');
     s.transactions.transaction(tx => { fence(tx, requestId, action, s); ownedReference(tx, args.space, s); });
     const space = await s.resources.space(args.space, s.context);
@@ -116,7 +116,7 @@ export class CardOperations {
       requireCard(loaded.data.cardRevision === expectedRevision, 'IDEMPOTENCY_CONFLICT', 'A newer card revision already completed.');
       return loaded;
     });
-    const template = templateFor(this.options, data.templateId);
+    const template = resolveCardTemplate(this.options, data.templateId, data.url);
     requireCard(template.kind === data.kind, 'UNAVAILABLE', 'Registered card kind changed.', 'card_template_changed');
     let url = data.url;
     if (data.kind === 'universal') {
@@ -174,6 +174,9 @@ export interface CardRuntimeOptions {
   binding(context: PublicServices['context']): { scope: PublicServices['context']['scope']; phone: string; nativeSpaceId: string };
   space(reference: Extract<ResourceRef, { kind: 'space' }>, services: PublicServices): Promise<Space>;
   requestId(action: CardAction, services: PublicServices): string;
+  /** Host-owned bounded checkpoint lookup; must enforce scope/task/principal/generation.
+   * Never returns credentials or a serialized SDK graph. */
+  loadSession?(reference: CardSession['session'], services: PublicServices): Promise<string | undefined>;
   /** Stable request-admission value, not a read of the latest card revision. */
   updateRevision?(action: ActionFor<'app.update'>, services: PublicServices): number | undefined;
 }
@@ -185,12 +188,14 @@ export class CardRuntime {
   private readonly handles = new Map<string, { data: CardSession; original: Message; templateDigest: string }>();
   constructor(readonly options: CardRuntimeOptions) {}
   remember(data: CardSession, original: Message): void {
+    const templateDigest = this.templateDigest(data.templateId, data.url);
+    data = { ...data, templateDigest };
     encodeCardSession(data);
     if (this.handles.size >= 1000 && !this.handles.has(data.session.id)) this.handles.delete(this.handles.keys().next().value!);
-    this.handles.set(data.session.id, { data: structuredClone(data), original, templateDigest: this.templateDigest(data.templateId) });
+    this.handles.set(data.session.id, { data: structuredClone(data), original, templateDigest });
   }
-  private templateDigest(id: string): string {
-    const template = runtimeTemplate(this, id);
+  private templateDigest(id: string, url: string): string {
+    const template = runtimeTemplate(this, id, url);
     return createHash('sha256').update(JSON.stringify({ kind: template.kind, origins: template.origins,
       extension: template.extension, live: template.live, interactions: template.interactions })).digest('hex');
   }
@@ -199,10 +204,61 @@ export class CardRuntime {
     const value = this.handles.get(sessionId);
     return value ? encodeCardSession(value.data) : undefined;
   }
+  /** Try only the provider's public refetch. A checkpoint never becomes a Message. */
+  async resolveOriginal(reference: CardSession['session'], services: PublicServices): Promise<{ data: CardSession; original: Message }> {
+    services.assertActiveClaim();
+    if (this.handles.has(reference.id)) {
+      const restored = this.original(reference.id);
+      requireCard(isDeepStrictEqual(restored.data.session, reference), 'SCOPE_MISMATCH', 'Requested session differs.');
+      services.transaction(unit => assertCurrentCardRevision(unit, restored.data, restored.data.cardRevision, services));
+      publicSpace(restored.original.space, this, services);
+      return restored;
+    }
+    const encoded = await this.options.loadSession?.(reference, services);
+    services.assertActiveClaim();
+    requireCard(encoded, 'UNAVAILABLE', 'Original SDK session and an authorized durable checkpoint are required.', 'requires_original_session');
+    const data = decodeSession(encoded);
+    requireCard(data.phase === 'ready', 'UNAVAILABLE', 'Unsettled checkpoint requires reconciliation.', 'card_update_outcome_unknown');
+    requireCard(isDeepStrictEqual(data.session, reference), 'SCOPE_MISMATCH', 'Checkpoint session differs from the requested session.');
+    requireCard(data.templateDigest === this.templateDigest(data.templateId, data.url), 'UNAVAILABLE',
+      'Original template identity is missing or changed since send.', 'card_template_changed');
+    // Validate all durable ownership and revision bindings before any provider read.
+    services.transaction(unit => assertCurrentCardRevision(unit, data, data.cardRevision, services));
+    const spaceRef = { version: 1, kind: 'space', id: data.card.scope.spaceId, scope: data.card.scope } as const;
+    const resolved = await services.resolveResource(spaceRef);
+    services.assertActiveClaim();
+    requireCard(isDeepStrictEqual(resolved, spaceRef), 'SCOPE_MISMATCH', 'Resolved card conversation differs.');
+    const space = await this.options.space(spaceRef, services);
+    services.assertActiveClaim();
+    publicSpace(space, this, services);
+    let original: Message | undefined;
+    try { original = await space.getMessage(data.providerMessageId); }
+    catch { /* Unsupported or failed public restoration is never a replacement send. */ }
+    services.assertActiveClaim();
+    const restored = restoreCardSession(encoded, original);
+    publicSpace(restored.original.space, this, services);
+    services.transaction(unit => assertCurrentCardRevision(unit, restored.data, restored.data.cardRevision, services));
+    this.remember(restored.data, restored.original);
+    return restored;
+  }
+  /** Read-only preflight for hosts: no edit/send or synthetic session restoration. */
+  async updateCapability(reference: CardSession['session'], services: PublicServices): Promise<{ available: boolean; blockerId?: string }> {
+    try {
+      const { data } = await this.resolveOriginal(reference, services);
+      const template = runtimeTemplate(this, data.templateId, data.url);
+      requireCard(template.kind !== 'universal' || template.updateUrl, 'UNAVAILABLE',
+        'Universal layout updates require the actual backend URL mapping.', 'universal_update_url_required');
+      return { available: true };
+    }
+    catch (error) {
+      if (error instanceof CardError && error.blockerId) return { available: false, blockerId: error.blockerId };
+      throw error;
+    }
+  }
   original(sessionId: string): { data: CardSession; original: Message } {
     const value = this.handles.get(sessionId);
     requireCard(value, 'UNAVAILABLE', 'Original SDK card session is no longer retained.', 'requires_original_session');
-    requireCard(value.templateDigest === this.templateDigest(value.data.templateId), 'UNAVAILABLE',
+    requireCard(value.templateDigest === this.templateDigest(value.data.templateId, value.data.url), 'UNAVAILABLE',
       'Configured card identity changed since send.', 'card_template_changed');
     return restoreCardSession(encodeCardSession(value.data), value.original);
   }
@@ -229,9 +285,9 @@ function publicFailure(error: unknown, requestId: string, s: PublicServices, dis
       retry: known && error.blockerId === 'card_update_outcome_unknown' ? 'reconcile-first' : 'never',
       ...(known && error.blockerId ? { blockerId: error.blockerId } : {}) } };
 }
-function runtimeTemplate(runtime: CardRuntime, templateId: string): CardTemplate {
+function runtimeTemplate(runtime: CardRuntime, templateId: string, url: string): CardTemplate {
   // Reuse existing configuration validation without entering the legacy executor.
-  return templateFor({ templates: runtime.options.templates } as CardOptions, templateId);
+  return resolveCardTemplate(runtime.options, templateId, url);
 }
 function publicSpace(space: Space, runtime: CardRuntime, s: PublicServices): void {
   const binding = runtime.options.binding(s.context);
@@ -284,13 +340,13 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
         const card = unit.get('cards', action.arguments.card.id);
         requireCard(card && card.revision % 2 === 0, 'UNAVAILABLE', 'Earlier update requires reconciliation.', 'card_update_outcome_unknown');
       });
-      const { data, original } = runtime.original(action.arguments.session.id);
+      const { data, original } = await runtime.resolveOriginal(action.arguments.session, s);
       requireCard(isDeepStrictEqual(data.card, action.arguments.card) && isDeepStrictEqual(data.session, action.arguments.session),
         'SCOPE_MISMATCH', 'Requested card/session differs from the original.');
       publicSpace(original.space, runtime, s);
       publicActive(s, action, signal);
       s.transaction(unit => assertCurrentCardRevision(unit, data, expected!, s));
-      const template = runtimeTemplate(runtime, data.templateId);
+      const template = runtimeTemplate(runtime, data.templateId, data.url);
       requireCard(template.kind === data.kind, 'UNAVAILABLE', 'Card template kind changed.', 'card_template_changed');
       let url = data.url;
       if (template.kind === 'universal') {
@@ -325,7 +381,7 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
       runtime.remember({ ...data, url, metadata, cardRevision: expected! + 2 }, original);
       return { ...publicResult(requestId, s, 'executor-completed', refs), value: { type: 'void' } };
     }
-    const args = action.arguments, template = runtimeTemplate(runtime, args.templateId);
+    const args = action.arguments, template = runtimeTemplate(runtime, args.templateId, args.url);
     requireCard(template.kind === (action.operation === 'app.send' ? 'universal' : 'customized'),
       'INVALID_REQUEST', 'Card operation and template kind differ.');
     const authorized = await s.resolveResource(args.space);

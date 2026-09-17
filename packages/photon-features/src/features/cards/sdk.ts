@@ -1,7 +1,7 @@
 import { app, edit, type ContentBuilder, type Message, type Space } from 'spectrum-ts';
 import { customizedMiniApp, imessage } from 'spectrum-ts/providers/imessage';
 import { sameScope, type ExecutionServices } from '../../index.js';
-import { approvedUrl, requireCard, type CardLayout, type CardOptions, type CardTemplate } from './configuration.js';
+import { approvedUrl, requireCard, templateFor, type CardLayout, type CardOptions, type CardTemplate } from './configuration.js';
 
 export function checkSpace(space: Space, services: ExecutionServices, options: CardOptions): void {
   const binding = options.binding(services.context);
@@ -47,4 +47,16 @@ export async function mapCardOperation(template: CardTemplate, url: string, layo
   const prepared = original ? await preparedEdit(builder, original) : await preparedSend(builder);
   services.assertActiveClaim();
   return prepared;
+}
+
+/** Reserved wire-compatible template: only the actual HTTPS URL is required.
+ * Explicit host registrations still use their origin and capability checks. */
+export const STATIC_CARD_TEMPLATE_ID = 'universal-static';
+export function resolveCardTemplate(options: Pick<CardOptions, 'templates'>, id: string, url: string): CardTemplate {
+  if (id !== STATIC_CARD_TEMPLATE_ID || options.templates.some(template => template.id === id))
+    return templateFor(options as CardOptions, id);
+  const parsed = new URL(url);
+  requireCard(parsed.protocol === 'https:' && !parsed.username && !parsed.password,
+    'INVALID_REQUEST', 'Static cards require an HTTPS URL without credentials.');
+  return { id, kind: 'universal', origins: [parsed.origin] };
 }
