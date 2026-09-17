@@ -348,3 +348,23 @@ Follow-up implementation commit: `57c5f94ea8365ffa2d84e5a38e1fb8214449752c`.
 This documentation-only commit records the reviewed/tested source identity. The
 only change after the final test run was removing a trailing blank line. Both
 follow-up commits are local; the working tree is clean at handoff.
+
+### Exact pinned public SDK evidence for the DM peer check
+
+Public distribution: https://unpkg.com/@spectrum-ts/imessage@12.8.0/dist/index.js
+Retrieved HTTP 200, text/javascript, 114644 bytes; SHA-256
+`2f7e13c432ad4e84f96b76eb3d59062d70d3d7e46737a7e15198a47ecda6ef24` exactly matches
+the installed node_modules/@spectrum-ts/imessage/dist/index.js bytes.
+Lines 664-671 define the shared DM encoding and the DM peer separator/read logic.
+Lines 2873-2905 implement public space.create/get: shared create returns the SDK's
+DM identifier and shared route; dedicated create returns the actual chat.guid
+and selected phone; get returns the exact supplied native ID and provider route.
+These published bytes, plus the official space.get DM example, ground the
+helper's bounded peer validation. No unexported helper is imported or invoked.
+
+The public type schema admits a string ID; it does NOT promise every future or
+provider-specific ID has this grammar. Our explicit safe subset rejects unknown
+formats instead of accepting a DM without verifiable peer evidence. It never
+constructs an ID from that grammar and never relabels a returned route. In shared
+mode the ID is SDK-resolved rather than proof of server-side chat creation;
+space.get is not an independent server receipt. Neither call proves delivery.
