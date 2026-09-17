@@ -18,7 +18,7 @@ Each tested HEAD with dirty paths means that commit **plus the listed edits**, n
 ## rfx01-focused
 
 - Command: `npm run photon:build && node --test packages/photon-features/dist/tests/integration/rfx-shared-routing.test.js packages/photon-features/dist/tests/lanes/wt-02/*.test.js packages/photon-features/dist/tests/integration/repair-ingress.test.js packages/photon-features/dist/tests/integration/typing-start-lifetime.test.js packages/photon-features/dist/tests/integration/repair-production-journey.test.js packages/photon-features/dist/tests/e2e/*.test.js packages/photon-features/dist/tests/security/webhook-auth.test.js`
-- Exit: 0; no complete TAP count emitted
+- Exit: 0; ℹ tests 142, ℹ pass 142, ℹ fail 0, ℹ cancelled 0, ℹ skipped 0
 - Tested HEAD: `94256c972a2cebb52c3fff9fb1f34a4b7249f911`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T02:46:59.070626+00:00.
 - Dependencies: `{"spectrum-ts": "12.8.0", "zod": "4.5.4"}`
 - Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/rfx01-focused.log`; SHA-256 `63c5e9338360ff2c1acb1ac3cfd60422c9a4cd1327802191fe4815d2d41dfc22`.
@@ -186,7 +186,7 @@ Each tested HEAD with dirty paths means that commit **plus the listed edits**, n
 ## phase-a-core-capability
 
 - Command: `npm run photon:build && node --test packages/photon-features/dist/tests/integration/release-fix-shared-roundtrip.test.js`
-- Exit: 1; no complete TAP count emitted
+- Exit: 1; ℹ tests 2, ℹ pass 0, ℹ fail 2, ℹ cancelled 0, ℹ skipped 0
 - Tested HEAD: `11273678ace112572c68eaada40a1e6ef460676c`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T03:04:37.761109+00:00.
 - Dependencies: `{"spectrum-ts": "12.8.0", "zod": "4.5.4"}`
 - Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/phase-a-core-capability.log`; SHA-256 `0e904dee35fb30e4b3b613e5af2e0f7c9aac0fff47d39fd767f87df28c122d17`.
@@ -485,3 +485,93 @@ Each tested HEAD with dirty paths means that commit **plus the listed edits**, n
 - Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/initial-host-final.log`; SHA-256 `3c47365216af109fa0bdbc022d9da878e47682c028cf87f58642d40303fb47e0`.
 - Worktree edits at test completion: ` M packages/photon-features/src/host/process.ts`, ` M packages/photon-features/src/host/production.ts`, `?? packages/photon-features/tests/integration/release-fix-setup-packaging.test.mjs`.
 
+## final-install
+
+- Command: `npm ci --ignore-scripts --no-audit --no-fund`
+- Exit: 0; no complete TAP count emitted
+- Tested HEAD: `134d67af348b547e04faca9f6fee82dcf3f182c7`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T03:50:21.372597+00:00.
+- Dependencies: `{"@grpc/grpc-js": "1.14.4", "@photon-ai/advanced-imessage": "2.1.0", "nice-grpc": "2.1.17", "nice-grpc-common": "2.0.4", "spectrum-ts": "12.8.0", "zod": "4.5.4"}`
+- Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/final-install.log`; SHA-256 `3a5252c04215b304e2f9d2367e2e39aefa6df5b0468223c17be8360bfdb67cf1`.
+
+## final-typecheck
+
+- Command: `npm run typecheck --workspace=@grokbot/photon-features`
+- Exit: 0; no complete TAP count emitted
+- Tested HEAD: `134d67af348b547e04faca9f6fee82dcf3f182c7`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T03:50:24.805926+00:00.
+- Dependencies: `{"@grpc/grpc-js": "1.14.4", "@photon-ai/advanced-imessage": "2.1.0", "nice-grpc": "2.1.17", "nice-grpc-common": "2.0.4", "spectrum-ts": "12.8.0", "zod": "4.5.4"}`
+- Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/final-typecheck.log`; SHA-256 `723e7a84e82d01d0d3fe2a3f3e75e477b7d08e33dbc04ee431d8d7186b8a878e`.
+
+## final-npm-test
+
+- Command: `npm test`
+- Exit: 0; ℹ tests 64, ℹ pass 64, ℹ fail 0, ℹ cancelled 0, ℹ skipped 0
+- Tested HEAD: `134d67af348b547e04faca9f6fee82dcf3f182c7`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T03:50:29.715581+00:00.
+- Dependencies: `{"@grpc/grpc-js": "1.14.4", "@photon-ai/advanced-imessage": "2.1.0", "nice-grpc": "2.1.17", "nice-grpc-common": "2.0.4", "spectrum-ts": "12.8.0", "zod": "4.5.4"}`
+- Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/final-npm-test.log`; SHA-256 `0fa561511e529d2538d8f38aa59a7811eeabe03e805231b33f907d645b4ec209`.
+
+## final-photon-test
+
+- Command: `npm run photon:test`
+- Exit: 0; ℹ tests 64, ℹ pass 64, ℹ fail 0, ℹ cancelled 0, ℹ skipped 0
+- Tested HEAD: `134d67af348b547e04faca9f6fee82dcf3f182c7`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T03:50:36.062784+00:00.
+- Dependencies: `{"@grpc/grpc-js": "1.14.4", "@photon-ai/advanced-imessage": "2.1.0", "nice-grpc": "2.1.17", "nice-grpc-common": "2.0.4", "spectrum-ts": "12.8.0", "zod": "4.5.4"}`
+- Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/final-photon-test.log`; SHA-256 `cbae3b525a6bbe47727a181e124f52e2424b19315a43636cea277c4afb5f6bf9`.
+
+## final-contract
+
+- Command: `npm run photon:check`
+- Exit: 0; no complete TAP count emitted
+- Tested HEAD: `134d67af348b547e04faca9f6fee82dcf3f182c7`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T03:50:42.523425+00:00.
+- Dependencies: `{"@grpc/grpc-js": "1.14.4", "@photon-ai/advanced-imessage": "2.1.0", "nice-grpc": "2.1.17", "nice-grpc-common": "2.0.4", "spectrum-ts": "12.8.0", "zod": "4.5.4"}`
+- Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/final-contract.log`; SHA-256 `98b1cc820014274d019b2a0ba1a45fc92276b742f107117a99a69c614f89f2be`.
+
+## final-integration
+
+- Command: `npm run photon:test:integration`
+- Exit: 0; # tests 1067, # pass 1067, # fail 0, # cancelled 0, # skipped 0
+- Tested HEAD: `134d67af348b547e04faca9f6fee82dcf3f182c7`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T03:50:47.715944+00:00.
+- Dependencies: `{"@grpc/grpc-js": "1.14.4", "@photon-ai/advanced-imessage": "2.1.0", "nice-grpc": "2.1.17", "nice-grpc-common": "2.0.4", "spectrum-ts": "12.8.0", "zod": "4.5.4"}`
+- Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/final-integration.log`; SHA-256 `4c8dcd953363fab2d54b1b060839761772ca958fba8764dcbc453ea7f9bc1133`.
+
+## final-installed
+
+- Command: `npm run photon:test:installed`
+- Exit: 1; ℹ tests 50, ℹ pass 49, ℹ fail 1, ℹ cancelled 0, ℹ skipped 0
+- Tested HEAD: `134d67af348b547e04faca9f6fee82dcf3f182c7`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T03:51:30.159420+00:00.
+- Dependencies: `{"@grpc/grpc-js": "1.14.4", "@photon-ai/advanced-imessage": "2.1.0", "nice-grpc": "2.1.17", "nice-grpc-common": "2.0.4", "spectrum-ts": "12.8.0", "zod": "4.5.4"}`
+- Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/final-installed.log`; SHA-256 `76fdd2ed0fbef8d32f601a50e6057db0c8be827483c887e2d55ca59fa7ed603e`.
+
+## final-installed-storage-retry
+
+- Command: `npm run photon:test:installed`
+- Exit: 0; ℹ tests 50, ℹ pass 50, ℹ fail 0, ℹ cancelled 0, ℹ skipped 0
+- Tested HEAD: `134d67af348b547e04faca9f6fee82dcf3f182c7`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T03:56:05.185352+00:00.
+- Dependencies: `{"@grpc/grpc-js": "1.14.4", "@photon-ai/advanced-imessage": "2.1.0", "nice-grpc": "2.1.17", "nice-grpc-common": "2.0.4", "spectrum-ts": "12.8.0", "zod": "4.5.4"}`
+- Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/final-installed-storage-retry.log`; SHA-256 `51bc1948611bcf8b549ab8f5c1688b6eaea6e26bfcf56d6bcdf7f9ac64f40120`.
+
+## final-generated
+
+- Command: `node packages/photon-features/scripts/generate-skill.mjs --check && node packages/photon-features/scripts/generate-configuration.mjs --check && node packages/photon-features/scripts/generate-production-inventory.mjs --check && node packages/photon-features/scripts/prepare-npm-lock.mjs --check && node scripts/verify-ownership.mjs integration && node scripts/verify-docs.mjs integration`
+- Exit: 0; no complete TAP count emitted
+- Tested HEAD: `134d67af348b547e04faca9f6fee82dcf3f182c7`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T03:59:15.066539+00:00.
+- Dependencies: `{"@grpc/grpc-js": "1.14.4", "@photon-ai/advanced-imessage": "2.1.0", "nice-grpc": "2.1.17", "nice-grpc-common": "2.0.4", "spectrum-ts": "12.8.0", "zod": "4.5.4"}`
+- Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/final-generated.log`; SHA-256 `23a629ce1330eb3385e9d6266aa81b8720782d5bd2fcc0d8be2b51fbeb9578da`.
+
+## final-npm-pack
+
+- Command: `npm pack --workspace=@grokbot/photon-features --dry-run --json --ignore-scripts`
+- Exit: 0; no complete TAP count emitted
+- Tested HEAD: `134d67af348b547e04faca9f6fee82dcf3f182c7`; Darwin arm64; Node 24.13.0; npm 10.9.2. Timestamp: 2026-09-17T03:59:19.013104+00:00.
+- Dependencies: `{"@grpc/grpc-js": "1.14.4", "@photon-ai/advanced-imessage": "2.1.0", "nice-grpc": "2.1.17", "nice-grpc-common": "2.0.4", "spectrum-ts": "12.8.0", "zod": "4.5.4"}`
+- Log: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-00-integration/.photon-local/rfx-00/final-npm-pack.log`; SHA-256 `196448027e7e9c221d8c78d967adbb45beb87549c44c00ea9a5f43af8263284c`.
+
+
+## Linux amd64 first validation
+
+Local emulated Linux x64 container, clean HEAD 134d67af348b547e04faca9f6fee82dcf3f182c7, Node 24.13.0 and npm 10.9.2; dependency versions as above. The runner deadline failure is retained; this is not a completed integration pass.
+
+- `npm run typecheck --workspace=@grokbot/photon-features`: exit 0; no complete test count; log `.photon-local/rfx-00/linux-checks-first/1.log`; SHA-256 `723e7a84e82d01d0d3fe2a3f3e75e477b7d08e33dbc04ee431d8d7186b8a878e`.
+- `npm test`: exit 0; ℹ tests 64, ℹ pass 64, ℹ fail 0, ℹ cancelled 0, ℹ skipped 0; log `.photon-local/rfx-00/linux-checks-first/2.log`; SHA-256 `fbdf08999bf38038a48f591a856ca8affd8cb708668d0a96ef9f18d0cf4ada5d`.
+- `npm run photon:test`: exit 0; ℹ tests 64, ℹ pass 64, ℹ fail 0, ℹ cancelled 0, ℹ skipped 0; log `.photon-local/rfx-00/linux-checks-first/3.log`; SHA-256 `bef40c917dc4759afd6b0a9c3cc5f6226e14a2bc74a2b4a8ab3a4c4537e3bed7`.
+- `npm run photon:check`: exit 0; no complete test count; log `.photon-local/rfx-00/linux-checks-first/4.log`; SHA-256 `98b1cc820014274d019b2a0ba1a45fc92276b742f107117a99a69c614f89f2be`.
+- `npm run photon:test:integration`: exit 1; no complete test count; log `.photon-local/rfx-00/linux-checks-first/5.log`; SHA-256 `2afe1ea00adc5495142e5ccedeb92d6a64dc25449c511fb7c8e8b0ea1afae6df`.

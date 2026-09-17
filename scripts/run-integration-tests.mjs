@@ -29,7 +29,9 @@ if (!tests.length) throw new Error("MISSING_INTEGRATION_TESTS");
 const result = spawnSync(process.execPath, ["--test", "--test-reporter=tap", ...tests], {
   cwd: root,
   encoding: "utf8",
-  timeout: 300_000,
+  // The assembled VM-bootstrap fixtures spawn real CLI processes; allow the
+  // complete suite to finish on the supported Linux build under emulation.
+  timeout: 600_000,
   maxBuffer: 64 * 1024 * 1024,
 });
 process.stdout.write(result.stdout ?? "");
