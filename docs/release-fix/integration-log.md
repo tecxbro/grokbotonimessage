@@ -463,3 +463,17 @@ RFX-00 updates `README.md`, `agent.md`, `architecthure.md`, `packages/photon-fea
 RFX-00 / RFX-04 / RFX-05: `scripts/run-integration-tests.mjs` retains a bounded runner deadline but raises it from five to ten minutes for the assembled 109-file suite, including the real CLI subprocess bootstrap fixtures on Linux amd64 emulation. The first Linux run reached test 1049 with no failing assertion before the suite-level ETIMEDOUT. Individual operation/test timeout, cancellation, test counts, failure validation and assertions are unchanged. Exact coverage: `npm run photon:test:integration` on Darwin arm64 and Linux x64, followed by the same required command in exact-clean-commit artifact packaging. Detailed results are recorded in test-evidence.md and final artifact provenance.
 
 The Darwin final installed suite first failed on ENOSPC during npm extraction (49/50). Clearing only npm's disposable download cache freed 7.4 GiB; the unchanged retry passed 50/50 with zero skips. No repository/worktree data was removed. All failure logs are retained.
+
+
+## 2026-09-17 scoped follow-up edits
+
+User-authorized follow-up on `codex/rfx-00-release-fix`, starting from clean HEAD
+`47165e618a82b5cb7d44d2f497d867b6e7b531e6`:
+
+- `packages/photon-features/tests/integration/rfx-lifecycle.test.ts`: use deadline-based polling with the existing 5-second default; only the detached `typing-start` observation gets 20 seconds.
+- `packages/photon-features/tests/integration/rfx-vm-bootstrap.test.mjs`: add the live current-bot discovery to private owner configuration to exact wake-target regression, with a captured offline sending boundary and secret exclusion assertion.
+- `packages/photon-features/SKILL.md`: add the supplied shallow iMessage Bot, Orchestrator and Worker roles before invocation guidance, outside the generated operations block.
+- `packages/photon-features/tests/artifact/rfx-owner-package.test.mjs`: package the real source skill in the fixture and assert the decoded archive retains all three roles and private-ID guidance.
+
+Runtime implementation is unchanged. Tests and builds are deferred at the user's
+explicit request; this checkpoint does not establish a green release candidate.

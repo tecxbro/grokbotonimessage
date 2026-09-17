@@ -8,6 +8,8 @@ import { setupCommandOptions } from '../../dist/src/cli/commands.js';
 import { formatCommandResult, formatSetupResult } from '../../dist/src/cli/output.js';
 import { main } from '../../dist/src/cli/main.js';
 import { runDiscoveryProcess } from '../../dist/src/host/grok-discovery.js';
+import { generateInitialOwnerConfiguration } from '../../dist/src/host/setup-configuration.js';
+import { GrokGatewayTaskHandoff } from '../../dist/src/host/grok-wake.js';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const local = join(repo, '.photon-local', 'rfx-bootstrap-tests');
@@ -325,6 +327,50 @@ test('advertised current bot must match the live roster; stale current remains u
     assert.equal(result.grok.agentId, current === 'two' ? 'two' : null);
     assert.ok(f.events().some(e => command(e) === '--gateway --json bots current'));
   }
+});
+
+test('current Grok bot privately becomes the exact Photon wake target', async t => {
+  const f = fixture(t, {
+    bots: [{ id: 'one', kind: 'bot' }, { id: 'two', kind: 'bot' }],
+    current: 'two',
+  });
+  const discovery = await runFixture(f);
+  assert.equal(discovery.grok.agentId, 'two');
+  assert.equal(discovery.grok.evidence, 'live-gateway-roster');
+
+  const configuration = await generateInitialOwnerConfiguration({
+    version: 2,
+    discovery,
+    choices: {},
+    activateAfterValidation: false,
+    cards: [],
+  });
+  assert.equal(configuration.task.grokAgentId, 'two');
+
+  let captured;
+  const handoff = new GrokGatewayTaskHandoff({
+    executable: configuration.grok.executable,
+    agentId: configuration.task.grokAgentId,
+    taskId: configuration.task.taskId,
+    generation: configuration.task.generation,
+    installationRoot: f.options.installationRoot,
+    releaseRoot: join(f.root, 'release'),
+    timeoutMs: configuration.grok.timeoutMs,
+    commandStyle: configuration.grok.commandStyle,
+  }, async (executable, args) => {
+    captured = { executable, args };
+    return 'accepted';
+  });
+  const outcome = await handoff.notifyExistingTask({
+    handoffId: 'handoff-1',
+    taskId: configuration.task.taskId,
+    generation: configuration.task.generation,
+  });
+  assert.equal(outcome, 'accepted');
+  assert.equal(captured.executable, configuration.grok.executable);
+  assert.deepEqual(captured.args.slice(0, 3), ['--gateway', 'send', 'two']);
+  assert.match(captured.args[3], /handoff-1/);
+  assert.ok(!JSON.stringify(captured).includes(secret), 'wake command must not expose Photon secrets');
 });
 
 test('failed private installation is a blocker, and occupied npm projects are preserved', async t => {

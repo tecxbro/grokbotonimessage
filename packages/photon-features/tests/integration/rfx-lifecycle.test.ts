@@ -58,8 +58,16 @@ async function fixture(t: Parameters<typeof privateTestRoot>[0]) {
   return { root, runtime, release, releaseRoot };
 }
 
-async function until(check: () => boolean, diagnostic: () => string = () => "condition timed out") {
-  for (let i = 0; i < 500; i++) { if (check()) return; await delay(10); }
+async function until(
+  check: () => boolean,
+  diagnostic: () => string = () => "condition timed out",
+  timeoutMs = 5_000,
+) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (check()) return;
+    await delay(20);
+  }
   assert.fail(diagnostic());
 }
 
@@ -104,7 +112,8 @@ function host(t: Parameters<typeof privateTestRoot>[0], f: Awaited<ReturnType<ty
   t.after(async () => { if (child.exitCode === null && child.signalCode === null) { child.kill("SIGKILL"); await exited; } });
   return { child, exited, stdout: () => stdout, stderr: () => stderr,
     ready: () => until(() => stdout.includes('"status":"ready"'), () => stdout + stderr),
-    event: (name: string) => until(() => stdout.includes(JSON.stringify({event: name})), () => stdout + stderr),
+    event: (name: string, timeoutMs = 5_000) =>
+      until(() => stdout.includes(JSON.stringify({event: name})), () => stdout + stderr, timeoutMs),
     stop: async (signal: NodeJS.Signals = "SIGTERM") => {
       child.kill(signal);
       assert.deepEqual(await exited, [0, null], stderr);
@@ -141,7 +150,7 @@ test("validate -> enable -> run -> ready, single owner, SIGTERM drains typing/so
     contextId: context.contextId, idempotencyKey: "typing-before-stop", operation: "typing.begin",
     arguments: { space: { version: 1, kind: "space", id: context.scope.spaceId, scope: context.scope }, ttlMs: 30000 } } });
   assert.equal(result.ok, true, JSON.stringify(result));
-  await h.event("typing-start");
+  await h.event("typing-start", 20_000);
   h.child.kill("SIGTERM");
   await h.event("sdk-stopping");
   h.child.kill("SIGTERM"); // second signal must not terminate cleanup

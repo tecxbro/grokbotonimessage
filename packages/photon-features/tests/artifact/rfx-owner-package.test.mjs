@@ -49,6 +49,7 @@ async function fixture(t) {
   put(join(candidate, '.gitignore'), 'node_modules/\ndist/\n');
   put(join(candidate, 'package.json'), { scripts: { 'photon:test:integration': 'fixture' } });
   for (const name of packageSupportFiles) put(join(root, name), 'fixture only\n');
+  put(join(root, 'SKILL.md'), await readFile(new URL('../../SKILL.md', import.meta.url), 'utf8'));
   put(join(root, 'package.json'), { name: '@grokbot/photon-features', version: '0.1.0', dependencies,
     bin: { 'grok-photon': 'dist/src/cli/main.js', 'grok-photon-host': 'dist/src/host/process.js', 'grok-photon-task': 'dist/src/host/task-launcher.js' } });
   const lock = { lockfileVersion: 3, packages: Object.fromEntries(Object.entries(dependencies).map(([name, version]) => ['node_modules/' + name, { version, resolved: 'https://registry.npmjs.org/' + name + '/-/' + name + '-' + version + '.tgz' }])) };
@@ -104,6 +105,14 @@ test('owner-local runs every check and records every subprocess without approval
   assert.equal(result.commit, f.commit);
   assert.equal(result.provenanceMode, 'owner-local-tested');
   const archive = await archiveFor(f);
+  const skillFile = archive.files.find(row => row.path === 'SKILL.md');
+  assert.ok(skillFile, 'release archive must contain the operating skill');
+  const skill = Buffer.from(skillFile.content, 'base64').toString('utf8');
+  assert.match(skill, /## Three-role behavior/);
+  assert.match(skill, /### iMessage Bot/);
+  assert.match(skill, /### Orchestrator/);
+  assert.match(skill, /### Worker/);
+  assert.match(skill, /Never ask the owner .* internal Grok Bot UUID/);
   assert.equal(archive.metadata.provenanceMode, 'owner-local-tested');
   assert.equal('workflowRun' in archive.metadata, false);
   assert.deepEqual(new Set(archive.metadata.tests.map(row => row.command)), new Set(requiredChecks));

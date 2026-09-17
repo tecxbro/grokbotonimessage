@@ -575,3 +575,14 @@ Local emulated Linux x64 container, clean HEAD 134d67af348b547e04faca9f6fee82dcf
 - `npm run photon:test`: exit 0; ℹ tests 64, ℹ pass 64, ℹ fail 0, ℹ cancelled 0, ℹ skipped 0; log `.photon-local/rfx-00/linux-checks-first/3.log`; SHA-256 `bef40c917dc4759afd6b0a9c3cc5f6226e14a2bc74a2b4a8ab3a4c4537e3bed7`.
 - `npm run photon:check`: exit 0; no complete test count; log `.photon-local/rfx-00/linux-checks-first/4.log`; SHA-256 `98b1cc820014274d019b2a0ba1a45fc92276b742f107117a99a69c614f89f2be`.
 - `npm run photon:test:integration`: exit 1; no complete test count; log `.photon-local/rfx-00/linux-checks-first/5.log`; SHA-256 `2afe1ea00adc5495142e5ccedeb92d6a64dc25449c511fb7c8e8b0ea1afae6df`.
+
+
+## 2026-09-17 scoped follow-up — tests deferred
+
+Base HEAD: `47165e618a82b5cb7d44d2f497d867b6e7b531e6` on
+`codex/rfx-00-release-fix`, with uncommitted changes listed in integration-log.md.
+The typing observation timeout, wake-binding regression, operating skill and
+artifact assertions were edited and manually reviewed. `git diff --check`
+reported no whitespace errors. No tests, build, typecheck, generated checks,
+packaging, CI, deployment or live messaging were run for these changes, per the
+user's instruction. Earlier passing results do not validate this changed tree.
