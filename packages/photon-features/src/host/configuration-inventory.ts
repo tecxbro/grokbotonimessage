@@ -1,4 +1,4 @@
-import type { Operation } from "../contracts/index.js";
+import type { Action, Operation } from "../contracts/index.js";
 import type { ProductionHostConfiguration } from "./configuration.js";
 
 export const administrativeOperations: readonly Operation[] = Object.freeze([
@@ -6,17 +6,83 @@ export const administrativeOperations: readonly Operation[] = Object.freeze([
   "space.setAvatar", "space.clearAvatar", "space.setBackground", "space.clearBackground", "account.shareContact",
 ]);
 export const upstreamPollOperations: readonly Operation[] = Object.freeze(["poll.get", "poll.vote", "poll.unvote", "poll.addOption"]);
+export const pollManagementBlocker = "The configured Spectrum owner has no approved public native poll-management adapter.";
+export const sharedGroupCreationBlocker = "Shared Free/Pro iMessage mode does not support group creation; a dedicated line is required.";
+const groupOperations = new Set<Operation>([
+  "space.getName", "space.rename", "space.getMembers", "space.addMembers", "space.removeMembers",
+  "space.leave", "space.getAvatar", "space.setAvatar", "space.clearAvatar",
+]);
 
-/** Static prerequisites only. Neither this report nor a provider connection is live evidence. */
-export function configurationBlockers(config: ProductionHostConfiguration): Partial<Record<Operation, string[]>> {
+/** Host-supplied facts, never inferred from handler registration or SDK method names. */
+export interface ProductionDependencySnapshot {
+  routeMode?: "shared" | "dedicated" | "unknown";
+  routeReady?: boolean;
+  conversationType?: "dm" | "group";
+  pollManagement?: boolean;
+  cardTemplates?: readonly ProductionHostConfiguration["cards"][number][];
+  cardBackendReady?: boolean;
+  /** Original SDK session AND admitted revision are bound for this exact update. */
+  cardUpdateReady?: boolean;
+}
+
+/** Missing group-event ingress is a separate inbound fact, not an outbound DM blocker. */
+export function accountModeBlockers(operation: Operation, mode: ProductionDependencySnapshot["routeMode"], action?: Action): string[] {
+  const createsGroup = operation === "space.create" &&
+    (action?.operation !== "space.create" || action.arguments.members.length > 1);
+  if (createsGroup && mode === "shared") return [sharedGroupCreationBlocker];
+  if ((createsGroup || groupOperations.has(operation)) && mode !== "shared" && mode !== "dedicated")
+    return ["The actual provider account mode must be established before group workflows can execute."];
+  // This restriction is also enforced by the shipped native handler's requireGroup.
+  if (groupOperations.has(operation) && mode === "shared")
+    return ["The configured native group handler requires a dedicated line for this operation."];
+  return [];
+}
+
+/** Card prerequisites are host requirements; static URL cards need no live-extension evidence. */
+export function cardConfigurationBlockers(operation: Operation, templates: ProductionDependencySnapshot["cardTemplates"],
+  backendReady: boolean, action?: Action): string[] {
+  if (!templates || !["app.send", "app.sendCustomized", "app.update"].includes(operation)) return [];
+  const requested = action?.operation === "app.send" || action?.operation === "app.sendCustomized" ? action.arguments : undefined;
+  const candidates = templates.filter(t => (!requested || t.id === requested.templateId) &&
+    (operation === "app.update" || t.kind === (operation === "app.send" ? "universal" : "customized")));
+  if (!candidates.length) return ["The requested template ID and kind must match a configured production card template."];
+  const issues = candidates.map(template => {
+    const blockers: string[] = [];
+    if (!template.origins.length) blockers.push("Configure an approved HTTPS origin for the card template.");
+    if (template.kind === "customized" && !template.extension)
+      blockers.push("Configure the customized template's actual Apple extension identifiers.");
+    if (template.live && (!template.live.installedExtensionVerified || !template.live.evidence.trim()))
+      blockers.push("The requested live card template requires installed-extension evidence.");
+    // Callback verification has its own ingress contract; requesting callbacks
+    // does not make the outbound static/customized card require a URL backend.
+    if ((template.backendId || (operation === "app.update" && template.kind === "universal")) && !backendReady)
+      blockers.push("The requested card template requires a bound card backend.");
+    if (requested) {
+      try {
+        const url = new URL(requested.url);
+        if (url.protocol !== "https:" || url.username || url.password || !template.origins.includes(url.origin))
+          blockers.push("The requested card URL must use a configured HTTPS origin.");
+      } catch { blockers.push("The requested card URL must be a valid HTTPS URL."); }
+    }
+    return blockers;
+  });
+  return issues.some(blockers => blockers.length === 0) ? [] : [...new Set(issues.flat())];
+}
+
+/** Configuration plus optional actual bindings. This function performs no I/O. */
+export function configurationBlockers(config: ProductionHostConfiguration, dependencies: ProductionDependencySnapshot = {},
+  action?: Action): Partial<Record<Operation, string[]>> {
   const output: Partial<Record<Operation, string[]>> = {};
   const add = (op: Operation, message: string) => (output[op] ??= []).push(message);
-  for (const op of upstreamPollOperations)
-    add(op, "Spectrum 12.8.0 exports no public native poll management API through the shared owner; upstream release blocker.");
-  if (!config.cards.some(t => t.kind === "universal")) add("app.send", "Configure a universal card template with an approved HTTPS origin.");
-  if (!config.cards.some(t => t.kind === "customized" && t.extension)) add("app.sendCustomized", "Configure a customized template with the actual Apple extension identifiers.");
-  if (!config.cards.some(t => t.kind === "customized" || (t.backendId && t.backendId === config.cardBackend?.id)))
-    add("app.update", "Configure a customized template or the shipped signed-card-v1 backend for universal updates.");
+  if (dependencies.pollManagement !== true)
+    for (const op of upstreamPollOperations) add(op, pollManagementBlocker);
+  const mode = dependencies.routeMode ?? (config.provider.dedicated ? "dedicated" : "shared");
+  for (const op of ["space.create" as const, ...groupOperations])
+    for (const blocker of accountModeBlockers(op, mode, action)) add(op, blocker);
+  const templates = dependencies.cardTemplates ?? config.cards;
+  const backendReady = dependencies.cardBackendReady ?? Boolean(config.cardBackend);
+  for (const op of ["app.send", "app.sendCustomized", "app.update"] as const)
+    for (const blocker of cardConfigurationBlockers(op, templates, backendReady, action)) add(op, blocker);
   for (const op of administrativeOperations)
     if (!config.authorization.administrativeOperations.includes(op)) add(op, "Explicit owner administrative intent is required in authorization.administrativeOperations.");
   for (const op of ["space.create", "space.addMembers", "space.removeMembers"] as const)
