@@ -6,6 +6,10 @@ import { spawnSync } from 'node:child_process';
 import { generateConfiguration, profiles, generateProfiles, sharedLogicalLineId } from '../../scripts/generate-configuration.mjs';
 import { configurationBlockers } from '../../dist/src/host/configuration-inventory.js';
 import { productionHostConfigurationSchema, normalizedHostConfigurationSchema, normalizeProductionHostConfiguration, loadProductionHostConfiguration, loadNormalizedHostConfiguration, readConfiguredProjectSecret } from '../../dist/src/host/configuration.js';
+import { resolveInitialConversation, validateInitialConversationPrerequisites, activationAfterValidationRequested } from '../../dist/src/host/initial-conversation.js';
+import { SpectrumOwner } from '../../dist/src/adapters/transport/spectrum-owner.js';
+import { ProviderContext } from '../../dist/src/adapters/transport/provider-context.js';
+import { acquireHostOwnership } from '../../dist/src/host/owner-lock.js';
 import { authenticateOwner } from '../../dist/src/host/authority-admin.js';
 import { operations } from '../../dist/src/contracts/actions.js';
 import { localRequestSchema, streamProducerInputSchemas } from '../../dist/src/contracts/protocol.js';
@@ -284,4 +288,214 @@ test('owner setup requires observed Grok command shape and evidence', async t =>
   const config = await generateConfiguration({ ...fixture.input,
     discovery: { ...fixture.discovery, grok: { ...fixture.discovery.grok, commandStyle: 'gateway-subcommand' } } });
   assert.equal(config.grok.commandStyle, 'gateway-subcommand');
+});
+
+async function routeFixture(t, mode = 'shared') {
+  const f = await discovered(t, mode);
+  const config = { ...await generateConfiguration({ ...f.input, activateAfterValidation: true }), activation: 'enabled' };
+  const path = join(f.runtime, 'configuration.json');
+  await writeFile(path, JSON.stringify(config) + '\n', { mode: 0o600 });
+  const ownership = await acquireHostOwnership(f.runtime, 'fixture-release');
+  const calls = { factories: 0, creates: [], gets: [], listeners: 0, stops: 0 };
+  const space = { __platform: 'imessage', id: `${mode === 'shared' ? 'any' : 'iMessage'};-;${config.provider.initialAddress}`,
+    type: 'dm', phone: mode === 'shared' ? 'shared' : config.provider.phone };
+  const results = { create: async () => space, get: async () => space };
+  const provider = { space: {
+    create: async (...args) => { calls.creates.push(args); return results.create(); },
+    get: async (...args) => { calls.gets.push(args); return results.get(); },
+  } };
+  const owner = new SpectrumOwner({ inbound: 'photon-stream', outbound: 'imessage', wake: 'existing-grok-task-handoff' },
+    new ProviderContext(config.provider.projectId, [{ accountId: config.provider.accountId, lineId: config.provider.lineId, dedicated: mode === 'dedicated', servingPhone: config.provider.phone }]),
+    async () => { calls.factories++; return { provider: () => provider,
+      messages: () => { calls.listeners++; return (async function* () {})(); },
+      stop: async () => { calls.stops++; },
+      space: () => { throw new Error('unresolved route must use public provider namespace'); },
+    }; });
+  t.after(() => owner.stop());
+  return { ...f, config, path, owner, ownership, calls, space, results,
+    resolve: () => resolveInitialConversation(f.root, config, owner, ownership) };
+}
+
+test('fresh address-only configuration validates offline without SDK, activation, or durable state', async t => {
+  const f = await routeFixture(t);
+  const disabled = { ...f.config, activation: 'disabled' };
+  const result = await validateInitialConversationPrerequisites(disabled);
+  assert.equal(result.provider.conversationId, undefined);
+  assert.equal(result.activation, 'disabled');
+  assert.equal(f.calls.factories, 0);
+  assert.equal(f.calls.listeners, 0);
+  await assert.rejects(stat(f.config.runtime.statePath), { code: 'ENOENT' });
+});
+
+for (const mode of ['shared', 'dedicated']) test(`${mode} initial DM resolution uses the same owner and atomically persists only the exact returned ID`, async t => {
+  const f = await routeFixture(t, mode);
+  const original = JSON.parse(await readFile(f.path, 'utf8'));
+  const inode = (await stat(f.path)).ino;
+  const token = await readFile(f.config.local.credentialFile, 'utf8');
+  const secret = await readFile(f.config.provider.projectSecretFile, 'utf8');
+  await f.owner.start();
+  const result = await f.resolve();
+  assert.equal(result.provider.conversationId, f.space.id);
+  assert.deepEqual(f.calls.creates, mode === 'shared' ? [[f.config.provider.initialAddress]]
+    : [[f.config.provider.initialAddress, { phone: f.config.provider.phone }]]);
+  assert.deepEqual(f.calls.gets, mode === 'shared' ? [[f.space.id]] : [[f.space.id, { phone: f.config.provider.phone }]]);
+  const persisted = JSON.parse(await readFile(f.path, 'utf8'));
+  assert.deepEqual(persisted, { ...original, provider: { ...original.provider, conversationId: f.space.id } });
+  assert.equal((await stat(f.path)).mode & 0o777, 0o600);
+  assert.notEqual((await stat(f.path)).ino, inode, 'configuration is atomically replaced, not edited in place');
+  assert.deepEqual(persisted.task, original.task);
+  assert.deepEqual(persisted.local, original.local);
+  assert.equal(await readFile(f.config.local.credentialFile, 'utf8'), token);
+  assert.equal(await readFile(f.config.provider.projectSecretFile, 'utf8'), secret);
+  await assert.rejects(stat(f.config.runtime.statePath), { code: 'ENOENT' });
+  assert.ok((await readdir(f.runtime)).includes('host.lock'));
+  assert.equal((await readdir(f.runtime)).some(name => name.startsWith('.initial-conversation-')), false);
+  assert.deepEqual(await resolveInitialConversation(f.root, result, f.owner, f.ownership), result);
+  assert.equal(f.calls.creates.length, 1, 'restart does not resolve an already persisted native ID');
+  await f.owner.start();
+  f.owner.stream('runtime-listener');
+  assert.equal(f.calls.factories, 1);
+  assert.equal(f.calls.listeners, 1);
+  assert.throws(() => f.owner.stream('second-listener'), /COMPETING_RECEIVE_PATH/);
+});
+
+test('activation, host ownership, and a ready matching owner are required before provider resolution', async t => {
+  const f = await routeFixture(t);
+  const disabled = { ...f.config, activation: 'disabled' };
+  await writeFile(f.path, JSON.stringify(disabled));
+  await assert.rejects(resolveInitialConversation(f.root, disabled, f.owner, f.ownership), /ACTIVATION_REQUIRED/);
+  await writeFile(f.path, JSON.stringify(f.config));
+  await assert.rejects(resolveInitialConversation(f.root, f.config, f.owner, { ...f.ownership, path: join(f.runtime, 'other.lock') }), /HOST_OWNERSHIP_REQUIRED/);
+  await assert.rejects(f.resolve(), /OWNER_NOT_READY/);
+  await f.owner.start();
+  const otherOwner = { ready: () => true, provider: () => { throw new Error('must not access mismatched owner'); },
+    routes: { projectId: 'wrong-project', evidence: () => [] } };
+  await assert.rejects(resolveInitialConversation(f.root, f.config, otherOwner, f.ownership), /INITIAL_CONVERSATION_OWNER_MISMATCH/);
+  assert.equal(f.calls.creates.length, 0);
+  assert.equal(f.calls.gets.length, 0);
+});
+
+test('existing state or expired authority blocks unresolved onboarding without renewal or provider calls', async t => {
+  const f = await routeFixture(t);
+  await f.owner.start();
+  await writeFile(f.config.runtime.statePath, 'must preserve', { mode: 0o600 });
+  await assert.rejects(validateInitialConversationPrerequisites(f.config), /UNRESOLVED_CONVERSATION_WITH_EXISTING_STATE/);
+  await assert.rejects(f.resolve(), /UNRESOLVED_CONVERSATION_WITH_EXISTING_STATE/);
+  assert.equal(await readFile(f.config.runtime.statePath, 'utf8'), 'must preserve');
+  const expired = { ...f.config, task: { ...f.config.task, issuedAt: 0, expiresAt: 1 } };
+  await writeFile(f.path, JSON.stringify(expired));
+  await assert.rejects(resolveInitialConversation(f.root, expired, f.owner, f.ownership), /EXPIRED_TASK_BINDING/);
+  assert.deepEqual(JSON.parse(await readFile(f.path, 'utf8')).task, expired.task);
+  assert.equal(f.calls.creates.length, 0);
+});
+
+for (const stage of ['create', 'get']) test(`resolution rejects non-iMessage, group, wrong-peer, missing-ID and wrong-route ${stage} results`, async t => {
+  const f = await routeFixture(t);
+  await f.owner.start();
+  const original = await readFile(f.path, 'utf8');
+  for (const patch of [{ __platform: 'local_imessage' }, { type: 'group' }, { id: 'any;-;+15555550999' },
+    { id: '' }, { id: 'opaque-without-peer-evidence' }, { phone: '+15555550888' }, { id: 'any;+;group' }]) {
+    f.results[stage] = async () => ({ ...f.space, ...patch });
+    await assert.rejects(f.resolve(), /INITIAL_CONVERSATION_ROUTE_MISMATCH/);
+    assert.equal(await readFile(f.path, 'utf8'), original);
+    assert.equal((await readdir(f.runtime)).some(name => name.startsWith('.initial-conversation-')), false);
+  }
+});
+
+test('provider failures do not retry, activate, or persist a fabricated fallback', async t => {
+  const f = await routeFixture(t);
+  await f.owner.start();
+  const original = await readFile(f.path, 'utf8');
+  f.results.create = async () => { throw new Error('PROVIDER_RESOLUTION_FAILED'); };
+  await assert.rejects(f.resolve(), /PROVIDER_RESOLUTION_FAILED/);
+  assert.equal(f.calls.creates.length, 1);
+  assert.equal(f.calls.gets.length, 0);
+  assert.equal(await readFile(f.path, 'utf8'), original);
+  assert.equal(f.calls.listeners, 0);
+});
+
+test('stale configuration and lock changes across provider awaits cannot overwrite authority', async t => {
+  const f = await routeFixture(t);
+  await f.owner.start();
+  const original = await readFile(f.path, 'utf8');
+  const changed = { ...f.config, task: { ...f.config.task, generation: 1 } };
+  await writeFile(f.path, JSON.stringify(changed));
+  await assert.rejects(f.resolve(), /INITIAL_CONVERSATION_CONFIGURATION_CHANGED/);
+  assert.equal(f.calls.creates.length, 0);
+  await writeFile(f.path, original);
+  f.results.create = async () => { await writeFile(f.path, JSON.stringify(changed)); return f.space; };
+  await assert.rejects(f.resolve(), /INITIAL_CONVERSATION_CONFIGURATION_CHANGED/);
+  assert.deepEqual(JSON.parse(await readFile(f.path, 'utf8')), changed);
+  await writeFile(f.path, original);
+  f.results.create = async () => {
+    const lock = JSON.parse(await readFile(f.ownership.path, 'utf8'));
+    await writeFile(f.ownership.path, JSON.stringify({ ...lock, nonce: 'replacement-owner' }));
+    return f.space;
+  };
+  await assert.rejects(f.resolve(), /HOST_OWNERSHIP_CHANGED/);
+  assert.equal(await readFile(f.path, 'utf8'), original);
+});
+
+test('concurrent resolution on one installation is fenced and preserves the first native result', async t => {
+  const f = await routeFixture(t);
+  await f.owner.start();
+  let entered, release;
+  const entry = new Promise(resolve => { entered = resolve; });
+  const gate = new Promise(resolve => { release = resolve; });
+  f.results.create = async () => { entered(); await gate; return f.space; };
+  const first = f.resolve();
+  await entry;
+  try { await assert.rejects(f.resolve(), /INITIAL_CONVERSATION_RESOLUTION_IN_PROGRESS/); }
+  finally { release(); }
+  assert.equal((await first).provider.conversationId, f.space.id);
+  assert.equal(f.calls.creates.length, 1);
+});
+
+test('setup activation decision adopts generated intent only when the host option is omitted', async t => {
+  const f = await discovered(t);
+  const config = await generateConfiguration({ ...f.input, activateAfterValidation: true });
+  assert.equal(activationAfterValidationRequested(config), true);
+  assert.equal(activationAfterValidationRequested(config, false), false);
+  assert.equal(activationAfterValidationRequested({ ...config, activateAfterValidation: false }, true), true);
+  assert.equal(activationAfterValidationRequested({ ...config, activateAfterValidation: false }), false);
+  assert.equal(config.activation, 'disabled');
+});
+
+
+test('shared email resolution preserves the returned ID even without displayed serving metadata', async t => {
+  const f = await routeFixture(t);
+  delete f.config.provider.phone;
+  f.config.provider.initialAddress = 'Owner@Example.test';
+  f.space.id = 'any;-;owner@example.test';
+  await writeFile(f.path, JSON.stringify(f.config));
+  await f.owner.start();
+  const result = await f.resolve();
+  assert.equal(result.provider.conversationId, 'any;-;owner@example.test');
+  assert.equal(result.provider.phone, undefined);
+  assert.deepEqual(f.calls.creates, [['Owner@Example.test']]);
+});
+
+test('lock held by a different PID and a mismatched native ID read both fail closed', async t => {
+  const f = await routeFixture(t);
+  await f.owner.start();
+  const lock = await readFile(f.ownership.path, 'utf8');
+  await writeFile(f.ownership.path, JSON.stringify({ ...JSON.parse(lock), pid: process.pid + 1 }));
+  await assert.rejects(f.resolve(), /HOST_OWNERSHIP_REQUIRED/);
+  assert.equal(f.calls.creates.length, 0);
+  await writeFile(f.ownership.path, lock);
+  f.results.get = async () => ({ ...f.space, id: `iMessage;-;${f.config.provider.initialAddress}` });
+  await assert.rejects(f.resolve(), /INITIAL_CONVERSATION_ROUTE_MISMATCH/);
+  assert.equal(JSON.parse(await readFile(f.path, 'utf8')).provider.conversationId, undefined);
+});
+
+
+test('returned route must bind through the existing owner route table, not only match config text', async t => {
+  const f = await routeFixture(t, 'dedicated');
+  await f.owner.start();
+  const wrongRouteOwner = { ready: () => f.owner.ready(), provider: () => f.owner.provider(),
+    routes: new ProviderContext(f.config.provider.projectId, [{ accountId: f.config.provider.accountId,
+      lineId: f.config.provider.lineId, dedicated: true, servingPhone: '+15555550999' }]) };
+  await assert.rejects(resolveInitialConversation(f.root, f.config, wrongRouteOwner, f.ownership), /INITIAL_CONVERSATION_ROUTE_MISMATCH/);
+  assert.equal(f.calls.gets.length, 0);
+  assert.equal(JSON.parse(await readFile(f.path, 'utf8')).provider.conversationId, undefined);
 });

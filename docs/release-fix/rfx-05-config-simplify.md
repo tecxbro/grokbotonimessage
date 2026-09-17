@@ -212,3 +212,139 @@ Implementation commit: `54f90b99e2a325759b52639bca8c43716850f7e7`.
 This following documentation-only commit records that exact tested implementation
 identity. No source changes occurred after the final 869-test run. Both commits
 remain local on codex/rfx-05-config-simplify; nothing was pushed.
+
+## Integration-return fix: initial conversation resolution
+
+RFX-00 reported that its assembled `validateProductionInstallation` called
+configuredAuthority before fresh address-only configuration had a native ID.
+Its composition also called requireRoutedConfiguration before the single SDK
+owner could resolve that address. Read-only reference was integration commit
+`cf5521921c3e6526ad6e32b02ac945f6dd94b65f`. This lane remains based on its reviewed
+f07cf5973b9c11a9deccc4a19f87bbe7092b1cea; no integration commit was merged.
+
+RFX-00 explicitly authorized a new narrow helper file and retains production,
+process, activation adoption and Grok command-style field wiring. Follow-up edits
+are limited to new `src/host/initial-conversation.ts`, the existing owned
+completion-configuration.test.mjs and this note. configuration.ts, the generator,
+Grok fields, production.ts and process.ts are untouched by this follow-up.
+
+New exports in `initial-conversation.ts`:
+
+- `validateInitialConversationPrerequisites(config, now?)`: offline normalization
+  and expiry validation. Accepts a fresh installation-owner initialAddress without
+  conversationId, but rejects an existing state.sqlite/WAL/SHM instead of silently
+  binding different conversation authority. Does not create SQLite or contact SDK.
+- `activationAfterValidationRequested(config, explicit?)`: adopts the saved
+  activateAfterValidation intent when the option is undefined; explicit false
+  overrides it. Returns a decision only, never changes activation or starts SDK.
+- `resolveInitialConversation(root, expectedConfig, owner, ownership)`: uses the
+  existing started SpectrumOwner and HostOwnership handle. Validates private
+  persisted config against expectedConfig, activation=enabled, unexpired authority,
+  current-PID/current-UID host lock, and matching owner project/account/logical
+  line. Calls only public owner.provider().space.create(address[, {phone}]) and
+  space.get(returnedId[, {phone}]). Shared mode omits the route argument and
+  requires returned phone="shared"; dedicated mode pins/requires its serving phone.
+  Both responses must be __platform="imessage", type="dm", with nonempty native
+  ID and exact expected route. Peer evidence in the returned `<service>;-;<address>`
+  native ID must match the requested address (email case-insensitive); group or
+  opaque IDs without that peer evidence fail closed. get must return the exact ID
+  create returned. Both returned routes must also resolve through owner.routes.inbound
+  to the configured project/account/logical line. The application never manufactures or rewrites a chat GUID.
+
+The helper changes only persisted provider.conversationId, using exclusive 0600
+temporary file, file fsync, rename and directory fsync. It checks exact config and
+lock snapshots and authority expiry across provider awaits and before rename;
+concurrent calls on the same root are fenced. Task IDs, grants, generation,
+issuance/expiry, credentials, activation and all other config fields remain intact.
+An already persisted ID is returned without provider calls. No retries, send,
+receiver/listener creation, SDK construction or stop occur in the helper. Same-user
+host-lock cooperation remains the filesystem concurrency boundary; this does not
+claim protection against a hostile process editing files as the installation user.
+A provider failure leaves the local config unchanged; no fabricated fallback ID.
+A crash after provider create but before local persistence has no invented receipt
+or retry guarantee. Retry must reread the persisted config; this helper does not
+claim network/provider exactly-once behavior or delivery.
+
+### Required RFX-00 wiring for this follow-up
+
+1. In process.ts offline validation, retain selected-release, private-file,
+   executable, secret and credential checks; call
+   `validateInitialConversationPrerequisites(configuration, now)`. If unresolved,
+   return the validation report with native resolution pending; do NOT call
+   configuredAuthority, create/open SQLite, bootstrapOrValidateAuthority, or SDK.
+   Preserve normal durable validation for existing resolved configurations.
+2. Preserve an omitted setup flag as `undefined`, not false. Compute intent using
+   `activationAfterValidationRequested(configuration, options.activateAfterValidation)`.
+   After successful offline checks, perform the existing locked enable operation
+   only if that decision is true. This must not imply the host is running. Explicit
+   programmatic false remains a veto; do not erase generated true intent merely
+   because the CLI flag was absent. RFX-00 owns these process.ts changes.
+3. During authorized run, acquire selected-release host ownership first, perform
+   offline validation and verify persisted activation=enabled. Construct and start
+   exactly one SpectrumOwner with its existing project credentials/routes. Before
+   opening state or deriving configuredAuthority, call
+   `resolveInitialConversation(root, configuration, owner, ownership)` for unresolved
+   config. Keep signal/cancellation handling and failed-start owner cleanup around
+   this entire phase. The helper deliberately never acquires a second lock or
+   constructs/stops a second SDK. If resolution fails, stop that owner and retain
+   ownership on cleanup failure under the existing lifecycle policy.
+4. Pass the SAME owner and resolved configuration into the production composition;
+   move owner construction before native-ID-dependent state/authority work or
+   accept an already-owned instance. Do not call the factory again. Its start is
+   already idempotent; claim the sole messages receiver only once through normal
+   runtime startup after the resolution/state transition. Then the existing
+   requireRoutedConfiguration/configuredAuthority checks have the exact persisted
+   native ID. Resume/restart uses that ID without create/get again.
+5. Add assembled process/composition tests for this offline validation -> explicit
+   activation -> one owner -> native resolution -> durable authority -> sole
+   listener order, including cancellation and provider cleanup failures. This
+   lane's helper tests cannot prove integration wiring that it does not own.
+6. Do not renew/reset the generated 24-hour authority. Expired binding is still an
+   explicit separate lifecycle blocker. This helper checks expiry before and after
+   provider awaits and never alters issuedAt/expiresAt/generation.
+
+### Follow-up evidence
+
+Pinned Node 24.13.0/npm 10.9.2 and spectrum-ts 12.8.0 retained. Build passed;
+focused completion-configuration suite passed 29/29, zero skips. It uses the real
+SpectrumOwner implementation with an injected fake SDK factory, real private
+fixture files and host locks; no provider connection or live messages. Tests prove
+one factory and one listener, exact public call arguments, route/peer rejection,
+private atomic replacement (new file inode), no state/credential changes, stale
+config and lock rejection, parallel-call fencing, offline address validation and
+activation-intent precedence. Full non-live suite result is recorded below.
+
+Official Markdown retrieval on this follow-up: HTTP 200, text/markdown, verified
+page titles/body and SHA-256:
+
+- https://photon.codes/docs/spectrum-ts/spaces-and-users:
+  f69d3567ce5bb75b6db2348c1906ff0e8629941be75c49f64416311693fbe044
+- https://photon.codes/docs/spectrum-ts/providers/imessage/connection-and-routing:
+  566a8ddbd1cf0dccdbcd3695c6e28c3cc4b100d97e606c0ee923ade339f24c47
+
+Pinned public SDK declarations expose space.create/get; installed imessage
+12.8.0 implementation returns the shared DM ID and route and uses the same
+`;-;` peer separator. No private SDK function is imported or invoked. This is
+provider resolver evidence only, never message delivery/read/device evidence.
+Logs are `.photon-local/rfx-05-evidence/followup-{focused,integration}.log`.
+
+Final follow-up full run: **878 passed / 883 tests; 5 failures; 0 skips** across
+97 files. All resolver/owner/configuration regressions passed. The five failures
+are the explicit assembled-target contract fixture (three branch/detached child
+assertions plus parent) and its final drift-test control assertion. Those fixtures
+run `git archive HEAD` (f07cf5973b9c11a9deccc4a19f87bbe7092b1cea during this run)
+and fail CONTRACT_DIGEST_DRIFT because that reviewed lane HEAD contains prior host
+configuration changes while its candidate digest remains at the release base.
+The uncommitted new helper is not even present in that archived fixture. No digest
+or fixture was changed to hide this integration gate. RFX-00 must regenerate the
+assembled-candidate digest and reconcile its source-file-count assertion after
+assembly; immutable F0 remains unchanged. Build and focused tests passed; the full
+suite is explicitly NOT reported as passing.
+
+Manual review and `git diff --check` passed. Exact follow-up assignment audit:
+three files only, no deletions, no changes to reviewed configuration/generator or
+Grok fields. No live provider/VM/Mac operation, activation, send, push or deployment.
+Follow-up implementation commit: `57c5f94ea8365ffa2d84e5a38e1fb8214449752c`.
+This documentation-only commit records the reviewed/tested source identity. The
+only change after the final test run was removing a trailing blank line. Both
+follow-up commits are local; the working tree is clean at handoff.
