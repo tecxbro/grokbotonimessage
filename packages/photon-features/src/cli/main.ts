@@ -2,9 +2,10 @@
 import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { MAX_REQUEST_BYTES } from "../contracts/actions.js";
-import { executeCommand } from "./commands.js";
+import { executeCommand, setupCommandOptions } from "./commands.js";
 import { callRuntime } from "./local-client.js";
-import { CliError, formatCommandResult } from "./output.js";
+import { setupDiscovery } from "./setup.js";
+import { CliError, formatCommandResult, formatSetupResult } from "./output.js";
 export async function readJson(input: NodeJS.ReadableStream): Promise<unknown> {
   const chunks: Buffer[] = []; let size = 0;
   for await (const chunk of input) {
@@ -19,6 +20,13 @@ export async function readJson(input: NodeJS.ReadableStream): Promise<unknown> {
 export async function main(argv: string[] = process.argv.slice(2), env = process.env, stdin: NodeJS.ReadableStream = process.stdin,
   stdout: Pick<NodeJS.WriteStream, "write"> = process.stdout, stderr: Pick<NodeJS.WriteStream, "write"> = process.stderr): Promise<number> {
   try {
+    if (argv[0] === "setup") {
+      const result = await setupDiscovery(setupCommandOptions(argv, env), { env, stderr });
+      const formatted = formatSetupResult(result);
+      stdout.write(formatted.stdout);
+      if (formatted.stderr) stderr.write(formatted.stderr);
+      return formatted.exitCode;
+    }
     const input = argv[0] === "execute" || argv[0] === "media.import" || argv[0]?.startsWith("stream.") ? await readJson(stdin) : undefined;
     const response = await executeCommand(
       argv,

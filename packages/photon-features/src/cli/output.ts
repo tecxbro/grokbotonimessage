@@ -37,3 +37,10 @@ export function formatCommandResult(input: CliResponse | CliError): FormattedCom
     exitCode,
   };
 }
+
+/** Incomplete discovery is reviewable JSON with a nonzero exit; it is never readiness. */
+export function formatSetupResult(result: import("./setup.js").SetupDiscovery): FormattedCommandResult {
+  return { stdout: JSON.stringify(result) + "\n",
+    stderr: result.status === "needs-input" ? "grok-photon: setup discovery requires attention; inspect unresolved fields\n" : "",
+    exitCode: result.status === "discovered" ? 0 : 3 };
+}
