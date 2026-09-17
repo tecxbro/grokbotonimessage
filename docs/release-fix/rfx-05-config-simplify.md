@@ -344,4 +344,7 @@ suite is explicitly NOT reported as passing.
 Manual review and `git diff --check` passed. Exact follow-up assignment audit:
 three files only, no deletions, no changes to reviewed configuration/generator or
 Grok fields. No live provider/VM/Mac operation, activation, send, push or deployment.
-The follow-up implementation SHA is recorded by the next documentation-only commit.
+Follow-up implementation commit: `57c5f94ea8365ffa2d84e5a38e1fb8214449752c`.
+This documentation-only commit records the reviewed/tested source identity. The
+only change after the final test run was removing a trailing blank line. Both
+follow-up commits are local; the working tree is clean at handoff.
