@@ -1,12 +1,26 @@
 # Grokbot on iMessage
 
-This repository contains the deterministic Photon Feature Runtime for the existing Grok orchestrator. The legacy root `gbot`/`grok-bot` CLI has been removed; the supported command-line surface is the private `@grokbot/photon-features` workspace and its `grok-photon` tool.
+This repository contains the deterministic Photon Feature Runtime for the Grok Bot cloud VM. Photon owns transport, durable inbox/outbox state and iMessage operations. Grok owns reasoning and bot-to-bot coordination. The legacy root `gbot`/`grok-bot` CLI has been removed; the supported command-line surface is the private `@grokbot/photon-features` workspace and its `grok-photon` tool.
+
+## Grok bot topology
+
+The setup prompt creates or reuses three shallow Grok roles:
+
+1. **iMessage Bot**: claims Photon handoffs, passes the user message to the Orchestrator, receives the final response, sends it through `grok-photon`, then acknowledges the handoff.
+2. **Orchestrator**: owns the conversation, decides whether to answer directly or delegate, coordinates Workers and returns the final user-facing response to the iMessage Bot.
+3. **Worker**: performs assigned substantive work and reports only to the Orchestrator.
+
+Keep these role prompts short. Do not add biographies, elaborate personalities, recursive management trees or separate memory systems. Reuse the current setup bot as the iMessage Bot when Grok supports that cleanly; otherwise create only the missing role. The Orchestrator may create more Workers later when work requires them.
+
+Internal Grok IDs are implementation details. The setup agent captures returned IDs and binds the Photon wake target privately. It must not ask the owner to choose or paste an internal UUID. Only the iMessage Bot uses Photon. The Orchestrator and Workers never start another Spectrum client.
+
+The Photon runtime still stores one internal wake target. The product setup must bind that target to the iMessage Bot. Bot creation and role wiring are prompt-owned until a supported Grok creation API is verified and automated in code.
 
 ## RFX-00 release integration
 
 The existing RFX-01 through RFX-11 lanes are composed in the preserved RFX-00 worktree. [Acceptance](docs/release-fix/acceptance.md), [exact included commits](docs/release-fix/included-commits.json) and [test evidence](docs/release-fix/test-evidence.md) describe the candidate. [Deployment](packages/photon-features/DEPLOYMENT.md) targets the Grok Bot cloud VM on Linux x86_64/amd64, not the user's Mac. Codex produces a tested owner-local artifact; actual activation and live phone/provider/device verification are separate later work.
 
-Shared routing uses "shared" with durable authorized root/secondary conversations. One messaging host feeds the existing Grok orchestrator. Capability reports separate configuration and informational evidence from actual runtime/provider/resource blockers. No extra orchestration framework is added.
+Shared routing uses "shared" with durable authorized root/secondary conversations. One messaging host wakes the iMessage Bot, which coordinates with the Orchestrator and Workers. Capability reports separate configuration and informational evidence from actual runtime/provider/resource blockers. No second messaging runtime or second orchestrator is added.
 
 ## Development
 

@@ -5,15 +5,27 @@ Working rules: [agent.md](agent.md). Detailed behavior: [runtime contract](docs/
 
 ## Purpose
 
-A user communicates through iMessage. The existing Grok Bot orchestrator decides what to do and delegates substantive work to existing worker Bots. The Photon Feature Runtime validates, authorizes, persists and executes messaging operations deterministically. Codex builds the package and its operating skill; normal Grok operation consumes that package without generating integration code.
+A user communicates through iMessage. The Photon Feature Runtime transports and persists messaging work without reasoning about it. A thin iMessage Bot receives the durable handoff, passes the request to the Grok Orchestrator, receives the final response and sends it through Photon. The Orchestrator decides what to do and delegates substantive work to Worker Bots. Codex builds the package and operating skill; normal Grok operation consumes that package without generating integration code.
 
 ## RFX-00 integrated flow
 
 One Grok Bot cloud VM host owns Spectrum, ingress, SQLite inbox/outbox, resource authority, and wake dispatch. Shared/free provider route identity is "shared"; displayed E.164 and recipient addresses are distinct metadata. Fresh setup validates offline, then enabled locked startup resolves an exact native DM through the same SDK owner before seeding authority. No Mac provider or access is required.
 
-Authenticated shared inbound → durable capture/inbox → one handoff → deduplicated/backed-off pointer wake → current task claim → original event → authorized outbound reply to that conversation. Task-created secondary conversations use exact same-principal/task/generation grants; leaf and parent identities are checked without changing task scope. Unknown inbound remains unresolved. One public SDK owner and receiver serve the complete flow.
+Authenticated shared inbound → durable capture/inbox → one handoff → deduplicated/backed-off pointer wake → iMessage Bot claim → Orchestrator reasoning/delegation → final response returned to the iMessage Bot → authorized outbound reply to the originating conversation. Task-created secondary conversations use exact same-principal/task/generation grants; leaf and parent identities are checked without changing task scope. Unknown inbound remains unresolved. One public SDK owner and receiver serve the complete flow.
 
-[Acceptance](docs/release-fix/acceptance.md) and [test evidence](docs/release-fix/test-evidence.md) separate code, integration, packaging, target installation and live/device proof. Static cards, customized extensions/live rendering, signed callbacks, original-card recovery and native poll management have independent prerequisites. The 24-hour initial authority expiration remains a lifecycle limitation; no unsafe reseeding or automatic renewal is introduced.
+The runtime stores one internal Grok wake target. Product setup binds that target to the iMessage Bot. Grok bot creation and role wiring are prompt-owned until a supported Grok creation API is verified and automated in code; the Photon host does not create bots or run a second orchestration loop.
+
+[Acceptance](docs/release-fix/acceptance.md) and [test evidence](docs/release-fix/test-evidence.md) separate code, integration, packaging, target installation and live/device proof. Static cards, customized extensions/live rendering, signed callbacks, original-card recovery and native poll management have independent prerequisites. Newly generated installation-owner authority is permanent; finite legacy/delegated authority retains its configured expiry.
+
+## Grok role topology
+
+The setup prompt creates or reuses three initial roles and keeps their instructions shallow:
+
+- **iMessage Bot**: claims Photon work, forwards the user request to the Orchestrator, receives the final response, invokes Photon, and acknowledges the handoff. It performs no substantive work.
+- **Orchestrator**: owns the conversation, decides whether to answer or delegate, coordinates Workers, and returns one final user-facing response to the iMessage Bot.
+- **Worker**: performs assigned substantive work and reports only to the Orchestrator.
+
+The current setup bot may become the iMessage Bot when Grok supports that cleanly, so setup creates only the missing roles. Start with one Worker. The Orchestrator may create more Workers when a task requires them. Do not create biographies, deep personas, recursive management layers, separate memory systems or one bot per Photon feature. Internal Grok identifiers stay private; the owner is never asked to choose or paste a UUID.
 
 ## Historical verified checkpoint
 
@@ -62,18 +74,20 @@ flowchart TB
     end
     Photon --> Ingress
     SDK --> Photon
-    Handoff -. wake pointer .-> Grok[Existing Grok orchestrator]
-    Grok <--> Workers[Existing worker Bots]
-    Grok <--> CLI[grok-photon executable]
-    Workers <--> CLI
+    Handoff -. wake pointer .-> IMessageBot[Thin iMessage Bot]
+    IMessageBot <--> Orchestrator[Grok Orchestrator]
+    Orchestrator <--> Workers[Worker Bot or Bots]
+    IMessageBot <--> CLI[grok-photon executable]
     CLI <-->|Restricted Unix socket| Local
 ```
 
 ## Boundaries and durable flows
 
-**Incoming work:** explicitly select Photon stream or webhook ingress, verify authenticity and scope, normalize typed events, and persist inbox/reducer/handoff state transactionally before upstream acknowledgement. Wake the existing task after commit. The bot then uses `work.list`, `work.claim`, `work.heartbeat` and `work.ack` to retrieve and manage actual durable work. The wake body is neither the work record nor authorization.
+**Incoming work:** explicitly select Photon stream or webhook ingress, verify authenticity and scope, normalize typed events, and persist inbox/reducer/handoff state transactionally before upstream acknowledgement. Wake the iMessage Bot after commit. It uses `work.list`, `work.claim`, `work.heartbeat` and `work.ack` to retrieve and manage actual durable work, then forwards the user request to the Orchestrator through Grok's own supported bot-to-bot mechanism. The wake body is neither the work record nor authorization.
 
-**Outgoing operations:** the executable submits a strict versioned action through local IPC. The runtime resolves the authenticated principal, context and resource scope, checks current generation/permissions/capabilities, and records idempotent outbox work. A claimed executor invokes an injected feature handler through the single SDK owner, then persists results and recovery state. The RFX-00 assembly wires this execution path; the F0 table above remains historical evidence.
+**Reasoning and delegation:** the iMessage Bot does not solve the task. The Orchestrator understands the request, answers directly or delegates to Workers, and returns the final response to the iMessage Bot. Workers never operate Photon and never communicate with the iMessage user directly.
+
+**Outgoing operations:** the iMessage Bot submits a strict versioned action through local IPC. The runtime resolves the authenticated principal, context and resource scope, checks current generation/permissions/capabilities, and records idempotent outbox work. A claimed executor invokes an injected feature handler through the single SDK owner, then persists results and recovery state. The RFX-00 assembly wires this execution path; the F0 table above remains historical evidence.
 
 **Recovery:** leases and fences prevent stale database writes. Multipart children have stable identities and checkpoints. A provider call whose outcome was not persisted can remain unknown; retry requires verified deduplication or reconciliation support. A successful void operation does not need an invented message reference. Delivery/read receipts are correlated observations, distinct from executor completion or provider acceptance.
 
@@ -102,11 +116,13 @@ Features receive injected SDK/resource services. They never create another clien
 
 ## Open integration decisions
 
+- Verify the installed Grok product's supported bot creation and bot-to-bot handoff controls before automating role creation; do not invent CLI syntax.
+- Bind the runtime's one wake target to the iMessage Bot without exposing an internal Grok identifier to the owner.
 - Select and verify deployment project/account/line/conversation bindings and account eligibility.
 - Resolve durable-before-ack ingress and stream replay/catch-up guarantees; do not assume the SDK webhook callback delays acknowledgement.
 - Verify a public provider idempotency/outcome-lookup seam and advanced poll/card/reaction mutation APIs before implementing adapters.
 - Implement current context/resource authorization, guarded media staging and registered-stream lifecycle.
-- Bind wake notifications to existing Grok tasks; implement task acceptance idempotency before acknowledgement.
+- Implement task acceptance idempotency before acknowledgement.
 - Add private runtime paths, a single-host process lock/supervisor, installation and explicit activation.
 - Preserve the documented SDK compiler compatibility settings and SQLite experimental-API limitation until new evidence supports changes.
 

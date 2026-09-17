@@ -5,7 +5,8 @@ Read this file and [architecthure.md](architecthure.md) when starting a lane ass
 
 ## Mission and boundaries
 
-- Build the deterministic Photon Feature Runtime; the existing Grok Bot orchestrator delegates substantive work to existing worker Bots.
+- Build the deterministic Photon Feature Runtime. Photon handles transport and durable messaging state; Grok handles reasoning and bot-to-bot coordination.
+- Product setup creates or reuses three shallow Grok roles: iMessage Bot, Orchestrator and an initial Worker. Follow the role rules below.
 - Codex builds the integration package and operating skill; Grok Bot must not generate integration code during normal operation.
 - Keep one host responsible for Photon credentials, client lifecycle, ingress and production outbox.
 - Keep inbound transport, outbound provider and Grok wake-up separate; wake notifications only point to durable work.
@@ -13,13 +14,25 @@ Read this file and [architecthure.md](architecthure.md) when starting a lane ass
 - Do not migrate hosting, modify iMessage-agent-render or select the macOS local provider because development runs on a Mac.
 - Do not provision lines, change billing/approval settings, activate services or send live messages without explicit task authorization.
 
+## Grok role creation rules
+
+Keep role creation intentionally shallow. The setup prompt may use the current setup bot as the iMessage Bot and create only the Orchestrator and Worker when that is the cleanest supported Grok flow. Otherwise it creates or reuses the three roles. It must use the installed Grok product's supported bot controls and must not invent an undocumented CLI command.
+
+- **iMessage Bot**: claim Photon handoffs, pass the original user message and required conversation context to the Orchestrator, receive the final response, send it through the installed Photon tool, then acknowledge the handoff. It does no substantive work and starts no second Spectrum client.
+- **Orchestrator**: understand the request, maintain the conversation, decide whether to answer directly or delegate, coordinate Workers and return the final user-facing response to the iMessage Bot. It does not operate Photon directly.
+- **Worker**: perform the assigned work and report to the Orchestrator. It never communicates with the iMessage user and never operates Photon.
+
+Use short role prompts. Do not add biographies, elaborate personalities, recursive management layers, separate memory systems or one bot per feature. Start with one Worker; the Orchestrator may create more only when a task requires them. Capture any returned Grok bot identifiers privately and bind the Photon wake target to the iMessage Bot. Never ask the owner to understand, choose or paste an internal UUID.
+
+The Photon runtime itself does not create or reason about Grok bots. It owns one internal wake target and transports durable work to that target. Bot creation and iMessage Bot ↔ Orchestrator ↔ Worker wiring remain setup-prompt responsibilities until a supported Grok creation API is verified and automated.
+
 ## Release-fix operating boundary
 
 RFX-00 is integration owner for reviewed RFX-01 through RFX-11. Required interface/type, routing, resource authority, composition, imports, fixture, registry/schema and merge glue may cross historical lane ownership; log each exact file, affected lanes, reason and tests in docs/release-fix/integration-log.md. Return substantive feature defects to their owning lane. There is no RFX-12.
 
 Preserve the registered rfx-00-integration worktree, codex/rfx-00-integration branch and exact base b83e3afd7049a991de6daffedf831165890f0901. Preserve original integration documentation. Never reset/recreate the checkout, rewrite immutable F0, mutate main, deploy, activate real Photon, send live messages or operate the real Grok VM from this task. Local isolated build/test environments use controlled external doubles only.
 
-The deliverable is a tested clean-commit owner-local Linux x64 artifact, SHA-256, provenance and VM instructions. Install/run belongs on the Grok Bot cloud VM, not the user's Mac. Photon CLI retrieves private project secrets after existing-session verification or a real headless device-login URL/code. Grok remains the only reasoning/orchestration layer; no instruction/orchestration redesign belongs in this wave.
+The deliverable is a tested clean-commit owner-local Linux x64 artifact, SHA-256, provenance and VM instructions. Install/run belongs on the Grok Bot cloud VM, not the user's Mac. Photon CLI retrieves private project secrets after existing-session verification or a real headless device-login URL/code. Grok remains the only reasoning/orchestration layer; the Photon host never reasons. The shallow three-role topology is an authorized setup contract, not a second messaging runtime.
 
 ## Checkout and ownership
 
