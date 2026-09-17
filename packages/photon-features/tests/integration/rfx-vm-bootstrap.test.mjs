@@ -14,7 +14,7 @@ const local = join(repo, '.photon-local', 'rfx-bootstrap-tests');
 mkdirSync(local, { recursive: true });
 const secret = 'private-project-secret-DO-NOT-PRINT';
 const fixtureScript = `#!${process.execPath}
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, writeFileSync, chmodSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { basename, join, dirname } from 'node:path';
 const args = process.argv.slice(2), fixture = JSON.parse(process.env.RFX_FIXTURE);
 const tool = basename(process.argv[1]);
@@ -31,7 +31,8 @@ if (tool === 'npm') {
   mkdirSync(dirname(target), {recursive: true}); copyFileSync(fixture.photonSource, target); chmodSync(target, 0o700);
 } else if (tool === 'gbot') {
   if (args[0] === '--version') console.log('gbot 1.2.3');
-  else if (args[0] === '--help') console.log(fixture.grokUnsupported ? 'gbot --files bots list' : 'gbot\\n  bots list\\nFlags: --gateway --json' + (fixture.current ? '\\n  bots current' : ''));
+  else if (args.length === 2 && ['--gateway','gateway'].includes(args[0]) && args[1] === '--help') console.log(fixture.noSendHelp ? 'Commands: bots list' : 'Commands:\\n  send <agent> <message>');
+  else if (args[0] === '--help') console.log(fixture.grokSubcommand ? 'gbot\\n  gateway' : fixture.grokAmbiguous ? 'gbot\\n  gateway\\nFlags: --gateway' : fixture.grokUnsupported ? 'gbot --files bots list' : 'gbot\\n  bots list\\nFlags: --gateway --json' + (fixture.current ? '\\n  bots current' : ''));
   else if (JSON.stringify(args) === JSON.stringify(['--gateway', '--json', 'bots', 'list'])) {
     if (fixture.grokFail) fail();
     out(fixture.bots ?? [{id:'live-agent', name:'Live orchestrator', kind:'bot'}]);
@@ -50,11 +51,15 @@ if (tool === 'npm') {
       });
     }
     if (fixture.loginFail) fail();
-    mkdirSync(process.env.PHOTON_CONFIG_DIR, {recursive:true});
-    writeFileSync(join(process.env.PHOTON_CONFIG_DIR, 'credentials.json'), JSON.stringify({token:fixture.secret}), {mode:0o600});
+    mkdirSync(join(process.env.PHOTON_CONFIG_DIR, 'credentials'), {recursive:true});
+    writeFileSync(join(process.env.PHOTON_CONFIG_DIR, 'credentials', 'production.json'), JSON.stringify({accessToken:fixture.secret,user:{id:'owner',email:'owner@example.test',name:'Owner'},envName:'production',apiUrl:'https://app.photon.codes',issuedAt:'2026-09-16T00:00:00Z'}), {mode:0o600});
     log({event:'login-exit'});
   } else if (args[0] === 'whoami') {
     if (args.length !== 1 || fixture.whoamiFail) fail();
+    let credentials;
+    try { credentials = JSON.parse(readFileSync(join(process.env.PHOTON_CONFIG_DIR, 'credentials', 'production.json'), 'utf8')); } catch {}
+    if (!credentials?.accessToken) { console.error('Not authenticated for backend "production".'); process.exit(9); }
+    if (credentials.accessToken === 'expired-token' || fixture.rejectAfterLogin) { console.error('Session expired for "production".'); process.exit(9); }
     console.log('Owner <owner@example.test>');
   } else if (args[0] === '--help') console.log('Commands:\\n  projects\\n' + (fixture.noAuth ? '' : '  auth'));
   else if (args.join(' ') === 'auth --help') console.log('Commands:\\n  status');
@@ -149,10 +154,10 @@ test('real login URL and fresh code reach stderr before login exits', async t =>
   for (const path of files(join(f.options.installationRoot, 'runtime'))) assert.ok(!readFileSync(path, 'utf8').includes('FRESH-1234'));
 });
 
-test('failed login stops before identity, projects, or Grok discovery', async t => {
+test('failed login stops after auth preflight and before projects or Grok discovery', async t => {
   const f = fixture(t, { loginFail: true });
   await assert.rejects(runFixture(f), { code: 'PHOTON_LOGIN_FAILED' });
-  assert.deepEqual(f.events().map(command), ['--version', 'login --no-browser']);
+  assert.deepEqual(f.events().map(command), ['--version', 'whoami', 'login --no-browser']);
 });
 
 test('failed whoami and logged-out auth status stop project discovery', async t => {
@@ -332,4 +337,112 @@ test('failed private installation is a blocker, and occupied npm projects are pr
   await assert.rejects(runFixture(occupied), {code:'PHOTON_PRIVATE_PREFIX_OCCUPIED'});
   assert.equal(readFileSync(join(prefix,'package.json'),'utf8'), '{"name":"unrelated"}');
   assert.ok(!occupied.events().some(e => e.tool === 'npm'));
+});
+
+
+function seedSession(f, location = 'private', accessToken = secret) {
+  let directory;
+  if (location === 'private') directory = join(f.options.installationRoot, 'runtime/setup/photon-config');
+  else if (location === 'home') directory = join(f.services.env.HOME, '.config/photon');
+  else if (location === 'legacy') directory = join(f.services.env.HOME, '.config/photon-dashboard');
+  else if (location === 'xdg') { f.services.env.XDG_CONFIG_HOME = join(f.root, 'xdg-config'); directory = join(f.services.env.XDG_CONFIG_HOME, 'photon'); }
+  else { directory = join(f.root, 'existing-photon-config'); f.services.env.PHOTON_CONFIG_DIR = directory; }
+  mkdirSync(join(directory, 'credentials'), {recursive:true});
+  const path = join(directory, 'credentials/production.json');
+  writeFileSync(path, JSON.stringify({accessToken,user:{id:'owner',name:'Owner',email:'owner@example.test'},envName:'production',apiUrl:'https://app.photon.codes',issuedAt:'2026-09-16T00:00:00Z'}), {mode:0o600});
+  return path;
+}
+
+test('an authenticated private Photon session is verified and reused with no device login', async t => {
+  const f = fixture(t); const path = seedSession(f);
+  const before = readFileSync(path, 'utf8'), beforeMtime = statSync(path).mtimeMs;
+  const result = await runFixture(f);
+  assert.equal(result.status, 'discovered'); assert.equal(result.photon.authStatus, 'verified');
+  assert.ok(f.events().some(e => command(e) === 'whoami'));
+  assert.ok(!f.events().some(e => e.args?.[0] === 'login'));
+  assert.equal(f.stderr(), ''); assert.equal(readFileSync(path, 'utf8'), before); assert.equal(statSync(path).mtimeMs, beforeMtime);
+});
+
+test('existing VM CLI config sessions are imported read-only into private runtime without login', async t => {
+  for (const location of ['home','config','xdg','legacy']) {
+    const f = fixture(t); const original = seedSession(f, location);
+    const before = readFileSync(original, 'utf8'), beforeMtime = statSync(original).mtimeMs;
+    const result = await runFixture(f);
+    assert.equal(result.photon.authStatus, 'verified'); assert.equal(result.status, 'discovered');
+    assert.ok(!f.events().some(e => e.args?.[0] === 'login'));
+    assert.equal(readFileSync(original, 'utf8'), before); assert.equal(statSync(original).mtimeMs, beforeMtime);
+    const copied = join(f.options.installationRoot, 'runtime/setup/photon-config/credentials/production.json');
+    assert.equal(statSync(copied).mode & 0o777, 0o600); assert.equal(JSON.parse(readFileSync(copied, 'utf8')).accessToken, secret);
+    assert.ok(!JSON.stringify(result).includes(secret)); assert.equal(f.stderr(), '');
+    assert.ok(!f.events().some(e => e.home === f.services.env.HOME));
+  }
+});
+
+test('missing and expired auth trigger one fresh device login and post-login verification', async t => {
+  for (const state of ['missing','expired']) {
+    const f = fixture(t); if (state === 'expired') seedSession(f, 'private', 'expired-token');
+    const result = await runFixture(f);
+    assert.equal(result.status, 'discovered');
+    const commands = f.events().map(command).filter(Boolean);
+    assert.deepEqual(commands.slice(0,4), ['--version','whoami','login --no-browser','whoami']);
+    assert.equal(commands.filter(cmd => cmd === 'login --no-browser').length, 1);
+    assert.ok(f.stderr().includes('https://app.photon.codes/device')); assert.ok(f.stderr().includes('FRESH-1234'));
+  }
+});
+
+test('repeat setup reuses the established session instead of replacing it with a fresh login', async t => {
+  const f = fixture(t); const first = await runFixture(f); const second = await runFixture(f);
+  assert.equal(first.status, 'discovered'); assert.equal(second.status, 'discovered');
+  assert.equal(f.events().filter(e => command(e) === 'login --no-browser').length, 1);
+  assert.equal(f.events().filter(e => command(e) === 'whoami').length, 3);
+  assert.notEqual(first.secretFile.path, second.secretFile.path);
+});
+
+test('unrelated auth failures do not trigger login, and failed post-login auth never loops', async t => {
+  const network = fixture(t, {whoamiFail:true}); seedSession(network);
+  await assert.rejects(runFixture(network), {code:'PHOTON_AUTHENTICATION_FAILED'});
+  assert.ok(!network.events().some(e => e.args?.[0] === 'login')); assert.ok(!network.stderr().includes(secret));
+  const expired = fixture(t, {rejectAfterLogin:true});
+  await assert.rejects(runFixture(expired), {code:'PHOTON_AUTHENTICATION_FAILED'});
+  assert.equal(expired.events().filter(e => e.args?.[0] === 'login').length, 1);
+  assert.ok(!expired.events().some(e => command(e) === 'projects ls --json'));
+});
+
+test('installed Grok help yields inert command-style evidence and never invokes send', async t => {
+  const flag = fixture(t); const result = await runFixture(flag);
+  assert.equal(result.grok.commandStyle, 'gateway-flag'); assert.equal(result.grok.commandStyleEvidence, 'installed-cli-help');
+  const subcommand = fixture(t, {grokSubcommand:true}); const subResult = await runFixture(subcommand);
+  assert.equal(subResult.grok.commandStyle, 'gateway-subcommand'); assert.equal(subResult.grok.agentId, null);
+  assert.ok(subResult.unresolved.includes('grok.liveRosterUnsupported'));
+  for (const f of [flag, subcommand]) assert.ok(!f.events().some(e => e.args?.includes('send')));
+  for (const changes of [{grokAmbiguous:true}, {noSendHelp:true}]) {
+    const f = fixture(t, changes); const blocked = await runFixture(f);
+    assert.equal(blocked.grok.commandStyle, null); assert.ok(blocked.unresolved.includes('grok.commandStyle'));
+  }
+});
+
+test('RFX-02-compatible resolver seam permits only installed help inspection', async t => {
+  const f = fixture(t); let invoked = false;
+  f.services.discoverGrokCommandStyle = async (executable, timeout, inspect) => {
+    invoked = true; assert.equal(executable, join(f.bin,'gbot')); assert.equal(timeout, 30000);
+    assert.ok((await inspect(executable, ['--help'], timeout)).includes('--gateway'));
+    assert.ok((await inspect(executable, ['--gateway','--help'], timeout)).includes('send'));
+    return 'gateway-flag';
+  };
+  const result = await runFixture(f); assert.ok(invoked); assert.equal(result.grok.commandStyle, 'gateway-flag');
+  f.services.discoverGrokCommandStyle = async (executable, timeout, inspect) => {
+    await inspect(executable, ['--gateway','send','agent','probe'], timeout); return 'gateway-flag';
+  };
+  const refused = await runFixture(f); assert.equal(refused.grok.commandStyle, null);
+  assert.ok(refused.unresolved.includes('grok.commandStyle')); assert.ok(!f.events().some(e => e.args?.includes('send')));
+});
+
+
+test('private credential symlinks cannot redirect a renewed login outside runtime', async t => {
+  const f = fixture(t); const outside = seedSession(f, 'home', 'expired-token');
+  const directory = join(f.options.installationRoot, 'runtime/setup/photon-config/credentials'); mkdirSync(directory, {recursive:true});
+  symlinkSync(outside, join(directory, 'production.json'));
+  const before = readFileSync(outside, 'utf8');
+  await assert.rejects(runFixture(f), {code:'SETUP_UNSAFE_ROOT'});
+  assert.equal(readFileSync(outside, 'utf8'), before); assert.equal(f.events().length, 0);
 });

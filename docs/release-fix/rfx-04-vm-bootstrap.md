@@ -70,23 +70,32 @@ Existing CLI versions are reused and recorded. Dependency manifests are unchange
 Each invocation creates `<installationRoot>/runtime/setup/discovery-XXXXXX/`.
 Photon configuration persists at `runtime/setup/photon-config/`; HOME/XDG paths
 are isolated under `runtime/setup/home/`, and temp files use the session directory.
-Inherited npm configuration and Photon token/project overrides are removed to
-ensure the device login actually establishes the identity being discovered.
+An existing runtime session is verified first. If none was imported yet, only the
+matching backend credential is copied read-only from the VM CLI's explicit config,
+XDG/default config, or legacy photon-dashboard store into the private runtime at
+0600. The original is never migrated, rewritten or deleted. Inherited npm settings
+and Photon token/project overrides are removed, so verification uses that session.
 `PHOTON_API_HOST` and existing VM Grok gateway/access credentials are inherited;
 no credentials are read from a Mac or copied from a Mac profile. The historical
 Grok CLI uses VM environment credentials on Linux; its Mac-only session reader
 is deliberately not invoked as a discovery fallback.
 
-Login stdout and stderr bytes are immediately forwarded, unchanged, to setup
+When login is required, its stdout and stderr bytes are immediately forwarded, unchanged, to setup
 stderr while `photon login --no-browser` waits. They are never captured in the
 result or written by setup to disk. The caller must surface stderr while the
 process is running and must not persist the transient device code. JSON stdout
 is emitted once discovery finishes. Ordinary discovery captures at most 2 MiB
-stdout, discards child stderr, uses a 30-second deadline and does not retry.
+stdout, uses a 30-second deadline and does not retry. Auth/help stderr is also
+captured within the same bounded memory limit for classification/inspection; other
+child stderr is discarded. Captured diagnostics are never exposed or logged.
 Installation has a 3-minute deadline; login has 15 minutes. The exported API
-accepts an AbortSignal and stops its child. Failed login exits before discovery.
+accepts an AbortSignal and stops its child. Failed login exits before project/resource discovery.
 
-`photon whoami` must succeed. Auth status is feature-detected via help and its
+`photon whoami` is invoked before login. An authenticated session is reused without
+a login command. Only the source-reviewed `Not authenticated` / `Session expired`
+errors initiate one `login --no-browser`, followed by another `whoami`. Other
+failures, including unknown/network failures, remain blockers; failed renewal does
+not loop. Auth status is feature-detected via help and its
 JSON must contain one authenticated, non-corrupt row for the selected backend.
 Older CLI versions without that JSON surface report `photon.identity` unresolved;
 raw whoami prose is not misrepresented as structured identity.
@@ -99,6 +108,11 @@ selected project. No secret rotation, resource creation or line purchase occurs.
 A failed read exits nonzero with a fixed error code; an unsupported/missing secret
 stays unresolved. The script never includes raw child errors in normal output.
 
+Grok root help and gateway help first identify exactly one invocation style; missing
+or ambiguous style/send help leaves `grok.commandStyle` unresolved. Style is inert
+evidence for configuration, not a send probe or delivery receipt. The RFX-02-compatible
+resolver seam is documented below. The roster adapter still requires the known
+legacy live syntax rather than guessing a roster for a different gateway namespace.
 Grok help must advertise `bots list`, `--gateway` and `--json`. Only then is
 `gbot --gateway --json bots list` executed. Group, hidden, archived, deleted,
 explicitly stopped/offline and non-bot entries are excluded; duplicate IDs are
@@ -145,6 +159,8 @@ No arbitrary provider properties pass through.
     "agentId": "live-agent-id",
     "candidates": [{"id": "live-agent-id", "name": "Orchestrator"}],
     "evidence": "live-gateway-roster",
+    "commandStyle": "gateway-flag",
+    "commandStyleEvidence": "installed-cli-help",
     "unresolved": []
   },
   "unresolved": [],
@@ -168,6 +184,8 @@ The example uses fixture identifiers; it is not live discovery evidence.
 | `spectrum.dedicatedLineId` | Unique iMessage line ID or null; shared mode does not fabricate one. |
 | `secretFile` | Private descriptor above or null; no secret value is included. |
 | `grok` | Executable/version may be null when unavailable. Agent ID is null until live evidence selects it. Candidates are `{id, name?}` only. Evidence is `live-gateway-roster` or null. |
+| `grok.commandStyle` | `gateway-flag`, `gateway-subcommand`, or null; help-derived invocation style only, never proof of a successful send. |
+| `grok.commandStyleEvidence` | `installed-cli-help` only after the installed CLI's root and selected gateway help were inspected successfully; otherwise null. |
 | `unresolved` | Ordered strings, including project, secret, identity, Spectrum choices/serving evidence and Grok blockers. |
 | `nextDecision` | First unresolved field as `{field, action}`, or null. Project choice uses `--project`; user/line/Grok choices are for RFX-05's handoff. |
 
@@ -284,3 +302,110 @@ Implementation commit: `e16664270856c106abc4c10c620e8e3752c9988e`.
 This follow-up changes only this task note to record that exact commit; the seven
 production/test files match the implementation tree that passed the checks above.
 The branch is local only; no remote branch was created.
+
+
+## RFX-00 authentication-reuse follow-up
+
+Requested from RFX-00 after immutable lane HEAD
+`7247c799ea325d38ec685a653f9728c7f4ee8a94` was selected for integration. This follow-up
+supersedes the initial unconditional-login behavior: existing authenticated CLI
+sessions must be reused, and missing/expired sessions alone trigger device login.
+
+Changes are confined to `src/cli/setup.ts`, `src/host/grok-discovery.ts`, the existing
+RFX-04 fake-executable test and this note. The VM-only guard still precedes credential
+reads or writes. All child HOME/config/temp writes remain in the installation runtime.
+External VM credentials are read-only inputs: only a matching backend's regular
+credential file is imported; no other backend or profile gets copied. Already
+imported runtime credentials take precedence. A private credential symlink or hard
+link is rejected before any child can renew through it. Imported credentials and
+project secrets remain 0600. No secrets or auth diagnostics enter normal JSON/logs.
+
+The matching backend key and credential format are verified against immutable
+Photon CLI source `13fb65a3f33e801cb50f7e7a240a8eb6466c4152` (`src/lib/env.ts`,
+`credentials.ts`, and `errors.ts`). Known `Not authenticated` and `Session expired`
+messages are classified from bounded in-memory output; an unrecognized CLI error
+fails closed rather than guessing that authentication expired. `whoami` success
+still requires the advertised auth-status verification before project discovery.
+
+### RFX-02 integration seam
+
+`SetupServices.discoverGrokCommandStyle` has the structurally compatible signature:
+
+```ts
+(executable: string, timeoutMs: number,
+ inspect: (executable: string, args: readonly string[], timeoutMs: number) => Promise<string>)
+ => Promise<"gateway-flag" | "gateway-subcommand">
+```
+
+RFX-00 can inject its assembled `discoverGrokCommandStyle` export from
+`src/host/grok-wake.ts` in the existing `setupDiscovery(..., services)` call in
+`src/cli/main.ts`. This lane deliberately does not import that absent branch export.
+Its default compatibility implementation applies the same RFX-02 root/gateway-help
+rules. Both paths are restricted to `--help`, `--gateway --help`, or `gateway --help`
+on the selected executable; even an injected resolver cannot send through this
+inspection capability. Both root and selected gateway help must actually have been
+inspected before evidence is labeled `installed-cli-help`.
+
+Persist `grok.commandStyle` only when non-null and `commandStyleEvidence` is
+`installed-cli-help`. RFX-00 owns the RFX-05 schema/config wiring. A discovered
+`gateway-subcommand` style does not invent support for a corresponding bot-roster
+command: the existing roster adapter can return `grok.liveRosterUnsupported`
+independently while retaining the inert style evidence. Ambiguous/missing style
+help remains unresolved; no real send is attempted.
+
+### Follow-up validation
+
+- The initial expanded fake-executable run passed 31 tests. Final validation adds
+  a private-credential symlink case and reruns all 32 cases within the complete
+  local integration suite.
+- Existing authenticated runtime session: no login; `whoami` and auth status verified.
+- Existing VM CLI session in explicit/default/XDG/legacy config: private import,
+  no login, original bytes/mtime preserved and copied mode 0600.
+- Missing/expired authentication: one live-streamed fake device flow followed by
+  verification; failed login and failed renewed auth stop without retry loops.
+- Repeat setup: two discoveries, one device login, three `whoami` checks, separate
+  private project-secret descriptors.
+- Non-auth failures remain redacted blockers and do not initiate login.
+- Both command styles, missing/ambiguous help, injected resolver compatibility,
+  and rejection of a send probe are covered with fake executables.
+
+Final test totals, evidence hashes and commit identity are recorded below.
+
+RFX-02 source read for compatibility: `74c7d9c265e0267cc13faee0a18410f3718fe44f:packages/photon-features/src/host/grok-wake.ts`.
+- [Photon env.ts](https://github.com/photon-hq/cli/blob/13fb65a3f33e801cb50f7e7a240a8eb6466c4152/src/lib/env.ts), SHA-256 `922f4cf444e441d61eaac1052fdac92458b79a6c04fe495a14542546201179dd`.
+- [Photon credentials.ts](https://github.com/photon-hq/cli/blob/13fb65a3f33e801cb50f7e7a240a8eb6466c4152/src/lib/credentials.ts), SHA-256 `2faad357fa8e287192f3ebf2d0afc718cc14d23a614c4510f13cbbb49d7ea19d`.
+- [Photon errors.ts](https://github.com/photon-hq/cli/blob/13fb65a3f33e801cb50f7e7a240a8eb6466c4152/src/lib/errors.ts), SHA-256 `12663655a33599fc201da4ed00ca33a64ca5ea387347157919009bd66ef9f4a6`.
+
+
+Follow-up build and typecheck passed under Node 24.13.0 / npm 10.9.2 / TypeScript
+5.9.3 / @types/node 24.10.1. The broad local suite completed **888 tests: 883 pass,
+5 fail, 0 skipped/cancelled**. All 32 RFX-04 cases passed. The five reported failures
+are the three subtests plus their parent for `explicit assembled target works on
+maintenance branches and detached PR checkouts`, and the final baseline assertion
+in `explicit target still rejects schema, source hash and file-count drift without
+fallback`, all in the historical `foundation/verification-tools.test.ts`.
+
+Those fixtures use `git archive HEAD`, so they now include the already committed
+RFX-04 host file while the coordinator-owned candidate digest remains at the
+original 56-file baseline. This explains why the initial pre-commit 880-test run
+passed while this committed-HEAD run exposes the integration seam. The immutable
+F0 case still passes. RFX-12 must preserve drift rejection while deriving the
+assembled expected file count and deliberate count mutation from the newly reviewed
+candidate manifest, instead of hardcoding 56 / 57. No test or manifest was weakened
+or edited by this lane. Current lane content has 57 digest files and digest
+`b97c43a750d45ea230295881b4c062d7d7b9a725d39a32e0bd5b3db198af98ca`; RFX-00 must
+recompute for its fully assembled tree rather than copy this lane digest blindly.
+
+Manual diff review and `git diff --check` passed. Exact follow-up ownership is the
+four paths listed above, with no untracked files, pending deletions or other lane
+edits. No real Photon/Grok executables, authentication, live provider calls or send
+probes were used; only spawned fixture executables.
+
+
+Final focused command:
+`node --test packages/photon-features/tests/integration/rfx-vm-bootstrap.test.mjs packages/photon-features/dist/tests/lanes/wt-08/*.test.js`
+passed **53/53 tests** (32 bootstrap plus 21 existing CLI regressions), zero
+failures/skips/cancellations. Broader suite failures remain recorded above.
+
+- `.photon-local/rfx-auth-reuse-focused.tap` SHA-256 `ec418ad2c529692625e4e999d8306197f8b4a7a91109e156f6a444ae960c2173`.
+- `.photon-local/rfx-auth-reuse-integration.tap` SHA-256 `8b73844cebe9d467ca7924da0fd946cb0af6280721dac9cddb8ef3417d94a5a0`.

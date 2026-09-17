@@ -1,7 +1,9 @@
-import { chmod, mkdtemp, open } from "node:fs/promises";
+import { chmod, lstat, mkdtemp, open } from "node:fs/promises";
+import { homedir } from "node:os";
+import { constants } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { CliError } from "./output.js";
-import { commandVersion, discoverGrok, runDiscoveryProcess, type CommandResult, type DiscoveryRunner, type GrokDiscovery } from "../host/grok-discovery.js";
+import { commandVersion, discoverGrok, runDiscoveryProcess, type CommandResult, type DiscoveryRunner, type GrokDiscovery, type GrokCommandStyleResolver } from "../host/grok-discovery.js";
 
 export interface SetupOptions { installationRoot: string; projectId?: string; toolRoot?: string; photonExecutable?: string; grokExecutable?: string }
 export interface SetupServices {
@@ -10,6 +12,8 @@ export interface SetupServices {
   platform?: NodeJS.Platform;
   stderr?: Pick<NodeJS.WriteStream, "write">;
   signal?: AbortSignal;
+  /** RFX-00 may inject RFX-02 discoverGrokCommandStyle without a missing branch import. */
+  discoverGrokCommandStyle?: GrokCommandStyleResolver;
 }
 export interface Identity { id: string; name?: string; email?: string }
 export interface ProjectCandidate { id: string; name?: string }
@@ -72,6 +76,47 @@ function nextDecision(unresolved: string[]): SetupDiscovery["nextDecision"] {
   return { field, action: actions[field] ?? "Resolve the reported discovery field before generating configuration." };
 }
 
+/** Import only the selected VM backend credential; the original CLI store is read-only. */
+async function importVmSession(env: NodeJS.ProcessEnv, destination: string, installer: Installer): Promise<void> {
+  const origin = new URL(env.PHOTON_API_HOST ?? "https://app.photon.codes").origin;
+  const url = new URL(origin);
+  const key = origin === "https://app.photon.codes" ? "production" :
+    url.hostname.toLowerCase().replace(/[[\]]/g, "").replace(/[.:%]/g, "_") + (url.port ? `_${url.port}` : "");
+  if (!/^[a-z0-9_][a-z0-9_-]{0,63}$/.test(key)) throw new CliError("SETUP_INVALID_BACKEND", 2);
+  const configBase = env.XDG_CONFIG_HOME ?? join(env.HOME ?? homedir(), ".config");
+  let source = env.PHOTON_CONFIG_DIR ?? env.DASHBOARD_CONFIG_DIR ?? join(configBase, "photon");
+  if (!isAbsolute(source)) throw new CliError("SETUP_INVALID_ROOT", 2);
+  if (!env.PHOTON_CONFIG_DIR && !env.DASHBOARD_CONFIG_DIR) {
+    try { await lstat(source); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") source = join(configBase, "photon-dashboard"); else throw error; }
+  }
+  await installer.privateDirectory(join(destination, "credentials"));
+  const target = join(destination, "credentials", `${key}.json`);
+  try {
+    const stat = await lstat(target);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1) throw new CliError("SETUP_UNSAFE_ROOT", 2);
+    return;
+  } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+  if (resolve(source) === resolve(destination)) return;
+  let sourceFile;
+  try { sourceFile = await open(join(source, "credentials", `${key}.json`), constants.O_RDONLY | constants.O_NOFOLLOW); }
+  catch (error) { if (["ENOENT", "ELOOP"].includes((error as NodeJS.ErrnoException).code ?? "")) return; throw error; }
+  try {
+    const stat = await sourceFile.stat();
+    if (!stat.isFile() || stat.size > 1024 * 1024) throw new CliError("PHOTON_SESSION_INVALID", 4);
+    let credential: Record<string, unknown>;
+    try { credential = object(JSON.parse(await sourceFile.readFile("utf8"))); }
+    catch { return; } // Corrupt cached state is not authenticated; let whoami require login.
+    if (credential.apiUrl !== origin || credential.envName !== key || !string(credential.accessToken)) return;
+    const user = identity(credential.user);
+    const file = await open(target, "wx", 0o600);
+    try { await file.writeFile(JSON.stringify({ accessToken: credential.accessToken, user, envName: key, apiUrl: origin,
+      ...(string(credential.issuedAt) ? { issuedAt: credential.issuedAt } : {}),
+      ...(string(credential.expiresAt) ? { expiresAt: credential.expiresAt } : {}) }) + "\n"); }
+    finally { await file.close(); }
+  } finally { await sourceFile.close(); }
+}
+
 /** Discovery only: no runtime configuration, activation, resource creation, or messaging. */
 export async function setupDiscovery(options: SetupOptions, services: SetupServices = {}): Promise<SetupDiscovery> {
   const platform = services.platform ?? process.platform;
@@ -90,7 +135,8 @@ export async function setupDiscovery(options: SetupOptions, services: SetupServi
     const photonConfig = await installer.privateDirectory(join(runtime, "photon-config"));
     await chmod(photonConfig, 0o700);
     const env: NodeJS.ProcessEnv = { ...(services.env ?? process.env) };
-    // Keep caller state/config/npm settings from redirecting writes or bypassing device login.
+    await importVmSession(env, photonConfig, installer);
+    // Reuse copied/private CLI credentials while preventing external writes or token overrides.
     for (const key of Object.keys(env)) if (/^npm_config_/i.test(key) ||
       ["PHOTON_TOKEN", "PHOTON_PROJECT_ID", "PHOTON_CONFIG_DIR", "NODE_OPTIONS", "NODE_PATH", "BUN_OPTIONS"].includes(key)) delete env[key];
     Object.assign(env, { HOME: childHome, XDG_CONFIG_HOME: join(childHome, ".config"), XDG_CACHE_HOME: join(childHome, ".cache"),
@@ -99,18 +145,26 @@ export async function setupDiscovery(options: SetupOptions, services: SetupServi
       PHOTON_NO_UPDATE_NOTIFIER: "1", NO_UPDATE_NOTIFIER: "1", NO_COLOR: "1", FORCE_COLOR: "0" });
     const run: DiscoveryRunner = (executable, args) => runDiscoveryProcess(executable, args, {
       cwd: session, env, signal: services.signal, timeoutMs: args[0] === "install" ? 180_000 : 30_000,
+      captureStderr: args[0] === "whoami" || args.at(-1) === "--help",
     });
     const cli = await installer.resolvePhotonCli({ configured: options.photonExecutable, toolRoot, env, run, platform });
     const versionResult = await run(cli.path, ["--version"]);
     const version = versionResult.exitCode === 0 ? commandVersion(versionResult.stdout) : null;
     if (!version) throw new CliError("PHOTON_VERSION_UNAVAILABLE", 5);
-    const login = await runDiscoveryProcess(cli.path, ["login", "--no-browser"], {
-      cwd: session, env, signal: services.signal, timeoutMs: 15 * 60_000,
-      stream: bytes => { (services.stderr ?? process.stderr).write(bytes); },
-    });
-    if (login.exitCode !== 0) throw new CliError("PHOTON_LOGIN_FAILED", 4);
-    const whoami = await run(cli.path, ["whoami"]);
-    if (whoami.exitCode !== 0) throw new CliError("PHOTON_AUTHENTICATION_FAILED", 4);
+    const existing = await run(cli.path, ["whoami"]);
+    if (existing.exitCode !== 0) {
+      // Public Photon 2.2.0 error messages distinguish missing/expired auth from
+      // network and other failures. Unknown failures must not initiate fresh login.
+      if (!/\b(?:not authenticated|session expired)\b/i.test(`${existing.stdout}\n${existing.stderr ?? ""}`))
+        throw new CliError("PHOTON_AUTHENTICATION_FAILED", 4);
+      const login = await runDiscoveryProcess(cli.path, ["login", "--no-browser"], {
+        cwd: session, env, signal: services.signal, timeoutMs: 15 * 60_000,
+        stream: bytes => { (services.stderr ?? process.stderr).write(bytes); },
+      });
+      if (login.exitCode !== 0) throw new CliError("PHOTON_LOGIN_FAILED", 4);
+      const whoami = await run(cli.path, ["whoami"]);
+      if (whoami.exitCode !== 0) throw new CliError("PHOTON_AUTHENTICATION_FAILED", 4);
+    }
     const rootHelp = await run(cli.path, ["--help"]);
     if (rootHelp.exitCode !== 0) throw new CliError("PHOTON_HELP_UNAVAILABLE", 5);
     let authenticated: Identity | null = null;
@@ -122,7 +176,7 @@ export async function setupDiscovery(options: SetupOptions, services: SetupServi
         if (statusHelp.exitCode === 0 && /--json\b/.test(statusHelp.stdout)) {
           const statuses = parseJson(await run(cli.path, ["auth", "status", "--json"]), "PHOTON_AUTH_STATUS_FAILED");
           if (!Array.isArray(statuses)) throw new CliError("SETUP_INVALID_RESPONSE", 5);
-          const activeUrl = (env.PHOTON_API_HOST ?? "https://app.photon.codes").replace(/\/$/, "");
+          const activeUrl = new URL(env.PHOTON_API_HOST ?? "https://app.photon.codes").origin;
           const rows = statuses.map(object).filter(row => string(row.url)?.replace(/\/$/, "") === activeUrl);
           if (rows.length !== 1 || rows[0]!.loggedIn !== true || rows[0]!.corrupt === true) throw new CliError("PHOTON_AUTHENTICATION_FAILED", 4);
           authenticated = identity(rows[0]!.user);
@@ -140,7 +194,7 @@ export async function setupDiscovery(options: SetupOptions, services: SetupServi
       photon: { executable: cli.path, version, source: cli.source, identity: authenticated, authStatus },
       project: selected ?? null, projectCandidates,
       spectrum: { mode: null, user: null, userCandidates: [], servingE164: null, dedicatedLineId: null, lineCandidates: [] },
-      secretFile: null, grok: { executable: null, version: null, agentId: null, candidates: [], evidence: null, unresolved: [] },
+      secretFile: null, grok: { executable: null, version: null, agentId: null, candidates: [], evidence: null, commandStyle: null, commandStyleEvidence: null, unresolved: [] },
       unresolved, nextDecision: null,
     };
     if (selected) {
@@ -192,7 +246,7 @@ export async function setupDiscovery(options: SetupOptions, services: SetupServi
     }
     if (!authenticated) unresolved.push("photon.identity");
     const grokExecutable = await installer.findExecutable(options.grokExecutable ?? "gbot", env);
-    result.grok = await discoverGrok(grokExecutable, run);
+    result.grok = await discoverGrok(grokExecutable, run, services.discoverGrokCommandStyle);
     unresolved.push(...result.grok.unresolved);
     result.status = unresolved.length ? "needs-input" : "discovered";
     result.nextDecision = nextDecision(unresolved);
