@@ -1,7 +1,7 @@
 import { Spectrum, type Message, type Platform, type PlatformInstance, type Space } from "spectrum-ts";
 import { imessage } from "spectrum-ts/providers/imessage";
 import type { ClientOwner, Scope } from "../../contracts/index.js";
-import { ProviderContext } from "./provider-context.js";
+import { ProviderContext, type SpaceRoute } from "./provider-context.js";
 
 export interface TransportDimensions {
   inbound: "photon-stream" | "photon-webhook";
@@ -12,7 +12,7 @@ type IMessageDefinition = typeof imessage extends Platform<infer Definition> ? D
 export type OwnedProvider = PlatformInstance<IMessageDefinition>;
 export interface OwnedSdk {
   messages(): AsyncIterable<[Space, Message]>;
-  space(id: string, route: { phone: string }): Promise<Space>;
+  space(id: string, route?: SpaceRoute): Promise<Space>;
   provider?(): OwnedProvider;
   stop(): Promise<void>;
 }
@@ -37,7 +37,9 @@ export function cloudSdkFactory(config: {
     const provider = imessage(app);
     return {
       messages: () => app.messages,
-      space: (id, route) => provider.space.get(id, route),
+      space: (id, route) => route === undefined
+        ? provider.space.get(id)
+        : provider.space.get(id, route),
       provider: () => provider,
       stop: () => app.stop(),
     };
