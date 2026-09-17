@@ -1,10 +1,12 @@
 import {
   incomingEventSchema,
+  contextSchema,
   sameScope,
   type Clock,
   type EventReducer,
   type IncomingEvent,
   type Scope,
+  type TrustedContext,
 } from "../../contracts/index.js";
 import type {
   InboxRecord,
@@ -16,6 +18,8 @@ import {
   opaqueId,
   scopeKey,
 } from "../../adapters/transport/provider-context.js";
+
+import { authorizedConversation } from "../core/conversation-routes.js";
 
 export class CorrelationPending extends Error {}
 export interface TaskRoute {
@@ -44,12 +48,36 @@ export function activeRoute(
   const task = tx.get("tasks", route.taskId);
   return (
     !!task &&
-    sameScope(task.scope, scope) &&
+    authorizedConversation(tx, { ...route, scope: task.scope }, scope) &&
     task.principalId === route.principalId &&
     task.generation === route.generation &&
     task.cancelledAt === null
   );
 }
+/** Route only the host-selected current context. Context, task and conversation
+ * grant are read inside the reducer's transaction; unknown chats never enroll
+ * themselves. Supply the runtime clock so expiry is checked at reduction time. */
+export function routeConversation(
+  tx: Transaction,
+  event: Pick<IncomingEvent, "scope">,
+  context: TrustedContext,
+  now: number,
+): TaskRoute | undefined {
+  const row = tx.get("contexts", context.contextId);
+  const parsed = contextSchema.safeParse(row?.context);
+  if (!row || !parsed.success) return;
+  const current = parsed.data;
+  if (row.id !== current.contextId || !sameScope(row.scope, current.scope) ||
+      current.contextId !== context.contextId || current.principalId !== context.principalId ||
+      current.taskId !== context.taskId || current.generation !== context.generation ||
+      !sameScope(current.scope, context.scope) || current.revokedAt !== null ||
+      current.issuedAt > now || current.expiresAt <= now) return;
+  const task = tx.get("tasks", current.taskId);
+  if (!task || !sameScope(task.scope, current.scope)) return;
+  const route = { taskId: current.taskId, generation: current.generation, principalId: current.principalId };
+  return activeRoute(tx, event.scope, route) ? route : undefined;
+}
+
 export class InboundRouter {
   private readonly reducers: Map<IncomingEvent["type"], EventReducer>;
   constructor(

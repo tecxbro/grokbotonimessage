@@ -1,7 +1,8 @@
+import { isDeepStrictEqual } from "node:util";
 import { imessage } from "spectrum-ts/providers/imessage";
 import type { Space } from "spectrum-ts";
 import {
-  assertScope, sameScope, type Action, type ExecutionServices,
+  sameLineScope, sameScope, type Action, type ExecutionServices,
   type ResourceRef, type RuntimeError,
 } from "../../contracts/index.js";
 import type { NativeBinding, NativeSpace } from "./sdk.js";
@@ -24,7 +25,7 @@ export function checkContext(action: Action, services: ExecutionServices): void 
   requireNative(context.permissions.includes(action.operation), "FORBIDDEN", "Operation permission is required.");
 }
 export function checkBinding(binding: NativeBinding, services: ExecutionServices, operation: Action["operation"]): void {
-  requireNative(sameScope(binding.scope, services.context.scope), "SCOPE_MISMATCH", "Provider binding scope mismatch.");
+  requireNative(sameLineScope(binding.scope, services.context.scope), "SCOPE_MISMATCH", "Provider binding scope mismatch.");
   requireNative(binding.scope.provider === "imessage", "UNSUPPORTED", "Cloud iMessage is required.");
   requireNative(binding.accountReady, "UNAVAILABLE", "The authenticated account is unavailable.");
   requireNative(binding.dedicated ? /^\+[1-9]\d{6,14}$/.test(binding.phone) : binding.phone === "shared",
@@ -32,12 +33,26 @@ export function checkBinding(binding: NativeBinding, services: ExecutionServices
   requireNative(binding.availableOperations.includes(operation), "UNAVAILABLE", "Native capability has not been established for this account.");
 }
 export async function resolveReference(ref: ResourceRef, services: ExecutionServices): Promise<ResourceRef> {
-  try { assertScope(ref, services.context.scope); }
-  catch { throw new NativeError("SCOPE_MISMATCH", "Resource scope mismatch."); }
-  const resolved = await services.resources.resolve(ref, services.context);
-  requireNative(resolved.kind === ref.kind && resolved.id === ref.id && sameScope(resolved.scope, ref.scope) &&
-      (!("messageId" in ref) || ("messageId" in resolved && resolved.messageId === ref.messageId)),
-  "SCOPE_MISMATCH", "Resolved resource identity mismatch.");
+  requireNative(sameLineScope(ref.scope, services.context.scope), "SCOPE_MISMATCH", "Resource line mismatch.");
+  if (ref.kind === "stream")
+    requireNative(sameScope(ref.scope, services.context.scope), "SCOPE_MISMATCH", "Stream scope mismatch.");
+  else if (ref.kind !== "space" && !sameScope(ref.scope, services.context.scope)) {
+    // The authoritative resolver must validate both the parent conversation grant
+    // and the leaf's complete parent chain before any provider lookup.
+    await resolveReference({ version: 1, kind: "space", id: ref.scope.spaceId, scope: ref.scope }, services);
+  }
+  if (ref.kind === "space")
+    requireNative(ref.id === ref.scope.spaceId, "SCOPE_MISMATCH", "Conversation identity mismatch.");
+  let resolved: ResourceRef;
+  try { resolved = await services.resources.resolve(ref, services.context); }
+  catch (error) {
+    // Keep authoritative authorization failures distinguishable from provider failures.
+    if (error instanceof Error && ["SCOPE_MISMATCH", "RESOURCE_NOT_FOUND", "FORBIDDEN",
+      "STALE_GENERATION", "CONTEXT_REVOKED", "CONTEXT_EXPIRED", "CANCELLED"].includes(error.message))
+      throw new NativeError(error.message as RuntimeError["code"], error.message);
+    throw error;
+  }
+  requireNative(isDeepStrictEqual(resolved, ref), "SCOPE_MISMATCH", "Resolved resource identity mismatch.");
   return resolved;
 }
 export function nativeSpace(space: Space, binding: NativeBinding, expectedId?: string): NativeSpace {

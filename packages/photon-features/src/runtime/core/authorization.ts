@@ -1,6 +1,7 @@
 import {
   contextSchema,
   sameScope,
+  sameLineScope,
   type Action,
   type AuthenticatedPrincipal,
   type ContextResolver,
@@ -17,6 +18,7 @@ import { references, walk } from "./admission.js";
 import { canonical } from "./idempotency.js";
 import { fault } from "./errors.js";
 import { admitRequest } from "./admission.js";
+import { authorizedResource } from "./conversation-routes.js";
 const admin = new Set([
   "space.create",
   "space.rename",
@@ -147,8 +149,14 @@ export class DurableContexts implements ContextResolver {
   }
   reference(tx: Transaction, c: TrustedContext, ref: ResourceRef,
     execution?: { requestId: string; claim: Claim }): void {
-    if (!sameScope(ref.scope, c.scope)) fault("SCOPE_MISMATCH");
+    if (!sameLineScope(ref.scope, c.scope) ||
+        (ref.kind === "space" && ref.id !== ref.scope.spaceId)) fault("SCOPE_MISMATCH");
+    if (ref.kind !== "stream" && !authorizedResource(tx, c, ref)) fault("RESOURCE_NOT_FOUND");
+    // Refresh even for direct resolver callers after checking exact ownership.
+    // A durable grant never revives a revoked/cancelled/stale task.
+    c = this.refresh(tx, c);
     if (ref.kind === "stream") {
+      if (!sameScope(ref.scope, c.scope)) fault("SCOPE_MISMATCH");
       const s = tx.get("streams", ref.id);
       if (
         !s ||
@@ -172,18 +180,6 @@ export class DurableContexts implements ContextResolver {
       // it deliberately has no provider reference or invented provider ID.
       return;
     }
-    const row = tx.get("references", ref.id);
-    if (
-      !row ||
-      row.ownedByPrincipalId !== c.principalId ||
-      row.taskId !== c.taskId ||
-      row.generation !== c.generation ||
-      !sameScope(row.scope, c.scope) ||
-      canonical(row.reference) !== canonical(ref)
-    )
-      fault("RESOURCE_NOT_FOUND");
-    if (ref.kind === "space" && ref.id !== c.scope.spaceId)
-      fault("SCOPE_MISMATCH");
     if (ref.kind === "card-session") {
       const s = tx.get("sessions", ref.id);
       if (
@@ -194,29 +190,8 @@ export class DurableContexts implements ContextResolver {
       )
         fault("CONTEXT_EXPIRED");
     }
-    const parent =
-      "messageId" in ref
-        ? ref.messageId
-        : "pollId" in ref
-          ? ref.pollId
-          : "cardId" in ref
-            ? ref.cardId
-            : undefined;
-    if (parent) {
-      const p = tx.get("references", parent);
-      const kind =
-        "messageId" in ref ? "message" : "pollId" in ref ? "poll" : "card";
-      if (
-        !p ||
-        p.reference.kind !== kind ||
-        p.ownedByPrincipalId !== c.principalId ||
-        p.taskId !== c.taskId ||
-        p.generation !== c.generation ||
-        !sameScope(p.scope, c.scope)
-      )
-        fault("RESOURCE_NOT_FOUND");
-    }
   }
+
   owned(tx: Transaction, id: string, supplied: TrustedContext): OutboxRecord {
     const c = this.refresh(tx, supplied),
       row = tx.get("outbox", id);

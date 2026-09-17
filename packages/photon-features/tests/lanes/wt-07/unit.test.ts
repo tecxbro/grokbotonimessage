@@ -55,7 +55,7 @@ for (const operation of nativeOperations) {
 }
 
 for (const dimension of ["projectId", "accountId", "lineId", "spaceId"] as const) {
-  test(`reject cross-${dimension} references and provider binding`, async t => {
+  test(`reject cross-${dimension} references and validate line-scoped provider binding`, async t => {
     const f = fixture(); t.after(f.close);
     const action = sample("space.rename");
     assert.ok(action.operation === "space.rename");
@@ -63,7 +63,9 @@ for (const dimension of ["projectId", "accountId", "lineId", "spaceId"] as const
     assert.equal((await f.run(action)).error?.code, "SCOPE_MISMATCH");
     assert.ok(!f.calls.some(c => c.method === "space.get"));
     f.binding.scope = { ...f.binding.scope, [dimension]: "foreign" };
-    assert.equal((await f.run(sample("space.get"))).error?.code, "SCOPE_MISMATCH");
+    const lookup = await f.run(sample("space.get"));
+    if (dimension === "spaceId") assert.equal(lookup.status, "executor-completed");
+    else assert.equal(lookup.error?.code, "SCOPE_MISMATCH");
   });
 }
 test("provider resolver cannot return another line/chat or a local space", async t => {
