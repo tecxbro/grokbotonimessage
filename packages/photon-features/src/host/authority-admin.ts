@@ -106,12 +106,8 @@ export async function administerAuthority(root: string, releaseRoot: string, req
   const ownership = await acquireHostOwnership(join(root, "runtime"), selected.release);
   let store: DurableSQLiteStore | undefined;
   try {
-    // RFX-00 must replace the legacy configuredAuthority adapter with RFX-01's
-    // shared route model. Never invent a serving E.164 for authority transitions.
-    if (!config.provider.phone || !config.provider.conversationId) throw new Error("SHARED_AUTHORITY_ROUTE_INTEGRATION_REQUIRED");
     store = new DurableSQLiteStore(config.runtime.statePath);
-    const configured = configuredAuthority({ ...config, version: 2,
-      provider: { ...config.provider, phone: config.provider.phone, conversationId: config.provider.conversationId } }).context;
+    const configured = configuredAuthority(config).context;
     if (canonical(configured) !== canonical({ ...request.expectedContext, revokedAt: configured.revokedAt }) && canonical(configured) !== canonical(request.nextContext))
       throw new Error("AUTHORITY_CONFIGURATION_MISMATCH");
     const next = request.nextContext;

@@ -8,8 +8,9 @@ import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { acquireHostOwnership } from "./owner-lock.js";
 import {
-  loadProductionHostConfiguration,
+  loadNormalizedHostConfiguration,
   readPrivateFile,
+  readConfiguredProjectSecret,
   writeActivation,
 } from "./configuration.js";
 import { createProductionComposition } from "./production.js";
@@ -35,8 +36,8 @@ export async function validateProductionInstallation(root: string, releaseRoot: 
   operationBlockers: ReturnType<typeof configurationBlockers>;
 }> {
   const selected = await assertSelectedRelease(root, releaseRoot);
-  const configuration = await loadProductionHostConfiguration(root);
-  const projectSecret = (await readPrivateFile(configuration.provider.projectSecretFile, 16 * 1024)).trim();
+  const configuration = await loadNormalizedHostConfiguration(root);
+  const projectSecret = await readConfiguredProjectSecret(configuration);
   const localToken = (await readPrivateFile(configuration.local.credentialFile, 128)).trim();
   if (!projectSecret || projectSecret.length > 8192) throw new Error("INVALID_PROJECT_SECRET");
   if (!/^[a-fA-F0-9]{64}$/.test(localToken)) throw new Error("INVALID_LOCAL_CREDENTIAL");
@@ -88,7 +89,7 @@ export async function changeProductionActivation(
 export async function runProductionHost(root: string, releaseRoot: string): Promise<void> {
   const validated = await validateProductionInstallation(root, releaseRoot);
   const selected = await assertSelectedRelease(root, releaseRoot);
-  const configuration = await loadProductionHostConfiguration(root);
+  const configuration = await loadNormalizedHostConfiguration(root);
   if (validated.activation !== "enabled" || configuration.activation !== "enabled") throw new Error("ACTIVATION_REQUIRED");
   const ownership = await acquireHostOwnership(join(root, "runtime"), selected.release);
   let cardBackend: { close(): Promise<void> } | undefined;

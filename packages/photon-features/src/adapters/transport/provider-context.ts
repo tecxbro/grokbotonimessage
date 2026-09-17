@@ -22,14 +22,14 @@ export interface LineBinding {
   lineId: string;
   dedicated: boolean;
   /** User-facing serving number; never the provider's shared sentinel. */
-  servingPhone: string;
+  servingPhone?: string;
 }
 /** Shared spaces use the SDK's shared identity without a dedicated phone pin. */
 export type SpaceRoute = { phone: string } | undefined;
 // Spectrum v12.8.0 packages/imessage/src/types.ts; not a public package export.
 const SHARED_PHONE = "shared";
 const providerPhone = (line: LineBinding): string =>
-  line.dedicated ? line.servingPhone : SHARED_PHONE;
+  line.dedicated ? line.servingPhone! : SHARED_PHONE;
 
 export class ProviderContext {
   private readonly lines: readonly LineBinding[];
@@ -39,7 +39,7 @@ export class ProviderContext {
   ) {
     for (const line of lines) {
       if (typeof line.dedicated !== "boolean") throw new Error("INVALID_LINE_MODE");
-      if (!line.servingPhone || line.servingPhone === SHARED_PHONE)
+      if ((line.dedicated && !line.servingPhone) || line.servingPhone === SHARED_PHONE)
         throw new Error("INVALID_SERVING_PHONE");
       scopeSchema.parse({
         projectId,
@@ -82,7 +82,7 @@ export class ProviderContext {
       scope.spaceId !== opaqueId("space", conversationId)
     )
       throw new Error("SCOPE_MISMATCH");
-    return line.dedicated ? { phone: line.servingPhone } : undefined;
+    return line.dedicated ? { phone: line.servingPhone! } : undefined;
   }
   evidence() {
     return this.lines.map(({ accountId, lineId }) => ({ accountId, lineId }));

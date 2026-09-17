@@ -1,5 +1,5 @@
 import type { Operation } from "../contracts/index.js";
-import type { ProductionHostConfiguration } from "./configuration.js";
+import type { NormalizedHostConfiguration, ProductionHostConfiguration } from "./configuration.js";
 
 export const administrativeOperations: readonly Operation[] = Object.freeze([
   "space.create", "space.rename", "space.addMembers", "space.removeMembers", "space.leave",
@@ -8,7 +8,7 @@ export const administrativeOperations: readonly Operation[] = Object.freeze([
 export const upstreamPollOperations: readonly Operation[] = Object.freeze(["poll.get", "poll.vote", "poll.unvote", "poll.addOption"]);
 
 /** Static prerequisites only. Neither this report nor a provider connection is live evidence. */
-export function configurationBlockers(config: ProductionHostConfiguration): Partial<Record<Operation, string[]>> {
+export function configurationBlockers(config: ProductionHostConfiguration | NormalizedHostConfiguration): Partial<Record<Operation, string[]>> {
   const output: Partial<Record<Operation, string[]>> = {};
   const add = (op: Operation, message: string) => (output[op] ??= []).push(message);
   for (const op of upstreamPollOperations)

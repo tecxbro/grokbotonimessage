@@ -193,7 +193,7 @@ export async function generateProfiles(check = false, { schemas: includeSchemas 
     if (check) { if (await readFile(target, 'utf8') !== content) throw new Error('PROFILE_DRIFT'); }
     else await writeFile(target, content);
   }
-  const schemas = { 'host-configuration-v2': productionHostConfigurationSchema, 'authority-transition-v1': authorityTransitionSchema,
+  const schemas = { 'host-configuration-v2': productionHostConfigurationSchema, 'host-configuration-v3': normalizedHostConfigurationSchema, 'authority-transition-v1': authorityTransitionSchema,
     protocol: localRequestSchema, ...streamProducerInputSchemas };
   for (const [name, schema] of Object.entries(includeSchemas ? schemas : {})) {
     const target = new URL('../schemas/' + name + '.json', import.meta.url);

@@ -56,7 +56,7 @@ import { SESSION_CODEC } from "../features/cards/session-codec.js";
 import { key as cardStateKey } from "../features/cards/state.js";
 import { createNativeModule, createPublicFeatureModule as createNativeFeature, publicServiceAdapter } from "../features/native/module.js";
 import { assembleFeatureSurface, createPollContentModule } from "../integration/assembly.js";
-import type { ProductionHostConfiguration } from "./configuration.js";
+import { requireRoutedConfiguration, providerRoutePhone as configuredRoutePhone, readConfiguredProjectSecret, type NormalizedHostConfiguration, type ProductionHostConfiguration } from "./configuration.js";
 import { readPrivateFile } from "./configuration.js";
 import { GrokGatewayTaskHandoff, type GrokCommandRunner, type GrokCommandStyle, type GrokHelpInspector } from "./grok-wake.js";
 import { bootstrapOrValidateAuthority, configuredAuthority } from "./authority.js";
@@ -263,13 +263,14 @@ export interface ProductionComposition {
  * private local state/secrets; provider, ingress, socket and Grok wake remain
  * inactive until runtime.start()/startLocalInterface(). */
 export async function createProductionComposition(
-  configuration: ProductionHostConfiguration,
+  input: ProductionHostConfiguration | NormalizedHostConfiguration,
   installationRoot: string,
   releaseRoot: string,
   dependencies: ProductionCompositionDependencies = {},
 ): Promise<ProductionComposition> {
+  const configuration = requireRoutedConfiguration(input);
   const now = dependencies.now ?? Date.now;
-  const projectSecret = (await readPrivateFile(configuration.provider.projectSecretFile, 16 * 1024)).trim();
+  const projectSecret = await readConfiguredProjectSecret(configuration);
   const localToken = (await readPrivateFile(configuration.local.credentialFile, 128)).trim();
   if (!projectSecret || projectSecret.length > 8192) throw new Error("INVALID_PROJECT_SECRET");
   if (!/^[a-fA-F0-9]{64}$/.test(localToken)) throw new Error("INVALID_LOCAL_CREDENTIAL");
@@ -280,7 +281,7 @@ export async function createProductionComposition(
     dedicated: configuration.provider.dedicated,
     servingPhone: configuration.provider.phone,
   }]);
-  const providerRoutePhone = configuration.provider.dedicated ? configuration.provider.phone : "shared";
+  const providerRoutePhone = configuredRoutePhone(configuration);
   const authority = configuredAuthority(configuration);
   const scope = authority.context.scope;
   const principal: AuthenticatedPrincipal = {

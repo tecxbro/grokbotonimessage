@@ -24,6 +24,13 @@
       "reviewedCommit": "7247c799ea325d38ec685a653f9728c7f4ee8a94",
       "implementationCommit": "e16664270856c106abc4c10c620e8e3752c9988e",
       "laneNote": "docs/release-fix/rfx-04-vm-bootstrap.md"
+    },
+    {
+      "lane": "RFX-05",
+      "branch": "codex/rfx-05-config-simplify",
+      "reviewedCommit": "f07cf5973b9c11a9deccc4a19f87bbe7092b1cea",
+      "implementationCommit": "54f90b99e2a325759b52639bca8c43716850f7e7",
+      "laneNote": "docs/release-fix/rfx-05-config-simplify.md"
     }
   ],
   "pendingLanes": [
@@ -142,9 +149,9 @@
         "packages/photon-features/tests/integration/completion-configuration.test.mjs"
       ],
       "laneNote": "docs/release-fix/rfx-05-config-simplify.md",
-      "integrationStatus": "not-merged",
+      "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "testEvidence": "rfx05-wiring-verified",
       "postImplementationChanges": [
         "docs/release-fix/rfx-05-config-simplify.md"
       ]

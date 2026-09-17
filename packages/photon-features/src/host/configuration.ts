@@ -251,8 +251,8 @@ export async function loadNormalizedHostConfiguration(root: string): Promise<Nor
 }
 
 /** Change only the activation bit; callers separately coordinate host/install ownership. */
-export async function writeActivation(root: string, activation: "disabled" | "enabled"): Promise<ProductionHostConfiguration> {
-  const config = await loadProductionHostConfiguration(root);
+export async function writeActivation(root: string, activation: "disabled" | "enabled"): Promise<ProductionHostConfiguration | NormalizedHostConfiguration> {
+  const config = await loadCompatibleHostConfiguration(root);
   const path = join(resolve(root), "runtime", "configuration.json");
   const temporary = join(dirname(path), `.configuration-${randomUUID()}`);
   const file = await open(temporary, "wx", 0o600);
@@ -266,4 +266,21 @@ export async function writeActivation(root: string, activation: "disabled" | "en
   const directory = await open(dirname(path), "r");
   try { await directory.sync(); } finally { await directory.close(); }
   return { ...config, activation };
+}
+
+/** Provider route identity is distinct from optional displayed serving metadata. */
+export function providerRoutePhone(config: ProductionHostConfiguration | NormalizedHostConfiguration): string {
+  if (!config.provider.dedicated) return "shared";
+  if (!config.provider.phone) throw new Error("DEDICATED_SERVING_PHONE_REQUIRED");
+  return config.provider.phone;
+}
+export type RoutedHostConfiguration = NormalizedHostConfiguration & {
+  provider: NormalizedHostConfiguration["provider"] & { conversationId: string };
+};
+/** Native conversation identity must come from configuration or authenticated provider resolution. */
+export function requireRoutedConfiguration(input: ProductionHostConfiguration | NormalizedHostConfiguration): RoutedHostConfiguration {
+  const configuration = normalizeProductionHostConfiguration(input);
+  const conversationId = configuration.provider.conversationId;
+  if (!conversationId) throw new Error("INITIAL_CONVERSATION_UNRESOLVED");
+  return { ...configuration, provider: { ...configuration.provider, conversationId } };
 }

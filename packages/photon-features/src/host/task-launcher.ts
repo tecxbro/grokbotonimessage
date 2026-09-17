@@ -2,7 +2,7 @@
 import { realpathSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { main as clientMain } from "../cli/main.js";
-import { loadProductionHostConfiguration } from "./configuration.js";
+import { loadNormalizedHostConfiguration } from "./configuration.js";
 import { assertSelectedRelease } from "./selected-release.js";
 import { DurableSQLiteStore } from "../adapters/state/sqlite.js";
 import { configuredAuthority, validateExistingAuthority } from "./authority.js";
@@ -21,7 +21,7 @@ export async function taskLauncherMain(
       generationFlag !== "--generation" || !generationValue || !/^\d+$/.test(generationValue) || !command.length)
       throw new Error("INVALID_TASK_LAUNCH");
     const selected = await assertSelectedRelease(root, releaseRoot);
-    const config = await loadProductionHostConfiguration(root);
+    const config = await loadNormalizedHostConfiguration(root);
     const generation = Number(generationValue);
     const now = Date.now();
     if (config.activation !== "enabled" || config.task.taskId !== taskId || config.task.generation !== generation ||

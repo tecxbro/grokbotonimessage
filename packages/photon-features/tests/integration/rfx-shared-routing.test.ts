@@ -12,8 +12,8 @@ import { observeReceipt } from "../../src/runtime/inbound/receipt-observer.js";
 
 const projectId = "rfx-project";
 const conversationId = "any;-;+15555550999";
-const shared: LineBinding = { accountId: "shared-account", lineId: "shared-logical-line", dedicated: false, servingPhone: "+15555550101" };
-const dedicated: LineBinding = { accountId: "dedicated-account", lineId: "dedicated-logical-line", dedicated: true, servingPhone: "+15555550102" };
+const shared = { accountId: "shared-account", lineId: "shared-logical-line", dedicated: false, servingPhone: "+15555550101" } satisfies LineBinding;
+const dedicated = { accountId: "dedicated-account", lineId: "dedicated-logical-line", dedicated: true, servingPhone: "+15555550102" } satisfies LineBinding;
 const scope = (line: LineBinding): Scope => ({ projectId, provider: "imessage", accountId: line.accountId, lineId: line.lineId, spaceId: opaqueId("space", conversationId) });
 const routes = () => new ProviderContext(projectId, [shared, dedicated]);
 const snapshot = (phone = "shared", content: Record<string, unknown> = { type: "text", text: "hello" }) => ({
@@ -105,7 +105,7 @@ test("ambiguous shared and dedicated bindings fail closed independent of orderin
 test("provider identity stays separate from serving phone and binding mutation cannot alter routing", () => {
   assert.throws(() => new ProviderContext(projectId, [{ ...shared, servingPhone: "shared" }]), /INVALID_SERVING_PHONE/);
   assert.throws(() => new ProviderContext(projectId, [{ ...dedicated, servingPhone: "" }]), /INVALID_SERVING_PHONE/);
-  const mutable = { ...shared };
+  const mutable: LineBinding = { ...shared };
   const context = new ProviderContext(projectId, [mutable]);
   mutable.dedicated = true;
   assert.deepEqual(context.inbound("shared", conversationId), scope(shared));

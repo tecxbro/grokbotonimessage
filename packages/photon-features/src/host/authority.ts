@@ -3,17 +3,18 @@ import type { ResourceRef, TrustedContext } from "../contracts/index.js";
 import { sameScope } from "../contracts/resources.js";
 import type { DurableSQLiteStore } from "../adapters/state/sqlite.js";
 import { ProviderContext } from "../adapters/transport/provider-context.js";
-import type { ProductionHostConfiguration } from "./configuration.js";
+import { requireRoutedConfiguration, providerRoutePhone, type NormalizedHostConfiguration, type ProductionHostConfiguration } from "./configuration.js";
 
 export interface DurableAuthorityBinding {
   context: TrustedContext;
   conversationId: string;
 }
 
-export function configuredAuthority(configuration: ProductionHostConfiguration): {
+export function configuredAuthority(input: ProductionHostConfiguration | NormalizedHostConfiguration): {
   context: TrustedContext;
   conversationId: string;
 } {
+  const configuration = requireRoutedConfiguration(input);
   const routes = new ProviderContext(configuration.provider.projectId, [{ accountId: configuration.provider.accountId,
     lineId: configuration.provider.lineId, dedicated: configuration.provider.dedicated, servingPhone: configuration.provider.phone }]);
   return {
@@ -22,7 +23,7 @@ export function configuredAuthority(configuration: ProductionHostConfiguration):
       version: 1,
       contextId: configuration.task.contextId,
       principalId: configuration.local.principalId,
-      scope: routes.inbound(configuration.provider.dedicated ? configuration.provider.phone : "shared", configuration.provider.conversationId),
+      scope: routes.inbound(providerRoutePhone(configuration), configuration.provider.conversationId),
       taskId: configuration.task.taskId,
       generation: configuration.task.generation,
       permissions: configuration.task.permissions,
