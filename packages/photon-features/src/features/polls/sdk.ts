@@ -26,7 +26,7 @@ export interface PollProviderBinding {
   /** The shared owner supplies the real serving phone and native conversation.
    * A logical scope lineId is not an E.164 provider phone and must not replace it.
    */
-  binding?(context: TrustedContext): {
+  binding?(context: TrustedContext, target?: Scope): {
     scope: Scope;
     phone: string;
     conversationId: string;

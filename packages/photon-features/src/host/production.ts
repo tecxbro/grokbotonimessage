@@ -333,10 +333,11 @@ export async function createProductionComposition(
     dependencies.sdkFactory ?? cloudSdkFactory({ projectId: configuration.provider.projectId, projectSecret }),
   );
   const resources = createResources(store, owner, now);
-  const mediaProvider = async (trusted: TrustedContext) => {
+  const mediaProvider = async (trusted: TrustedContext, target = trusted.scope) => {
     if (!sameScope(trusted.scope, scope)) throw new Error("SCOPE_MISMATCH");
     const provider = owner.provider();
-    return { scope, phone: providerRoutePhone, conversationId: configuration.provider.conversationId,
+    const route = binding(trusted, target);
+    return { scope: target, phone: providerRoutePhone, conversationId: route.nativeSpaceId,
       provider, space: (reference: ResourceRef) => resources.space(reference, trusted),
       message: (reference: ResourceRef) => resources.message(reference, trusted) };
   };
@@ -452,9 +453,9 @@ export async function createProductionComposition(
   const scopedProvider = resolveProviderContext(owner, scope, configuration.provider.conversationId);
   const pollBinding: PollProviderBinding = {
     resolveSpace: resources.space,
-    binding: trusted => {
-      if (!sameScope(trusted.scope, scope)) throw new Error("SCOPE_MISMATCH");
-      return { scope, phone: providerRoutePhone, conversationId: configuration.provider.conversationId };
+    binding: (trusted, target = trusted.scope) => {
+      const route = binding(trusted, target);
+      return { scope: target, phone: providerRoutePhone, conversationId: route.nativeSpaceId };
     },
     ...(dependencies.pollManagement ? { management: dependencies.pollManagement } : {}),
   };
@@ -513,7 +514,7 @@ export async function createProductionComposition(
     services.assertActiveClaim();
     store.transaction(tx => {
       const mapped = tx.get("references", session.id);
-      if (!mapped || !sameScope(mapped.scope, services.context.scope) ||
+      if (!mapped || !sameScope(mapped.scope, session.scope) ||
         mapped.taskId !== services.context.taskId || mapped.generation !== services.context.generation ||
         mapped.ownedByPrincipalId !== services.context.principalId || !isDeepStrictEqual(mapped.reference, session))
         throw new Error("RESOURCE_NOT_FOUND");

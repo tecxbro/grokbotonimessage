@@ -409,3 +409,33 @@ Adopt installed help evidence through discovery, generation, v3 schema and the p
 - `packages/photon-features/tests/integration/completion-configuration.test.mjs` — required shared discovery/configuration interface adoption; tested by `setup-style-final`.
 
 Exact command: `npm run photon:build && node --test --test-reporter=tap packages/photon-features/tests/integration/completion-configuration.test.mjs packages/photon-features/tests/integration/rfx-vm-bootstrap.test.mjs packages/photon-features/dist/tests/integration/rfx-wake-reliability.test.js packages/photon-features/dist/tests/integration/release-fix-shared-roundtrip.test.js`. Exit 0; 79 passed, 0 failed/skipped. Tested HEAD `f83f4a4e27e8e5b5fe4a29b524158369610ce52e` plus listed edits.
+
+## RFX-03 / RFX-08 / RFX-09 secondary feature route adoption
+
+The reviewed authorized-route model admits an exact owned secondary target. Public media, poll and card adapters still compared that target with the task root. Preserve the task context and use the authorized target for provider binding, returned references, card checkpoints and poll identities. Root-scoped staged media/streams remain tied to the same task; secondary attachment provenance requires resource resolution. No permission grant, SDK client or provider capability is added.
+
+- `packages/photon-features/src/features/cards/operations.ts` — RFX-03 shared/dedicated route and resource interface adoption, covered by `secondary-features-verified`.
+
+- `packages/photon-features/src/features/cards/update-ordering.ts` — RFX-03 shared/dedicated route and resource interface adoption, covered by `secondary-features-verified`.
+
+- `packages/photon-features/src/features/media/sdk.ts` — RFX-03 shared/dedicated route and resource interface adoption, covered by `secondary-features-verified`.
+
+- `packages/photon-features/src/features/media/staging.ts` — RFX-03 shared/dedicated route and resource interface adoption, covered by `secondary-features-verified`.
+
+- `packages/photon-features/src/features/polls/identity.ts` — RFX-03 shared/dedicated route and resource interface adoption, covered by `secondary-features-verified`.
+
+- `packages/photon-features/src/features/polls/operations.ts` — RFX-03 shared/dedicated route and resource interface adoption, covered by `secondary-features-verified`.
+
+- `packages/photon-features/src/features/polls/reducer.ts` — RFX-03 shared/dedicated route and resource interface adoption, covered by `secondary-features-verified`.
+
+- `packages/photon-features/src/features/polls/sdk.ts` — RFX-03 shared/dedicated route and resource interface adoption, covered by `secondary-features-verified`.
+
+- `packages/photon-features/src/host/production.ts` — RFX-03 shared/dedicated route and resource interface adoption, covered by `secondary-features-verified`.
+
+- `packages/photon-features/tests/integration/release-fix-shared-roundtrip.test.ts` — RFX-03 shared/dedicated route and resource interface adoption, covered by `secondary-features-verified`.
+
+Exact command: `npm run photon:build && node --test --test-reporter=tap packages/photon-features/dist/tests/integration/release-fix-shared-roundtrip.test.js packages/photon-features/dist/tests/integration/repair-cards.test.js packages/photon-features/dist/tests/lanes/wt-04/*.test.js packages/photon-features/dist/tests/lanes/wt-05/*.test.js packages/photon-features/dist/tests/lanes/wt-06/*.test.js packages/photon-features/dist/tests/integration/rfx-multi-conversation.test.js`. Exit 0; 245 passed, 0 failed/skipped. Tested HEAD `fba068fa9797d2c12b17c17e751b948d00bf6ebd` plus listed edits. Production secondary Core test now additionally dispatches static cards, contacts and native poll creation and checks every returned reference retains its authorized conversation.
+
+### Assembled registry verification
+
+`packages/photon-features/tests/foundation/verification-tools.test.ts` now compares candidate file count to the reviewed candidate manifest and corrupts that count by +1; all drift/foundation assertions remain. `docs/worktrees/integration/candidate-contract.json` was regenerated for the assembled source only (58 files at this checkpoint). `scripts/run-integration-tests.mjs` now reports a child error/signal before retaining its existing fail-closed result check. Covered by `assembled-diagnostic`: exact `npm run photon:test:integration`, HEAD fba068fa9797d2c12b17c17e751b948d00bf6ebd, 1052 passed, 0 failed/skipped, 108 files. Earlier assembled-first failed and its log remains; there was no complete TAP count.

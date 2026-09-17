@@ -1,7 +1,7 @@
 import { metadataSchema, type SourceMetadata } from "./metadata.js";
 import type { Attachment, Content, SpectrumInstance } from "spectrum-ts";
 import { imessage } from "spectrum-ts/providers/imessage";
-import { assertScope, sameScope, type ResourceResolver, type Scope, type TrustedContext, type TransactionStore, type ResourceRef } from "../../index.js";
+import { assertScope, sameScope, sameLineScope, type ResourceResolver, type Scope, type TrustedContext, type TransactionStore, type ResourceRef } from "../../index.js";
 import { abortable, MAX_MEDIA_BYTES, mediaName, reject, validMime } from "./safety.js";
 import type { NativeMediaSource } from "./staging.js";
 
@@ -102,17 +102,17 @@ export interface MediaProviderContext extends ScopedMediaBinding {
   message(ref: ResourceRef): Promise<Message>;
 }
 export interface MediaOperationOptions {
-  provider(context: TrustedContext): Promise<MediaProviderContext>;
+  provider(context: TrustedContext, target?: Scope): Promise<MediaProviderContext>;
   /** Required host policy: native voice support or explicitly labelled ordinary audio fallback. */
   voiceBehavior: VoiceBehavior;
   stageAttachment?(ref: Extract<ResourceRef, { kind: "attachment" }>, services: PublicServices): ReturnType<GuardedMediaStager["stage"]>;
 }
 /** Domain reference lookup only; every logical/native mapping remains scoped to the current task. */
 export function mappedMediaReference(ref: ResourceRef, services: PublicServices) {
-  services.assertActiveClaim(); assertScope(ref, services.context.scope);
+  services.assertActiveClaim(); if (!sameLineScope(ref.scope, services.context.scope)) throw new Error("SCOPE_MISMATCH");
   const row = services.transaction(unit => unit.get("references", ref.id));
   const context = services.context;
-  if (!row || !sameScope(row.scope, context.scope) || !sameScope(row.reference.scope, context.scope) ||
+  if (!row || !sameScope(row.scope, ref.scope) || !sameScope(row.reference.scope, ref.scope) ||
     row.reference.id !== ref.id || row.reference.kind !== ref.kind ||
     (ref.kind === "attachment" && (row.reference.kind !== "attachment" || row.reference.messageId !== ref.messageId)) ||
     row.ownedByPrincipalId !== context.principalId || row.taskId !== context.taskId ||
@@ -120,9 +120,9 @@ export function mappedMediaReference(ref: ResourceRef, services: PublicServices)
   return row;
 }
 async function resolvedReference(ref: ResourceRef, services: PublicServices): Promise<void> {
-  assertScope(ref, services.context.scope);
+  if (!sameLineScope(ref.scope, services.context.scope)) throw new Error("SCOPE_MISMATCH");
   const authoritative = await services.resolveResource(ref);
-  services.assertActiveClaim(); services.signal.throwIfAborted(); assertScope(authoritative, services.context.scope);
+  services.assertActiveClaim(); services.signal.throwIfAborted(); assertScope(authoritative, ref.scope);
   if (authoritative.kind !== ref.kind || authoritative.id !== ref.id ||
     (ref.kind === "attachment" && (authoritative.kind !== "attachment" || authoritative.messageId !== ref.messageId))) reject("resource reference mismatch");
 }
@@ -137,7 +137,7 @@ export function publicNativeMediaSource(services: PublicServices,
     await resolvedReference(parentRef, services); await resolvedReference(spaceRef, services);
     const mapping = mappedMediaReference(ref, services), parentMapping = mappedMediaReference(parentRef, services);
     const spaceMapping = mappedMediaReference(spaceRef, services);
-    const binding = await abortable(provider(context), signal); services.assertActiveClaim();
+    const binding = await abortable(provider(context, ref.scope), signal); services.assertActiveClaim();
     if (!sameScope(binding.scope, ref.scope) || !binding.phone || binding.conversationId !== spaceMapping.providerId) reject("attachment line scope");
     const parent = await abortable(binding.message(parentRef), signal); services.assertActiveClaim();
     if (parent.platform !== "imessage" || parent.id !== parentMapping.providerId || parent.space.id !== spaceMapping.providerId ||
@@ -199,11 +199,11 @@ export async function mapMediaOperation(action: MediaAction, services: PublicSer
     return { ...base(), references: [action.arguments.attachment], value: { type: "media", media } };
   }
   await resolvedReference(action.arguments.space, services);
-  if (action.arguments.space.id !== services.context.scope.spaceId) throw new Error("SCOPE_MISMATCH");
+  if (action.arguments.space.id !== action.arguments.space.scope.spaceId) throw new Error("SCOPE_MISMATCH");
   const mapping = mappedMediaReference(action.arguments.space, services);
-  const binding = await options.provider(services.context); services.assertActiveClaim();
+  const binding = await options.provider(services.context, action.arguments.space.scope); services.assertActiveClaim();
   const space = await binding.space(action.arguments.space); services.assertActiveClaim();
-  if (!sameScope(binding.scope, services.context.scope) || !binding.phone || space.__platform !== "imessage" ||
+  if (!sameScope(binding.scope, action.arguments.space.scope) || !binding.phone || space.__platform !== "imessage" ||
     space.id !== mapping.providerId || space.id !== binding.conversationId || imessage(space).phone !== binding.phone) throw new Error("SCOPE_MISMATCH");
   const builder = await mediaOperationContent(action, services, options.voiceBehavior);
   // Build before dispatch: malformed contact/audio input is a pre-dispatch error, not an ambiguous send.
@@ -218,9 +218,9 @@ export async function mapMediaOperation(action: MediaAction, services: PublicSer
       const message = await space.send({ build: async () => built });
       if (!message || typeof message.id !== "string" || !message.id || message.id.length > 500 || message.platform !== "imessage" || message.space.id !== space.id ||
         message.space.__platform !== "imessage" || imessage(message.space).phone !== binding.phone) return unknown();
-      const reference = { version: 1 as const, kind: "message" as const, id: `message:${randomUUID()}`, scope: services.context.scope };
+      const reference = { version: 1 as const, kind: "message" as const, id: `message:${randomUUID()}`, scope: action.arguments.space.scope };
       services.transaction(unit => unit.put("references", { id: reference.id, reference, providerId: message.id,
-        scope: services.context.scope, revision: 0, ownedByPrincipalId: services.context.principalId,
+        scope: action.arguments.space.scope, revision: 0, ownedByPrincipalId: services.context.principalId,
         taskId: services.context.taskId, generation: services.context.generation }, null));
       return { ...base(), status: "provider-accepted", references: [reference], value: { type: "void" },
         observations: [{ kind: "accepted", source: "sdk-return", at: services.clock.now() }],

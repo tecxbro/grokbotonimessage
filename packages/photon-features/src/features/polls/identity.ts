@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import {
-  sameScope, idSchema, pollRefSchema,
+  sameScope, sameLineScope, idSchema, pollRefSchema,
   type ResourceRef, type Scope, type Transaction, type ReferenceRecord,
 } from "../../index.js";
 
@@ -85,7 +85,7 @@ type PollIdentityReader = Pick<UnitOfWork, "get">;
 
 /** Verify the durable originating principal/task/generation; a matching chat is insufficient. */
 export function assertPollOwner(owner: ReferenceRecord, context: Readonly<TrustedContext>): void {
-  if (!sameScope(owner.scope, context.scope)) throw new Error("SCOPE_MISMATCH");
+  if (!sameLineScope(owner.scope, context.scope)) throw new Error("SCOPE_MISMATCH");
   if (owner.ownedByPrincipalId !== context.principalId || owner.taskId !== context.taskId)
     throw new Error("FORBIDDEN");
   if (owner.generation !== context.generation) throw new Error("STALE_GENERATION");
@@ -97,7 +97,14 @@ export function assertPollOwner(owner: ReferenceRecord, context: Readonly<Truste
 export function resolvePollIdentity(unit: PollIdentityReader, ref: PollRef,
   context: Readonly<TrustedContext>): PollRecord {
   pollRefSchema.parse(ref);
-  if (!sameScope(ref.scope, context.scope)) throw new Error("SCOPE_MISMATCH");
+  if (!sameLineScope(ref.scope, context.scope)) throw new Error("SCOPE_MISMATCH");
+  if (!sameScope(ref.scope, context.scope)) {
+    const grant = unit.get("references", ref.scope.spaceId);
+    if (!grant || grant.reference.kind !== "space" || grant.reference.id !== ref.scope.spaceId ||
+        !sameScope(grant.scope, ref.scope) || !sameScope(grant.reference.scope, ref.scope) || !grant.providerId)
+      throw new Error("SCOPE_MISMATCH");
+    assertPollOwner(grant, context);
+  }
   const candidates = [ref.id, scopedId("poll", ref.scope, ref.id)]
     .map(id => unit.get("polls", id)).filter((p): p is PollRecord => !!p);
   const matches = candidates.filter(p => {
@@ -125,7 +132,7 @@ export function resolveOptionIdentity(unit: PollIdentityReader, poll: PollRecord
   const owner = unit.get("references", poll.id);
   if (!owner) throw new Error("UNKNOWN_POLL");
   assertPollOwner(owner, context);
-  if (!sameScope(ref.scope, context.scope) ||
+  if (!sameLineScope(ref.scope, context.scope) ||
       (ref.pollId !== poll.id && ref.pollId !== owner.providerId)) throw new Error("POLL_OPTION_MISMATCH");
   const matches = poll.options.filter(o => {
     const native = unit.get("references", o.reference.id);

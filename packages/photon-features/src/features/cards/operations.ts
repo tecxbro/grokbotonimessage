@@ -171,7 +171,7 @@ export class CardOperations {
  * in action JSON. Resolvers reuse the host's single transport and credentials. */
 export interface CardRuntimeOptions {
   templates: readonly CardTemplate[];
-  binding(context: PublicServices['context']): { scope: PublicServices['context']['scope']; phone: string; nativeSpaceId: string };
+  binding(context: PublicServices['context'], target?: PublicServices['context']['scope']): { scope: PublicServices['context']['scope']; phone: string; nativeSpaceId: string };
   space(reference: Extract<ResourceRef, { kind: 'space' }>, services: PublicServices): Promise<Space>;
   requestId(action: CardAction, services: PublicServices): string;
   /** Host-owned bounded checkpoint lookup; must enforce scope/task/principal/generation.
@@ -211,7 +211,7 @@ export class CardRuntime {
       const restored = this.original(reference.id);
       requireCard(isDeepStrictEqual(restored.data.session, reference), 'SCOPE_MISMATCH', 'Requested session differs.');
       services.transaction(unit => assertCurrentCardRevision(unit, restored.data, restored.data.cardRevision, services));
-      publicSpace(restored.original.space, this, services);
+      publicSpace(restored.original.space, this, services, restored.data.card.scope);
       return restored;
     }
     const encoded = await this.options.loadSession?.(reference, services);
@@ -230,13 +230,13 @@ export class CardRuntime {
     requireCard(isDeepStrictEqual(resolved, spaceRef), 'SCOPE_MISMATCH', 'Resolved card conversation differs.');
     const space = await this.options.space(spaceRef, services);
     services.assertActiveClaim();
-    publicSpace(space, this, services);
+    publicSpace(space, this, services, data.card.scope);
     let original: Message | undefined;
     try { original = await space.getMessage(data.providerMessageId); }
     catch { /* Unsupported or failed public restoration is never a replacement send. */ }
     services.assertActiveClaim();
     const restored = restoreCardSession(encoded, original);
-    publicSpace(restored.original.space, this, services);
+    publicSpace(restored.original.space, this, services, restored.data.card.scope);
     services.transaction(unit => assertCurrentCardRevision(unit, restored.data, restored.data.cardRevision, services));
     this.remember(restored.data, restored.original);
     return restored;
@@ -289,9 +289,9 @@ function runtimeTemplate(runtime: CardRuntime, templateId: string, url: string):
   // Reuse existing configuration validation without entering the legacy executor.
   return resolveCardTemplate(runtime.options, templateId, url);
 }
-function publicSpace(space: Space, runtime: CardRuntime, s: PublicServices): void {
-  const binding = runtime.options.binding(s.context);
-  requireCard(isDeepStrictEqual(binding.scope, s.context.scope), 'SCOPE_MISMATCH', 'Trusted card scope differs.');
+function publicSpace(space: Space, runtime: CardRuntime, s: PublicServices, target: PublicServices['context']['scope']): void {
+  const binding = runtime.options.binding(s.context, target);
+  requireCard(isDeepStrictEqual(binding.scope, target), 'SCOPE_MISMATCH', 'Trusted card scope differs.');
   requireCard(space.__platform === 'imessage', 'UNSUPPORTED', 'Native app cards require cloud iMessage.');
   // Public provider narrowing only; no client internals or transport replacement.
   requireCard(space.id === binding.nativeSpaceId && nativeIMessage(space).phone === binding.phone,
@@ -343,7 +343,7 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
       const { data, original } = await runtime.resolveOriginal(action.arguments.session, s);
       requireCard(isDeepStrictEqual(data.card, action.arguments.card) && isDeepStrictEqual(data.session, action.arguments.session),
         'SCOPE_MISMATCH', 'Requested card/session differs from the original.');
-      publicSpace(original.space, runtime, s);
+      publicSpace(original.space, runtime, s, data.card.scope);
       publicActive(s, action, signal);
       s.transaction(unit => assertCurrentCardRevision(unit, data, expected!, s));
       const template = runtimeTemplate(runtime, data.templateId, data.url);
@@ -356,7 +356,7 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
       }
       const content = await mapCardOperation(template, url, template.kind === 'customized' ? action.arguments.layout : undefined, s, original);
       publicActive(s, action, signal);
-      publicSpace(original.space, runtime, s);
+      publicSpace(original.space, runtime, s, data.card.scope);
       refs = [data.message, data.card, data.session];
       publicActive(s, action, signal);
       s.transaction(unit => {
@@ -389,18 +389,18 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
     requireCard(isDeepStrictEqual(authorized, args.space), 'SCOPE_MISMATCH', 'Resolved space differs.');
     const space = await runtime.options.space(args.space, s);
     publicActive(s, action, signal);
-    publicSpace(space, runtime, s);
+    publicSpace(space, runtime, s, args.space.scope);
     const assertSpaceMapping = () => s.transaction(unit => {
       const row = unit.get('references', args.space.id);
       requireCard(row && row.providerId === space.id && isDeepStrictEqual(row.reference, args.space) &&
-        isDeepStrictEqual(row.scope, s.context.scope) && row.taskId === s.context.taskId &&
+        isDeepStrictEqual(row.scope, args.space.scope) && row.taskId === s.context.taskId &&
         row.ownedByPrincipalId === s.context.principalId && row.generation === s.context.generation,
         'SCOPE_MISMATCH', 'Authoritative space mapping differs.');
     });
     publicActive(s, action, signal);
-    publicSpace(space, runtime, s);
+    publicSpace(space, runtime, s, args.space.scope);
     assertSpaceMapping();
-    const scope = s.context.scope;
+    const scope = args.space.scope;
     const identity = createHash('sha256').update(JSON.stringify([scope, s.context.principalId, s.context.taskId, s.context.generation, requestId])).digest('hex');
     const url = template.prepareUrl ? approvedUrl(template, await template.prepareUrl(args.url, `wt06.session.${identity}`,
       s.context, s.media, 'layout' in args ? args.layout : undefined)) : args.url;
@@ -411,7 +411,7 @@ async function dispatchPublicCard(action: CardAction, s: PublicServices, runtime
     const message = await space.send(content);
     requireCard(message && message.platform === 'imessage' && message.direction === 'outbound',
       'UNAVAILABLE', 'Card send returned no outbound cloud message.');
-    publicSpace(message.space, runtime, s);
+    publicSpace(message.space, runtime, s, args.space.scope);
     const metadata = sessionMetadata(message);
     requireCard(!metadata || metadata.chatGuid === space.id, 'SCOPE_MISMATCH', 'Provider card session chat differs.');
 

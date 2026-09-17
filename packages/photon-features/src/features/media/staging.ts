@@ -4,7 +4,7 @@ import { mkdir, open, realpath, rename, unlink, lstat, opendir } from "node:fs/p
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import {
-  assertScope, sameScope, stagedMediaSchema, type Claim, type Clock, type ContentSpec,
+  assertScope, sameScope, sameLineScope, stagedMediaSchema, type Claim, type Clock, type ContentSpec,
   type MediaStager, type StagedMediaRecord, type TransactionStore, type TrustedContext,
 } from "../../index.js";
 import { openApprovedFile } from "./file-access.js";
@@ -328,10 +328,10 @@ export class GuardedMediaStager implements MediaStager {
         const download = await this.fetchUrl(source.url, signal);
         close = async () => download.close(); stream = download.stream; metadata = { mimeType: download.mimeType };
       } else if (source.type === "native") {
-        assertScope(source.attachment, context.scope);
+        if (!sameLineScope(source.attachment.scope, context.scope)) reject("attachment line scope");
         const authorized = await abortable(this.options.services.resolveResource(source.attachment), signal);
         if (authorized.kind !== "attachment" || authorized.id !== source.attachment.id || authorized.messageId !== source.attachment.messageId) reject("attachment reference mismatch");
-        assertScope(authorized, context.scope); this.authorize(context);
+        assertScope(authorized, source.attachment.scope); this.authorize(context);
         const opening = this.options.native.open(source.attachment, context, signal);
         opening.then(item => { if (signal.aborted) void item.stream.cancel().catch(() => {}); }).catch(() => {});
         const native = await abortable(opening, signal);
@@ -344,7 +344,13 @@ export class GuardedMediaStager implements MediaStager {
         this.authorize(context); signal.throwIfAborted();
         const meta = resourceMetadataSchema.parse({ ...metadata, version: 1, stagingId: id });
         validMime(meta.mimeType);
-        if (meta.source) assertScope(meta.source, context.scope);
+        if (meta.source && !sameScope(meta.source.scope, context.scope)) {
+          if (!sameLineScope(meta.source.scope, context.scope)) reject("attachment line scope");
+          const checked = await abortable(this.options.services.resolveResource(meta.source), signal);
+          if (checked.kind !== "attachment" || checked.id !== meta.source.id || checked.messageId !== meta.source.messageId ||
+              !sameScope(checked.scope, meta.source.scope)) reject("attachment metadata authority");
+          this.authorize(context);
+        }
         if (source.type === "native" && (!meta.source || meta.source.id !== source.attachment.id || meta.source.messageId !== source.attachment.messageId)) reject("native metadata identity");
         if (meta.size !== undefined && meta.size > this.maxBytes) reject("byte limit");
         file = await open(partial, "wx", 0o600);
@@ -441,7 +447,7 @@ export async function resolveMediaResource(media: Media, services: PublicService
   if ("kind" in media) {
     const ref = await services.resolveResource(media);
     if (ref.kind !== "attachment" || ref.id !== media.id || ref.messageId !== media.messageId) reject("attachment reference mismatch");
-    assertScope(ref, services.context.scope); services.assertActiveClaim();
+    assertScope(ref, media.scope); services.assertActiveClaim();
   } else services.transaction(unit => retainResource(unit, media, services.context));
   const resolved = await services.media.resolve(media, services.context);
   services.assertActiveClaim(); services.signal.throwIfAborted();

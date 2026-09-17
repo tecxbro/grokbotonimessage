@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 import {
-  incomingEventSchema, sameScope,
+  incomingEventSchema, sameScope, sameLineScope,
   type EventReducer, type IncomingEvent, type Transaction,
 } from "../../index.js";
 import { pollForEvent, referenceOwner, scopedId } from "./identity.js";
@@ -167,7 +167,7 @@ export function applyPollEvent(input: IncomingEvent, unit: UnitOfWork,
   const parsed = incomingEventSchema.safeParse(input);
   if (!parsed.success || parsed.data.type !== "poll") return unresolved("INVALID_POLL_EVENT");
   const event = parsed.data;
-  if (!sameScope(event.scope, context.scope) || !sameScope(event.poll.scope, event.scope) ||
+  if (!sameLineScope(event.scope, context.scope) || !sameScope(event.poll.scope, event.scope) ||
       !sameScope(event.option.scope, event.scope) || event.option.pollId !== event.poll.id ||
       event.targets.some(t => !sameScope(t.scope, event.scope))) return unresolved("EVENT_SCOPE_OR_PARENT_MISMATCH");
   if (event.direction !== "inbound") return unresolved("INBOUND_INTERACTION_REQUIRED");
@@ -191,7 +191,7 @@ export function applyPollEvent(input: IncomingEvent, unit: UnitOfWork,
       }
       if (!["poll", "poll-option", "message", "space"].includes(target.kind))
         return unresolved("UNSUPPORTED_EVENT_TARGET");
-      if (target.kind === "space" && target.id !== context.scope.spaceId)
+      if (target.kind === "space" && target.id !== event.scope.spaceId)
         return unresolved("AMBIGUOUS_EVENT_TARGET");
     }
   } catch (error) {

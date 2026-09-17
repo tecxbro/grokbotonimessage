@@ -9,7 +9,7 @@ import type { NormalizedHostConfiguration } from "../../src/host/configuration.j
 import { FileCaptureStore } from "../../src/adapters/transport/capture.js";
 import { DurableSQLiteStore } from "../../src/adapters/state/sqlite.js";
 import type { OwnedSdk } from "../../src/adapters/transport/spectrum-owner.js";
-import type { IncomingEvent, LocalRequest, OperationResult } from "../../src/contracts/index.js";
+import { localRequestSchema, type IncomingEvent, type LocalRequest, type OperationResult } from "../../src/contracts/index.js";
 import type { HandoffRecord } from "../../src/state/ports.js";
 import { validateResponse } from "../../src/cli/local-client.js";
 
@@ -38,9 +38,9 @@ for (const [servingPhone, secondary] of [["+15555550101", false], [undefined, fa
     provider: { kind: "spectrum-cloud-imessage", projectId: "project-1", projectSecretFile,
       projectSecretFormat: "photon-project-secret-v1", accountId: "account-1", lineId: "shared-line-1",
       ...(servingPhone ? { phone: servingPhone } : {}), conversationId: "authenticated-native-conversation", dedicated: false,
-      availableOperations: secondary ? ["text.send", "space.create", "space.get", "typing.begin", "typing.end"] : ["text.send", "app.send"] },
+      availableOperations: secondary ? ["text.send", "space.create", "space.get", "typing.begin", "typing.end", "app.send", "poll.create", "contact.send"] : ["text.send", "app.send"] },
     local: { socketPath: join(runtime, "runtime.sock"), credentialFile, principalId: "owner-1", credentialId: "credential-1" },
-    task: { contextId: "context-1", taskId: "task-1", generation: 1, permissions: secondary ? ["text.send", "space.create", "space.get", "typing.begin", "typing.end"] : ["text.send", "app.send"],
+    task: { contextId: "context-1", taskId: "task-1", generation: 1, permissions: secondary ? ["text.send", "space.create", "space.get", "typing.begin", "typing.end", "app.send", "poll.create", "contact.send"] : ["text.send", "app.send"],
       issuedAt: now - 1000, expiresAt: now + 120000, grokAgentId: "grok-1" },
     grok: { executable: "/fixture/gbot", timeoutMs: 1000 },
     authorization: { administrativeOperations: secondary ? ["space.create"] : [], allowedRecipients: secondary ? ["+15555550777"] : [], allowNativeContent: false }, cards: [],
@@ -177,7 +177,7 @@ for (const [servingPhone, secondary] of [["+15555550101", false], [undefined, fa
     assert.equal(observer.transaction(tx => tx.list("inbox", conversationScope, 100)).length, 1);
     assert.equal(rows().length, 1);
     assert.deepEqual({ constructions, listeners, wakes: wakes.length }, { constructions: secondary ? 2 : 1, listeners: secondary ? 2 : 1, wakes: 1 });
-    if (!secondary) {
+    {
       const card = await request<OperationResult>({ version: 1, method: "submit", action: { version: 1,
         contextId: "context-1", idempotencyKey: "static-card", operation: "app.send",
         arguments: { space: action.arguments.space, templateId: "universal-static", url: "https://ordinary.example/card" } } });
@@ -187,9 +187,30 @@ for (const [servingPhone, secondary] of [["+15555550101", false], [undefined, fa
       }, "built-in static card completes without templates or backend");
       const completedCard = observer.transaction(tx => tx.get("outbox", card.requestId))!.result;
       assert.equal(completedCard.status, "provider-accepted", JSON.stringify(completedCard));
+      assert.ok(completedCard.references.every(ref => JSON.stringify(ref.scope) === JSON.stringify(conversationScope)));
       assert.equal(sent.length, 2);
       assert.equal(sent[1]!.type, "app");
       if (sent[1]!.type === "app") assert.equal(sent[1]!.live, false);
+      assert.equal(wakes.length, 1);
+    }
+    if (secondary) {
+      for (const [operation, args] of [
+        ["contact.send", { contact: { name: "Offline contact", phones: ["+15555550777"], emails: [] } }],
+        ["poll.create", { question: "Offline choice", options: [{ key: "a", label: "A" }, { key: "b", label: "B" }] }],
+      ] as const) {
+        const submitted = await request<OperationResult>(localRequestSchema.parse({ version: 1, method: "submit", action: { version: 1,
+          contextId: "context-1", idempotencyKey: `secondary-${operation}`, operation,
+          arguments: { ...args, space: action.arguments.space } } }));
+        await eventually(() => {
+          const result = observer.transaction(tx => tx.get("outbox", submitted.requestId))?.result;
+          return !!result && !["queued", "running"].includes(result.status);
+        }, `secondary ${operation} completes`);
+        const completed = observer.transaction(tx => tx.get("outbox", submitted.requestId))!.result;
+        assert.equal(completed.status, "provider-accepted", JSON.stringify(completed));
+        assert.ok(completed.references.length > 0);
+        assert.ok(completed.references.every(ref => JSON.stringify(ref.scope) === JSON.stringify(conversationScope)));
+      }
+      assert.equal(sent.length, 4);
       assert.equal(wakes.length, 1);
     }
   } finally { await composition.runtime.stop(); observer.close(); }

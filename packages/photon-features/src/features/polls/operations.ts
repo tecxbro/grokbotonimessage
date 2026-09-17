@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { imessage } from "spectrum-ts/providers/imessage";
 import {
-  assertClaim, assertScope, parseAction, sameScope, resultSchema,
+  assertClaim, assertScope, parseAction, sameScope, sameLineScope, resultSchema,
   type Action, type ExecutionServices, type OperationResult, type RuntimeError,
   type Transaction, type OutboxRecord, type ResourceRef,
 } from "../../index.js";
@@ -190,10 +190,10 @@ function assertPollActionActive(action: Action, s: F0ExecutionServices): void {
   if (c.issuedAt > s.clock.now() || c.expiresAt <= s.clock.now()) throw new Error("CONTEXT_EXPIRED");
 }
 
-function scopedBinding(binding: PollProviderBinding, s: F0ExecutionServices) {
+function scopedBinding(binding: PollProviderBinding, s: F0ExecutionServices, target: F0ExecutionServices["context"]["scope"]) {
   if (!binding.binding) throw new Error("POLL_PROVIDER_BINDING_MISSING");
-  const value = binding.binding(s.context);
-  if (!sameScope(value.scope, s.context.scope) || !value.phone || !value.conversationId)
+  const value = binding.binding(s.context, target);
+  if (!sameScope(value.scope, target) || !value.phone || !value.conversationId)
     throw new Error("SCOPE_MISMATCH");
   return value;
 }
@@ -225,12 +225,14 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
     if ("poll" in action.arguments) refs.push(action.arguments.poll);
     if ("option" in action.arguments && "pollId" in action.arguments.option) refs.push(action.arguments.option);
     for (const ref of refs) {
-      assertScope(ref, s.context.scope);
+      if (!sameLineScope(ref.scope, s.context.scope)) throw new Error("SCOPE_MISMATCH");
       const resolved = await s.resolveResource(ref);
       assertPollActionActive(action, s);
       if (!isDeepStrictEqual(resolved, ref)) throw new Error("RESOURCE_NOT_FOUND");
       s.transaction(unit => assertPollOwner(referenceOwner(unit, ref), s.context));
     }
+    const targetScope = refs[0]!.scope;
+    if (refs.some(ref => !sameScope(ref.scope, targetScope))) throw new Error("SCOPE_MISMATCH");
     const args = action.arguments;
     if ("poll" in args) s.transaction(unit => {
       const p = resolvePollIdentity(unit, args.poll, s.context);
@@ -242,7 +244,7 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
     if (!binding) return f0Failure(s, requestId, "UNAVAILABLE", "Shared owner Spectrum space binding is missing.",
       "blocked", "wt-05-provider-binding");
     let providerBinding;
-    try { providerBinding = scopedBinding(binding, s); }
+    try { providerBinding = scopedBinding(binding, s, targetScope); }
     catch (error) {
       if (error instanceof Error && error.message === "POLL_PROVIDER_BINDING_MISSING")
         return f0Failure(s, requestId, "UNAVAILABLE", "Authoritative provider phone/conversation binding is missing.",
@@ -258,8 +260,8 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
         const poll = resolvePollIdentity(unit, pollAction.arguments.poll, s.context);
         const pollOwner = referenceOwner(unit, poll.reference);
         assertPollOwner(pollOwner, s.context);
-        const space = unit.get("references", s.context.scope.spaceId);
-        if (!space || space.reference.kind !== "space" || !sameScope(space.scope, s.context.scope) ||
+        const space = unit.get("references", targetScope.spaceId);
+        if (!space || space.reference.kind !== "space" || !sameScope(space.scope, targetScope) ||
             space.providerId !== providerBinding.conversationId || space.taskId !== pollOwner.taskId ||
             space.generation !== pollOwner.generation || space.ownedByPrincipalId !== pollOwner.ownedByPrincipalId)
           throw new Error("SCOPE_MISMATCH");
@@ -342,10 +344,10 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
               imessage(message.space).phone !== imessage(space).phone)
             throw new Error("UNKNOWN_OUTCOME");
           const messageRef: Extract<ResourceRef, { kind: "message" }> = {
-            version: 1, kind: "message", scope: s.context.scope, id: scopedId("message", s.context.scope, message.id),
+            version: 1, kind: "message", scope: targetScope, id: scopedId("message", targetScope, message.id),
           };
-          const pollRef: PollRef = { version: 1, kind: "poll", scope: s.context.scope,
-            id: scopedId("poll", s.context.scope, message.id), messageId: messageRef.id };
+          const pollRef: PollRef = { version: 1, kind: "poll", scope: targetScope,
+            id: scopedId("poll", targetScope, message.id), messageId: messageRef.id };
           // Persist actual native GUID while the child remains unfinished. A failed commit is uncertain,
           // so runtime recovery must not resend. There is no feature-owned dispatch journal.
           s.transaction(unit => {
@@ -355,14 +357,14 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
                 assertPollOwner(prior, s.context);
                 if (!isDeepStrictEqual(prior.reference, reference) || prior.providerId !== message.id)
                   throw new Error("POLL_IDENTITY_MISMATCH");
-              } else unit.put("references", { id: reference.id, scope: s.context.scope, revision: 0,
+              } else unit.put("references", { id: reference.id, scope: targetScope, revision: 0,
                 reference, providerId: message.id, ownedByPrincipalId: s.context.principalId,
                 taskId: s.context.taskId, generation: s.context.generation }, null);
             }
             const prior = unit.get("polls", pollRef.id);
             if (prior && (!isDeepStrictEqual(prior.reference, pollRef) || prior.question !== pollAction.arguments.question))
               throw new Error("POLL_IDENTITY_MISMATCH");
-            if (!prior) unit.put("polls", { id: pollRef.id, scope: s.context.scope, revision: 0,
+            if (!prior) unit.put("polls", { id: pollRef.id, scope: targetScope, revision: 0,
               reference: pollRef, question: pollAction.arguments.question, options: [] }, null);
           });
           return f0Result(s, requestId, { status: "provider-accepted", references: [messageRef, pollRef],
