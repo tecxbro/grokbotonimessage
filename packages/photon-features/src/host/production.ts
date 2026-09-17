@@ -58,7 +58,7 @@ import { createNativeModule, createPublicFeatureModule as createNativeFeature, p
 import { assembleFeatureSurface, createPollContentModule } from "../integration/assembly.js";
 import type { ProductionHostConfiguration } from "./configuration.js";
 import { readPrivateFile } from "./configuration.js";
-import { GrokGatewayTaskHandoff, type GrokCommandRunner } from "./grok-wake.js";
+import { GrokGatewayTaskHandoff, type GrokCommandRunner, type GrokCommandStyle, type GrokHelpInspector } from "./grok-wake.js";
 import { bootstrapOrValidateAuthority, configuredAuthority } from "./authority.js";
 import type { BindExecutionResources } from "../runtime/core/execution-services.js";
 import { ProductionStreamRegistry } from "./stream-registry.js";
@@ -231,6 +231,8 @@ class ProductionLocalExecutor implements LocalExecutor {
 export interface ProductionCompositionDependencies {
   sdkFactory?: SdkFactory;
   grokRunner?: GrokCommandRunner;
+  grokCommandStyle?: GrokCommandStyle;
+  grokHelpInspector?: GrokHelpInspector;
   /** Optional approved adapter over the already-owned provider connection. The
    * shipped Spectrum 12.8.0 adapter cannot supply this public surface. */
   pollManagement?: (context: TrustedContext) => Promise<PollManagement>;
@@ -570,9 +572,10 @@ export async function createProductionComposition(
     installationRoot,
     releaseRoot,
     timeoutMs: configuration.grok.timeoutMs,
-  }, dependencies.grokRunner);
+    commandStyle: dependencies.grokCommandStyle,
+  }, dependencies.grokRunner, dependencies.grokHelpInspector);
   const wake = configuredGrokWake(handoff);
-  const dispatcher = new WakeDispatcher(store, { now }, wake);
+  const dispatcher = new WakeDispatcher(store, { now }, wake, configuration.task.grokAgentId);
   const interactions = createInteractionAdapter({
     backend: backend ?? dependencies.cardBackend,
     authorize: tx => { contexts.current(tx, context.principalId, context.contextId); },

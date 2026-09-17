@@ -186,6 +186,7 @@ async function createHarness(
     now: () => now,
     sdkFactory,
     report: code => reports.push(code),
+    grokCommandStyle: "gateway-flag",
     grokRunner: async () => { wakeCalls++; return onWake({cli, settle}); },
   });
   await composition.runtime.start();
@@ -307,6 +308,7 @@ test("default production composition sends one explicit poll and Grok claims its
   const reopened = await createProductionComposition(h.configuration, h.root, h.root, {
     now: h.now,
     sdkFactory: h.sdkFactory,
+    grokCommandStyle: "gateway-flag",
     grokRunner: async () => { throw new Error("acknowledged capture replay must not wake"); },
   });
   await reopened.runtime.start();

@@ -238,6 +238,7 @@ test("automated production path retrieves durable work and acts only through cap
   const composition = await createProductionComposition(configuration, root, root, {
     now: () => now,
     sdkFactory,
+    grokCommandStyle: "gateway-flag",
     grokRunner: async () => {
       wakeCalls++;
       if (wakeCalls > 1) return "accepted";
@@ -407,6 +408,7 @@ test("automated production path retrieves durable work and acts only through cap
   const reopened = await createProductionComposition(configuration, root, root, {
     now: () => now,
     sdkFactory,
+    grokCommandStyle: "gateway-flag",
     grokRunner: async () => { wakeCalls++; return "accepted"; },
   });
   await reopened.runtime.start();

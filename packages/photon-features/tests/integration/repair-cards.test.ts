@@ -119,6 +119,7 @@ test("prepared production binding preserves admission revision and original card
   const composition = await createProductionComposition(configuration, root, root, {
     now: () => now,
     sdkFactory: async () => sdk,
+    grokCommandStyle: "gateway-flag",
     grokRunner: async () => { callbackWakes++; return "accepted"; },
     cardBackend: {
       id: "fixture-backend-v1",

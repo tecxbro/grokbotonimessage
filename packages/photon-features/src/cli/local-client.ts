@@ -20,7 +20,9 @@ const count = z.number().int().nonnegative();
 // LocalResponse's work records are TypeScript-only in F0. This validates that wire seam;
 // operation payloads always use the shared schemas. Shared response schema requested from WT-00.
 const handoff = z.strictObject({ id: idSchema, scope: scopeSchema, revision: count, taskId: idSchema,
-  generation: count, principalId: idSchema, eventIds: z.array(idSchema), state: z.enum(["pending", "claimed", "acknowledged", "cancelled"]),
+  generation: count, principalId: idSchema, eventIds: z.array(idSchema),
+  wake: z.strictObject({ targetId: z.string().min(1), attempts: count.min(1), lastAttemptAt: count.nullable(),
+    nextAttemptAt: count, lastStatus: z.enum(["accepted", "failed", "unknown"]).nullable() }).optional(), state: z.enum(["pending", "claimed", "acknowledged", "cancelled"]),
   claim: z.strictObject({ owner: idSchema, leaseUntil: count, fence: count, generation: count }).nullable(), createdAt: count });
 const failure = z.strictObject({ version: z.literal(1), ok: z.literal(false), error: z.strictObject({ code: z.string().regex(/^[A-Z_]+$/).max(80), requestId: idSchema.optional() }) });
 export function validateResponse(input: unknown, request: LocalRequest): CliResponse {

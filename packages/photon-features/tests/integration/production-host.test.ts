@@ -62,6 +62,7 @@ test("production composition owns one provider, durable store, authenticated soc
   const composition = await createProductionComposition(configuration, root, root, {
     now: () => now,
     sdkFactory: async () => { constructions++; return sdk; },
+    grokCommandStyle: "gateway-flag",
     grokRunner: async () => "accepted",
   });
   let local: { close(): Promise<void> } | undefined;
@@ -103,7 +104,7 @@ test("Grok wake sends an exact pointer-only gateway command for the release-pinn
   let invocation: { executable: string; args: readonly string[]; timeout: number } | undefined;
   const handoff = new GrokGatewayTaskHandoff({ executable: "/opt/grok/bin/gbot", agentId: "agent-1",
     taskId: "task-1", generation: 3, installationRoot: "/opt/grok-photon",
-    releaseRoot: "/opt/grok-photon/releases/" + "a".repeat(64), timeoutMs: 15000 },
+    releaseRoot: "/opt/grok-photon/releases/" + "a".repeat(64), commandStyle: "gateway-flag", timeoutMs: 15000 },
   async (executable, args, timeout) => { invocation = { executable, args, timeout }; return "accepted"; });
   assert.equal(await handoff.notifyExistingTask({ handoffId: "handoff-1", taskId: "task-1", generation: 3 }), "accepted");
   assert.equal(invocation?.executable, "/opt/grok/bin/gbot");

@@ -362,6 +362,9 @@ test("wake retries the same committed identity after SQLite close/reopen; claims
     );
     f.store.close();
     reopened = new SQLiteStore(f.path);
+    assert.deepEqual(await new WakeDispatcher(reopened, f.clock, wake).tick(scope, taskRoute), []);
+    const deadline = reopened.transaction(tx => tx.get("handoffs", seen[0]!)!.wake!.nextAttemptAt);
+    f.clock.advance(deadline - f.clock.now());
     assert.equal(
       (
         await new WakeDispatcher(reopened, f.clock, wake).tick(scope, taskRoute)
@@ -617,6 +620,10 @@ test("host pump batches before dispatch and retries a failed wake using the same
     assert.equal(seen.length, 0);
     f.clock.advance(2000);
     await pump.tick();
+    await pump.tick();
+    assert.equal(seen.length, 1);
+    const deadline = f.store.transaction(tx => tx.get("handoffs", seen[0]!)!.wake!.nextAttemptAt);
+    f.clock.advance(deadline - f.clock.now());
     await pump.tick();
     assert.equal(seen.length, 2);
     assert.equal(seen[0], seen[1]);

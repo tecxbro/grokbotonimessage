@@ -10,6 +10,13 @@
       "reviewedCommit": "6c76d6537f6bf98a5603be8b6e0791bb5c67e2c9",
       "implementationCommit": "ef607dd457515d9ea367d4c7bfa70935a9ae28ab",
       "laneNote": "docs/release-fix/rfx-01-shared-routing.md"
+    },
+    {
+      "lane": "RFX-02",
+      "branch": "codex/rfx-02-wake-reliability",
+      "reviewedCommit": "59bf129238f0858fdc5644cce895bf71ad94e4c6",
+      "implementationCommit": "d8c03433f922f243af30e89ea0bd79f074e41b42",
+      "laneNote": "docs/release-fix/rfx-02-wake-reliability.md"
     }
   ],
   "pendingLanes": [
@@ -51,9 +58,9 @@
         "packages/photon-features/tests/lanes/wt-02/integration.test.ts"
       ],
       "laneNote": "docs/release-fix/rfx-02-wake-reliability.md",
-      "integrationStatus": "not-merged",
+      "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "testEvidence": "rfx02-focused-fixed",
       "postImplementationChanges": [
         "docs/release-fix/rfx-02-wake-reliability.md"
       ]
