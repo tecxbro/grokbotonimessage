@@ -12,7 +12,9 @@ const metadataSchema = z.strictObject({ chatGuid: providerId, messageGuid: provi
 export const sessionSchema = z.strictObject({
   version: z.literal(1), sdkVersion: z.literal('12.8.0'),
   card: cardRefSchema, session: sessionRefSchema, message: messageRefSchema,
-  providerMessageId: idSchema, templateId: idSchema, kind: z.enum(['universal', 'customized']),
+  providerMessageId: idSchema, templateId: idSchema,
+  // Optional for reading historical v1 checkpoints; cold restoration requires it.
+  templateDigest: z.string().regex(/^[a-f0-9]{64}$/).optional(), kind: z.enum(['universal', 'customized']),
   taskId: idSchema, principalId: idSchema, generation: z.number().int().nonnegative(), cardRevision: z.number().int().nonnegative(),
   url: httpsSchema, phase: z.enum(['ready', 'dispatching', 'unknown']),
   metadata: metadataSchema.nullable(),
