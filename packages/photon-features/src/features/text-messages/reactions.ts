@@ -7,7 +7,7 @@ import {
   tapbacks,
   type PublicTextMessageOptions,
 } from "./sdk.js";
-/** Preserve the SDK reaction handle and stable parent reference for later authorized removal. */
+/** Persist public provider/parent identity with the actual SDK result through the shared child. */
 export async function executeReaction(
   action: ActionFor<"message.react">,
   s: ExecutionServices,
@@ -29,7 +29,7 @@ export async function executeReaction(
     action.arguments.message.id,
   );
 }
-/** Remove only an actual bot-owned reaction; the SDK uses its own original parent metadata. */
+/** Validate durable identity and a real public handle before one removal; runtime owns reconciliation. */
 export async function removeOwnReaction(
   action: ActionFor<"reaction.remove">,
   s: ExecutionServices,
