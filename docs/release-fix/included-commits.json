@@ -1,0 +1,285 @@
+{
+  "version": 1,
+  "baseCommit": "b83e3afd7049a991de6daffedf831165890f0901",
+  "integrationBranch": "codex/rfx-00-integration",
+  "preflightHead": "ee867210952460113efdf09a1f5ea659079eb36e",
+  "includedCommits": [],
+  "pendingLanes": [
+    {
+      "lane": "RFX-01",
+      "branch": "codex/rfx-01-shared-routing",
+      "worktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-01-shared-routing",
+      "submittedCommit": "6c76d6537f6bf98a5603be8b6e0791bb5c67e2c9",
+      "implementationCommit": "ef607dd457515d9ea367d4c7bfa70935a9ae28ab",
+      "status": "clean",
+      "changedFiles": [
+        "docs/release-fix/rfx-01-shared-routing.md",
+        "packages/photon-features/src/adapters/transport/provider-context.ts",
+        "packages/photon-features/src/adapters/transport/spectrum-owner.ts",
+        "packages/photon-features/tests/integration/rfx-shared-routing.test.ts"
+      ],
+      "laneNote": "docs/release-fix/rfx-01-shared-routing.md",
+      "integrationStatus": "not-merged",
+      "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
+      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "postImplementationChanges": [
+        "docs/release-fix/rfx-01-shared-routing.md"
+      ]
+    },
+    {
+      "lane": "RFX-02",
+      "branch": "codex/rfx-02-wake-reliability",
+      "worktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-02-wake-reliability",
+      "submittedCommit": "59bf129238f0858fdc5644cce895bf71ad94e4c6",
+      "implementationCommit": "d8c03433f922f243af30e89ea0bd79f074e41b42",
+      "status": "clean",
+      "changedFiles": [
+        "docs/release-fix/rfx-02-wake-reliability.md",
+        "packages/photon-features/src/host/grok-wake.ts",
+        "packages/photon-features/src/runtime/inbound/pump.ts",
+        "packages/photon-features/src/runtime/inbound/wake-dispatcher.ts",
+        "packages/photon-features/src/state/ports.ts",
+        "packages/photon-features/tests/integration/rfx-wake-reliability.test.ts",
+        "packages/photon-features/tests/lanes/wt-02/integration.test.ts"
+      ],
+      "laneNote": "docs/release-fix/rfx-02-wake-reliability.md",
+      "integrationStatus": "not-merged",
+      "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
+      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "postImplementationChanges": [
+        "docs/release-fix/rfx-02-wake-reliability.md"
+      ]
+    },
+    {
+      "lane": "RFX-03",
+      "branch": "codex/rfx-03-multi-conversation",
+      "worktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-03-multi-conversation",
+      "submittedCommit": "3f223bad52f8e17a22ec4a21c3df348f76bc18dd",
+      "implementationCommit": "903041c0d468d74b72a23a364320b4020d8f2b86",
+      "status": "clean",
+      "changedFiles": [
+        "docs/release-fix/rfx-03-multi-conversation.md",
+        "packages/photon-features/src/contracts/resources.ts",
+        "packages/photon-features/src/features/native/guards.ts",
+        "packages/photon-features/src/features/native/spaces.ts",
+        "packages/photon-features/src/runtime/core/authorization.ts",
+        "packages/photon-features/src/runtime/core/conversation-routes.ts",
+        "packages/photon-features/src/runtime/inbound/router.ts",
+        "packages/photon-features/tests/integration/rfx-multi-conversation.test.ts",
+        "packages/photon-features/tests/lanes/wt-07/unit.test.ts"
+      ],
+      "laneNote": "docs/release-fix/rfx-03-multi-conversation.md",
+      "integrationStatus": "not-merged",
+      "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
+      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "postImplementationChanges": [
+        "docs/release-fix/rfx-03-multi-conversation.md"
+      ]
+    },
+    {
+      "lane": "RFX-04",
+      "branch": "codex/rfx-04-vm-bootstrap",
+      "worktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-04-vm-bootstrap",
+      "submittedCommit": "7247c799ea325d38ec685a653f9728c7f4ee8a94",
+      "implementationCommit": "e16664270856c106abc4c10c620e8e3752c9988e",
+      "status": "clean",
+      "changedFiles": [
+        "docs/release-fix/rfx-04-vm-bootstrap.md",
+        "packages/photon-features/scripts/install-photon-cli.mjs",
+        "packages/photon-features/src/cli/commands.ts",
+        "packages/photon-features/src/cli/main.ts",
+        "packages/photon-features/src/cli/output.ts",
+        "packages/photon-features/src/cli/setup.ts",
+        "packages/photon-features/src/host/grok-discovery.ts",
+        "packages/photon-features/tests/integration/rfx-vm-bootstrap.test.mjs"
+      ],
+      "laneNote": "docs/release-fix/rfx-04-vm-bootstrap.md",
+      "integrationStatus": "not-merged",
+      "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
+      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "postImplementationChanges": [
+        "docs/release-fix/rfx-04-vm-bootstrap.md"
+      ]
+    },
+    {
+      "lane": "RFX-05",
+      "branch": "codex/rfx-05-config-simplify",
+      "worktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-05-config-simplify",
+      "submittedCommit": "f07cf5973b9c11a9deccc4a19f87bbe7092b1cea",
+      "implementationCommit": "54f90b99e2a325759b52639bca8c43716850f7e7",
+      "status": "clean",
+      "changedFiles": [
+        "docs/release-fix/rfx-05-config-simplify.md",
+        "packages/photon-features/examples/configuration-input.json",
+        "packages/photon-features/examples/profiles/administrative.json",
+        "packages/photon-features/examples/profiles/messaging.json",
+        "packages/photon-features/examples/profiles/minimal-text.json",
+        "packages/photon-features/scripts/generate-configuration.mjs",
+        "packages/photon-features/src/host/authority-admin.ts",
+        "packages/photon-features/src/host/configuration.ts",
+        "packages/photon-features/tests/integration/completion-configuration.test.mjs"
+      ],
+      "laneNote": "docs/release-fix/rfx-05-config-simplify.md",
+      "integrationStatus": "not-merged",
+      "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
+      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "postImplementationChanges": [
+        "docs/release-fix/rfx-05-config-simplify.md"
+      ]
+    },
+    {
+      "lane": "RFX-06",
+      "branch": "codex/rfx-06-packaging",
+      "worktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-06-packaging",
+      "submittedCommit": "b9be4107fbe013602964124242604fc176582262",
+      "implementationCommit": "1476e17f51a657f9941860c19a6ae5a27d232a7d",
+      "status": "clean",
+      "changedFiles": [
+        "docs/release-fix/RFX-06.md",
+        "packages/photon-features/scripts/package.mjs",
+        "packages/photon-features/tests/artifact/rfx-owner-package.test.mjs"
+      ],
+      "laneNote": "docs/release-fix/RFX-06.md",
+      "integrationStatus": "not-merged",
+      "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
+      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "postImplementationChanges": [
+        "docs/release-fix/RFX-06.md"
+      ]
+    },
+    {
+      "lane": "RFX-07",
+      "branch": "codex/rfx-07-capability-truth",
+      "worktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-07-capability-truth",
+      "submittedCommit": "0d3a3f7197ccccbd98ac26ab0f8c74ad03ed2503",
+      "implementationCommit": "8f51e364acb5cb9f35736da263a31b2e4372a630",
+      "status": "clean",
+      "changedFiles": [
+        "docs/release-fix/RFX-07.md",
+        "packages/photon-features/examples/production-inventory.json",
+        "packages/photon-features/scripts/generate-production-inventory.mjs",
+        "packages/photon-features/src/host/capabilities.ts",
+        "packages/photon-features/src/host/configuration-inventory.ts",
+        "packages/photon-features/tests/integration/rfx-capability-truth.test.ts"
+      ],
+      "laneNote": "docs/release-fix/RFX-07.md",
+      "integrationStatus": "not-merged",
+      "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
+      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "postImplementationChanges": [
+        "docs/release-fix/RFX-07.md"
+      ]
+    },
+    {
+      "lane": "RFX-08",
+      "branch": "codex/rfx-08-polls",
+      "worktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-08-polls",
+      "submittedCommit": "25b58bda4436ea4a592297d31e852eab6566bdc0",
+      "implementationCommit": "1d15daa32584991341f45930de12ebdffb64d241",
+      "status": "clean",
+      "changedFiles": [
+        "docs/release-fix/RFX-08.md",
+        "packages/photon-features/src/features/polls/advanced-adapter.ts",
+        "packages/photon-features/src/features/polls/operations.ts",
+        "packages/photon-features/src/features/polls/sdk.ts",
+        "packages/photon-features/tests/integration/rfx-poll-management.test.ts",
+        "packages/photon-features/tests/lanes/wt-05/advanced-adapter.test.ts",
+        "packages/photon-features/tests/lanes/wt-05/advanced-support.ts"
+      ],
+      "laneNote": "docs/release-fix/RFX-08.md",
+      "integrationStatus": "not-merged",
+      "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
+      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "postImplementationChanges": [
+        "docs/release-fix/RFX-08.md"
+      ]
+    },
+    {
+      "lane": "RFX-09",
+      "branch": "codex/rfx-09-cards",
+      "worktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-09-cards",
+      "submittedCommit": "1823103e4b204790664fa48f1eaa79abbd8660b7",
+      "implementationCommit": "d0c27bd18ebd4936fec1c68455ee29b4d6e9931d",
+      "status": "clean",
+      "changedFiles": [
+        "docs/release-fix/RFX-09.md",
+        "packages/photon-features/src/features/cards/module.ts",
+        "packages/photon-features/src/features/cards/operations.ts",
+        "packages/photon-features/src/features/cards/sdk.ts",
+        "packages/photon-features/src/features/cards/session-codec.ts",
+        "packages/photon-features/tests/integration/rfx-card-restart.test.ts"
+      ],
+      "laneNote": "docs/release-fix/RFX-09.md",
+      "integrationStatus": "not-merged",
+      "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
+      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "postImplementationChanges": [
+        "docs/release-fix/RFX-09.md"
+      ]
+    },
+    {
+      "lane": "RFX-10",
+      "branch": "codex/rfx-10-reactions",
+      "worktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-10-reactions",
+      "submittedCommit": "3ed9131b55457c0bfdbfe0e665c96e0212cbd9fa",
+      "implementationCommit": "44e7ee9488ab7012bb740f4005fdc1dd6429f574",
+      "status": "clean",
+      "changedFiles": [
+        "docs/release-fix/RFX-10.md",
+        "packages/photon-features/src/features/text-messages/reactions.ts",
+        "packages/photon-features/src/features/text-messages/sdk.ts",
+        "packages/photon-features/src/features/text-messages/targets.ts",
+        "packages/photon-features/tests/integration/rfx-reaction-restart.test.ts"
+      ],
+      "laneNote": "docs/release-fix/RFX-10.md",
+      "integrationStatus": "not-merged",
+      "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
+      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "postImplementationChanges": [
+        "docs/release-fix/RFX-10.md"
+      ]
+    },
+    {
+      "lane": "RFX-11",
+      "branch": "codex/rfx-11-lifecycle",
+      "worktree": "/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-11-lifecycle",
+      "submittedCommit": "9aea50ab2de1cd825909a61bf86e6d3b2fe0ffe1",
+      "implementationCommit": "0f9e4db417c0011c308a5ba53f14860c9dc8f4ab",
+      "status": "clean",
+      "changedFiles": [
+        "docs/release-fix/rfx-11-lifecycle.md",
+        "packages/photon-features/scripts/smoke-test.mjs",
+        "packages/photon-features/src/host/owner-lock.ts",
+        "packages/photon-features/src/host/process.ts",
+        "packages/photon-features/src/host/supervisor.ts",
+        "packages/photon-features/tests/integration/rfx-lifecycle.test.ts"
+      ],
+      "laneNote": "docs/release-fix/rfx-11-lifecycle.md",
+      "integrationStatus": "not-merged",
+      "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
+      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "postImplementationChanges": [
+        "docs/release-fix/rfx-11-lifecycle.md"
+      ]
+    }
+  ],
+  "phaseOrder": {
+    "A": [
+      "RFX-01",
+      "RFX-02",
+      "RFX-04",
+      "RFX-05",
+      "RFX-11",
+      "RFX-07"
+    ],
+    "B": [
+      "RFX-03",
+      "RFX-08",
+      "RFX-09",
+      "RFX-10",
+      "RFX-06"
+    ]
+  },
+  "blockedBy": null,
+  "integrationAuthorization": "User explicitly approved cross-lane integration glue and required source/test/registry/schema migrations on continuation; preserve authority and provider limitations."
+}
