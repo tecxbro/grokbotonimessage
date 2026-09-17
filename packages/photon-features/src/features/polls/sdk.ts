@@ -31,9 +31,8 @@ export interface PollProviderBinding {
     phone: string;
     conversationId: string;
   };
-  /** This must be backed by the already-owned provider connection. Spectrum 12.8.0
-   * does not expose this surface, so production must leave it absent until an
-   * approved public shared-owner adapter exists.
+  /** Return the host's long-lived management adapter for this authenticated scope.
+   * Never construct a client here: the host owns startup, credential refresh and shutdown.
    */
   management?(context: TrustedContext): Promise<PollManagement>;
 }
@@ -61,9 +60,21 @@ export type NativePollState = z.infer<typeof nativePollStateSchema>;
  */
 export interface PollManagement {
   get(pollMessageGuid: string): Promise<NativePollState>;
-  vote(pollMessageGuid: string, optionIdentifier: string): Promise<NativePollState>;
-  unvote(pollMessageGuid: string): Promise<NativePollState>;
-  addOption(pollMessageGuid: string, text: string): Promise<NativePollState>;
+  vote(pollMessageGuid: string, optionIdentifier: string, execution: PollMutationExecution): Promise<NativePollState>;
+  unvote(pollMessageGuid: string, execution: PollMutationExecution): Promise<NativePollState>;
+  addOption(pollMessageGuid: string, text: string, execution: PollMutationExecution): Promise<NativePollState>;
+}
+
+/** Captured by the child executor, never supplied by action JSON or renewed on retry. */
+export interface PollMutationExecution {
+  readonly childKey: string;
+}
+
+/** A definitive provider rejection. Transport failures and duplicate writes are not rejections. */
+export class PollManagementRejected extends Error {
+  constructor(readonly code: "INVALID_REQUEST" | "RESOURCE_NOT_FOUND" | "UNSUPPORTED") {
+    super(code);
+  }
 }
 
 /** Reject malformed or ambiguous provider snapshots before they can update durable identity. */

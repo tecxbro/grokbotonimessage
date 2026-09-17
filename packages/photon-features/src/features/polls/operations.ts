@@ -7,7 +7,7 @@ import {
   type Transaction, type OutboxRecord, type ResourceRef,
 } from "../../index.js";
 import { scopedId, referenceOwner, type PollRef } from "./identity.js";
-import { checkedSpace, compilePoll } from "./sdk.js";
+import { checkedSpace, compilePoll, PollManagementRejected } from "./sdk.js";
 
 export const pollOperations = ["poll.create", "poll.get", "poll.vote", "poll.unvote", "poll.addOption"] as const;
 export const codecIdentity = { id: "wt-05-poll-create", version: 1 } as const;
@@ -289,8 +289,8 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
         }
         return f0Result(s, requestId, { references: reconciled.references, value: reconciled.value });
       }
-      const childResult = await s.executeChild({ index: 0,
-        key: scopedId("child", s.context.scope, s.context.taskId, s.context.generation, requestId, pollAction.operation),
+      const childKey = scopedId("child", s.context.scope, s.context.taskId, s.context.generation, requestId, pollAction.operation);
+      const childResult = await s.executeChild({ index: 0, key: childKey,
         argumentsDigest: actionDigest(action),
         dispatch: async signal => {
           assertPollActionActive(action, s);
@@ -298,17 +298,19 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
           possibleTransmission = true;
           try {
             const state = mapped.kind === "vote"
-              ? await management.vote(target.nativePollGuid, target.nativeOptionId!)
+              ? await management.vote(target.nativePollGuid, target.nativeOptionId!, { childKey })
               : mapped.kind === "unvote"
-                ? await management.unvote(target.nativePollGuid)
+                ? await management.unvote(target.nativePollGuid, { childKey })
                 : await management.addOption(target.nativePollGuid, pollAction.operation === "poll.addOption"
-                  ? pollAction.arguments.option.label : (() => { throw new Error("INVALID_REQUEST"); })());
+                  ? pollAction.arguments.option.label : (() => { throw new Error("INVALID_REQUEST"); })(), { childKey });
             assertPollActionActive(action, s);
             const reconciled = reconcileManagedState(s, target.poll, providerBinding.conversationId, state);
             return f0Result(s, requestId, { status: "provider-accepted", references: reconciled.references,
               value: reconciled.value,
               observations: [{ kind: "accepted", source: "sdk-return", at: s.clock.now() }] });
-          } catch {
+          } catch (error) {
+            if (error instanceof PollManagementRejected)
+              return f0Failure(s, requestId, error.code, "Native poll mutation was rejected by the provider.");
             return f0Failure(s, requestId, "UNKNOWN_OUTCOME",
               "Poll mutation may have been transmitted; reconcile before retry.", "unknown-outcome");
           }
@@ -378,7 +380,8 @@ export async function executePollOperation(input: Action, s: F0ExecutionServices
     const message = error instanceof Error ? error.message : "INTERNAL";
     const codes = ["FORBIDDEN", "SCOPE_MISMATCH", "RESOURCE_NOT_FOUND", "CONTEXT_REVOKED", "CONTEXT_EXPIRED",
       "STALE_GENERATION", "STALE_FENCE", "CANCELLED", "UNSUPPORTED", "IDEMPOTENCY_CONFLICT", "INVALID_REQUEST"] as const;
-    const invalid = error instanceof z.ZodError || ["POLL_OPTION_MISMATCH", "DUPLICATE_OPTION"].includes(message);
+    const invalid = error instanceof z.ZodError || ["POLL_OPTION_MISMATCH", "DUPLICATE_OPTION",
+      "NATIVE_OPTION_LOOKUP_REQUIRED"].includes(message);
     const code = invalid ? "INVALID_REQUEST" : codes.find(code => code === message) ?? "INTERNAL";
     return f0Failure(s, requestId, code, `Poll operation rejected: ${code}.`);
   }
