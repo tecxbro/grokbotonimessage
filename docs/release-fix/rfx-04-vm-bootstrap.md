@@ -280,4 +280,7 @@ remain in ignored local evidence, and hashes make the reviewed content explicit.
 - `.photon-local/rfx-contract-evidence.json` SHA-256: `3b8ed0d89960404875cffca5dc49355971681756472f95741ba5e45dde730117`.
 
 Tests ran on base HEAD `b83e3afd7049a991de6daffedf831165890f0901` plus the lane diff.
-Implementation commit identity will be recorded in a follow-up documentation commit.
+Implementation commit: `e16664270856c106abc4c10c620e8e3752c9988e`.
+This follow-up changes only this task note to record that exact commit; the seven
+production/test files match the implementation tree that passed the checks above.
+The branch is local only; no remote branch was created.
