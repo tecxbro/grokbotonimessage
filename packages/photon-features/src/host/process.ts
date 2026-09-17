@@ -6,25 +6,27 @@ import { constants, realpathSync } from "node:fs";
 import { access, lstat, realpath } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { acquireHostOwnership } from "./owner-lock.js";
+import { acquireHostOwnership, reconcileHostOwnership } from "./owner-lock.js";
 import {
   loadProductionHostConfiguration,
   readPrivateFile,
   writeActivation,
 } from "./configuration.js";
-import { createProductionComposition } from "./production.js";
+import { createProductionComposition, type ProductionCompositionDependencies } from "./production.js";
+import { supervisorGuidance } from "./supervisor.js";
 import { assertSelectedRelease } from "./selected-release.js";
 import { DurableSQLiteStore } from "../adapters/state/sqlite.js";
 import { bootstrapOrValidateAuthority, configuredAuthority } from "./authority.js";
 
-type HostCommand = "validate" | "enable" | "disable" | "run";
+type HostCommand = "validate" | "enable" | "disable" | "run" | "setup" | "supervisor" | "reconcile" | "recover-stale";
 
-function parse(argv: readonly string[]): { command: HostCommand; root: string } {
+function parse(argv: readonly string[]): { command: HostCommand; root: string; activateAfterValidation: boolean } {
   const [command, flag, root, ...extra] = argv;
-  if (!(["validate", "enable", "disable", "run"] as const).includes(command as HostCommand) ||
-    flag !== "--installation-root" || !root || extra.length)
+  if (!(["validate", "enable", "disable", "run", "setup", "supervisor", "reconcile", "recover-stale"] as const).includes(command as HostCommand) ||
+    flag !== "--installation-root" || !root || (extra.length > 0 &&
+      !(command === "setup" && extra.length === 1 && extra[0] === "--activate-after-validation")))
     throw new Error("USAGE_COMMAND_INSTALLATION_ROOT");
-  return { command: command as HostCommand, root: resolve(root) };
+  return { command: command as HostCommand, root: resolve(root), activateAfterValidation: extra.length === 1 };
 }
 
 export async function validateProductionInstallation(root: string, releaseRoot: string): Promise<{
@@ -79,61 +81,92 @@ export async function changeProductionActivation(
   releaseRoot: string,
   activation: "disabled" | "enabled",
 ): Promise<"disabled" | "enabled"> {
-  await assertSelectedRelease(root, releaseRoot);
+  const selected = await assertSelectedRelease(root, releaseRoot);
   await requireInactive(root);
-  if (activation === "enabled") await validateProductionInstallation(root, releaseRoot);
-  return (await writeActivation(root, activation)).activation;
+  const ownership = await acquireHostOwnership(join(root, "runtime"), selected.release);
+  try {
+    if (activation === "enabled") await validateProductionInstallation(root, releaseRoot);
+    return (await writeActivation(root, activation)).activation;
+  } finally { await ownership.release(); }
 }
 
-export async function runProductionHost(root: string, releaseRoot: string): Promise<void> {
+/** Caller authorization is carried once, explicitly. Validation never grants
+ * activation by itself; start revalidates and acquires the same owner lock. */
+export async function setupProductionInstallation(root: string, releaseRoot: string,
+  options: { activateAfterValidation: boolean }) {
   const validated = await validateProductionInstallation(root, releaseRoot);
+  const activation = options.activateAfterValidation === true
+    ? await changeProductionActivation(root, releaseRoot, "enabled") : validated.activation;
+  return { ...validated, activation, supervisor: supervisorGuidance(root, releaseRoot),
+    start: () => runProductionHost(root, releaseRoot) };
+}
+
+/** Foreground lifecycle. Dependency injection is programmatic only, for offline
+ * verification; installed CLI always constructs the production SDK owner. */
+export async function runProductionHost(root: string, releaseRoot: string,
+  dependencies: ProductionCompositionDependencies = {}): Promise<void> {
   const selected = await assertSelectedRelease(root, releaseRoot);
-  const configuration = await loadProductionHostConfiguration(root);
-  if (validated.activation !== "enabled" || configuration.activation !== "enabled") throw new Error("ACTIVATION_REQUIRED");
   const ownership = await acquireHostOwnership(join(root, "runtime"), selected.release);
   let cardBackend: { close(): Promise<void> } | undefined;
   let local: { close(): Promise<void> } | undefined;
   let composition: Awaited<ReturnType<typeof createProductionComposition>> | undefined;
-  let started = false;
+  let monitor: ReturnType<typeof setInterval> | undefined;
+  let startupCleanupFailure: unknown;
   let signalRequested = false;
   let resolveSignal!: () => void;
   const signal = new Promise<void>(resolveValue => { resolveSignal = resolveValue; });
   const requestStop = () => { signalRequested = true; resolveSignal(); };
-  process.once("SIGINT", requestStop);
-  process.once("SIGTERM", requestStop);
+  process.on("SIGINT", requestStop);
+  process.on("SIGTERM", requestStop);
   const stop = async (): Promise<void> => {
-    const failures: unknown[] = [];
+    const failures: unknown[] = startupCleanupFailure ? [startupCleanupFailure] : [];
     if (cardBackend) try { await cardBackend.close(); } catch (error) { failures.push(error); }
     if (local) try { await local.close(); } catch (error) { failures.push(error); }
-    if (started && composition) try { await composition.runtime.stop(); } catch (error) { failures.push(error); }
-    try { await ownership.release(); } catch (error) { failures.push(error); }
+    if (composition) try { await composition.runtime.stop(); } catch (error) { failures.push(error); }
+    // Failed cleanup retains ownership so a supervisor cannot create a second
+    // owner while a provider or local interface might still be alive.
+    if (!failures.length) try { await ownership.release(); } catch (error) { failures.push(error); }
     if (failures.length) throw new AggregateError(failures, "HOST_SHUTDOWN_FAILED");
   };
   try {
+    const validated = await validateProductionInstallation(root, releaseRoot);
+    const configuration = await loadProductionHostConfiguration(root);
+    if (validated.activation !== "enabled" || configuration.activation !== "enabled") throw new Error("ACTIVATION_REQUIRED");
+    if (signalRequested) return;
     composition = await createProductionComposition(configuration, root, releaseRoot,
-      { report: code => process.stderr.write(`grok-photon-host: ${code}\n`) });
+      { report: code => process.stderr.write(`grok-photon-host: ${code}\n`), ...dependencies });
+    try { await composition.runtime.start(); }
+    catch (error) {
+      // Runtime.start rolls back itself. Its aggregate includes the original
+      // failure followed by cleanup failures; stop() on a failed runtime is inert.
+      if (error instanceof AggregateError && error.message === "HOST_START_FAILED" && error.errors.length > 1)
+        startupCleanupFailure = error;
+      throw error;
+    }
+    if (signalRequested) return;
     cardBackend = await composition.startCardBackend();
-    await composition.runtime.start();
-    started = true;
     if (signalRequested) return;
     local = await composition.startLocalInterface();
+    if (signalRequested) return;
+    if (!composition.runtime.doctor().ready) throw new Error("HOST_LOST_READINESS");
     process.stdout.write(JSON.stringify({ version: 1, status: "ready", release: selected.release,
       taskId: configuration.task.taskId, generation: configuration.task.generation,
       socketPath: configuration.local.socketPath }) + "\n");
     await Promise.race([signal, new Promise<void>((_resolve, reject) => {
-      const monitor = setInterval(() => {
+      monitor = setInterval(() => {
         if (!composition?.runtime.doctor().ready) {
           clearInterval(monitor);
           reject(new Error("HOST_LOST_READINESS"));
         }
       }, 1000);
-      monitor.unref();
-      signal.finally(() => clearInterval(monitor)).catch(() => undefined);
     })]);
   } finally {
-    process.off("SIGINT", requestStop);
-    process.off("SIGTERM", requestStop);
-    await stop();
+    clearInterval(monitor);
+    try { await stop(); }
+    finally {
+      process.off("SIGINT", requestStop);
+      process.off("SIGTERM", requestStop);
+    }
   }
 }
 
@@ -156,7 +189,23 @@ export async function processMain(
       process.stdout.write(JSON.stringify({ version: 1, ...await administerAuthority(resolve(root), releaseRoot, requestFile, credentialFile) }) + "\n");
       return 0;
     }
-    const { command, root } = parse(argv);
+    const { command, root, activateAfterValidation } = parse(argv);
+    if (command === "setup") {
+      const { start: _start, ...result } = await setupProductionInstallation(root, releaseRoot, { activateAfterValidation });
+      process.stdout.write(JSON.stringify({ version: 1, valid: true, ...result }) + "\n");
+      return 0;
+    }
+    if (command === "supervisor") {
+      await assertSelectedRelease(root, releaseRoot);
+      process.stdout.write(JSON.stringify({ version: 1, ...supervisorGuidance(root, releaseRoot) }) + "\n");
+      return 0;
+    }
+    if (command === "reconcile" || command === "recover-stale") {
+      await assertSelectedRelease(root, releaseRoot);
+      const result = await reconcileHostOwnership(join(root, "runtime"), { recoverStale: command === "recover-stale" });
+      process.stdout.write(JSON.stringify({ version: 1, ...result }) + "\n");
+      return 0;
+    }
     if (command === "validate") {
       process.stdout.write(JSON.stringify({ version: 1, valid: true, ...await validateProductionInstallation(root, releaseRoot) }) + "\n");
       return 0;
