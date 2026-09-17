@@ -20,7 +20,7 @@ RFX-02 retry state is not present at this base. Lifecycle must preserve the whol
 
 ## Evidence
 
-Implementation and lane-local validation complete. The exact implementation commit is recorded below after the implementation commit; cross-lane integration gates remain explicitly open.
+Implementation and lane-local validation complete; cross-lane integration gates remain explicitly open.
 
 ## Implemented lifecycle
 
@@ -74,3 +74,7 @@ Tested source SHA-256 (before committing):
 - `packages/photon-features/src/host/supervisor.ts`: `e1ab289be5d7f4e542d04523c4102b3429b13de31b81c2dda6e669acdaaa5aa9`
 - `packages/photon-features/scripts/smoke-test.mjs`: `2e85e420f16e9344702f54d2b3ca4c3ee13fb63dc3d84de72963d5538deec0a3`
 - `packages/photon-features/tests/integration/rfx-lifecycle.test.ts`: `9aec1dd42e1dbc3a0d9e0e158cfb69116b0f6969cde28f9b999cc33fa1b2099a`
+
+## Exact commit handoff
+
+Implementation commit: `0f9e4db417c0011c308a5ba53f14860c9dc8f4ab`. The final regression rerun tested the identical source hashes above: **867 passed, 0 failed, 0 skipped**; final focused lifecycle rerun: **11 passed**. This follow-up documentation commit records the implementation SHA without claiming a self-referential commit hash. No push was performed.
