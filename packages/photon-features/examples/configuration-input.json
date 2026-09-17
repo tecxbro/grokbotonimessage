@@ -1,60 +1,66 @@
 {
-  "version": 1,
-  "profile": "minimal-text",
-  "enable": [
-    "text.send"
-  ],
-  "configuration": {
-    "version": 2,
-    "activation": "disabled",
-    "provider": {
-      "kind": "spectrum-cloud-imessage",
-      "projectId": "replace-project",
-      "projectSecretFile": "/absolute/private-root/runtime/project-secret",
-      "accountId": "replace-account",
-      "lineId": "replace-line",
-      "phone": "+15555550101",
-      "conversationId": "replace-native-conversation",
-      "dedicated": true,
-      "availableOperations": [
-        "text.send"
-      ]
+  "version": 2,
+  "discovery": {
+    "version": 1,
+    "kind": "setup-discovery",
+    "status": "discovered",
+    "installationRoot": "/workspace/grok-photon",
+    "photon": {
+      "executable": "/workspace/photon-tools/bin/photon",
+      "version": "1.0.0",
+      "source": "private",
+      "identity": {
+        "id": "example-owner"
+      },
+      "authStatus": "verified"
     },
-    "local": {
-      "socketPath": "/absolute/private-root/runtime/runtime.sock",
-      "credentialFile": "/absolute/private-root/runtime/local-token",
-      "principalId": "replace-principal",
-      "credentialId": "replace-credential"
+    "project": {
+      "id": "example-project",
+      "name": "Example"
     },
-    "task": {
-      "contextId": "replace-context",
-      "taskId": "replace-task",
-      "generation": 1,
-      "permissions": [
-        "text.send"
+    "projectCandidates": [
+      {
+        "id": "example-project",
+        "name": "Example"
+      }
+    ],
+    "spectrum": {
+      "mode": "shared",
+      "user": {
+        "id": "example-user",
+        "phoneNumber": "+15555550102",
+        "assignedPhoneNumber": "+15555550101"
+      },
+      "userCandidates": [
+        {
+          "id": "example-user",
+          "phoneNumber": "+15555550102",
+          "assignedPhoneNumber": "+15555550101"
+        }
       ],
-      "issuedAt": 1789257600000,
-      "expiresAt": 1789261200000,
-      "grokAgentId": "replace-existing-agent"
+      "servingE164": "+15555550101",
+      "dedicatedLineId": null,
+      "lineCandidates": []
+    },
+    "secretFile": {
+      "path": "/workspace/grok-photon/runtime/setup/discovery-example/project-secret.json",
+      "mode": "0600",
+      "format": "photon-project-secret-v1"
     },
     "grok": {
-      "executable": "/absolute/existing/gbot",
-      "timeoutMs": 15000
+      "executable": "/workspace/bin/gbot",
+      "version": "1.0.0",
+      "agentId": "example-live-agent",
+      "candidates": [
+        {
+          "id": "example-live-agent"
+        }
+      ],
+      "evidence": "live-gateway-roster",
+      "unresolved": []
     },
-    "authorization": {
-      "administrativeOperations": [],
-      "allowedRecipients": [],
-      "allowNativeContent": false
-    },
-    "cards": [],
-    "textStreaming": {
-      "delivery": "progressive"
-    },
-    "runtime": {
-      "statePath": "/absolute/private-root/runtime/state.sqlite",
-      "captureDirectory": "/absolute/private-root/runtime/captures",
-      "stagingDirectory": "/absolute/private-root/runtime/staging",
-      "importDirectory": "/absolute/private-root/runtime/imports"
-    }
-  }
+    "unresolved": [],
+    "nextDecision": null
+  },
+  "activateAfterValidation": false
 }

@@ -45,7 +45,7 @@ const cardTemplate = z.strictObject({
     context.addIssue({ code: "custom", message: "customized template extension required" });
 });
 
-export const productionHostConfigurationSchema = z.strictObject({
+const hostConfigurationShape = z.strictObject({
   version: z.literal(2),
   activation: z.enum(["disabled", "enabled"]),
   provider: z.strictObject({
@@ -93,7 +93,12 @@ export const productionHostConfigurationSchema = z.strictObject({
     stagingDirectory: absolutePath,
     importDirectory: absolutePath.optional(),
   }),
-}).superRefine((value, context) => {
+});
+
+type ConfigurationChecks = Pick<z.infer<typeof hostConfigurationShape>, "task" | "cards" | "cardBackend" | "authorization"> & {
+  provider: { availableOperations: typeof operations[number][] };
+};
+function validateConfiguration(value: ConfigurationChecks, context: z.RefinementCtx) {
   if (value.task.expiresAt <= value.task.issuedAt)
     context.addIssue({ code: "custom", path: ["task", "expiresAt"], message: "context expiry must follow issue time" });
   for (const template of value.cards) {
@@ -103,15 +108,80 @@ export const productionHostConfigurationSchema = z.strictObject({
       template.interactions.participantIds.some(id => !value.cardBackend!.participants.some(p => p.id === id))))
       context.addIssue({ code: "custom", path: ["cards", template.id, "interactions"], message: "matching backend and verified participant key enrollment required" });
   }
-  if (value.ownerAdministration?.credentialFile === value.local.credentialFile)
-    context.addIssue({ code: "custom", path: ["ownerAdministration", "credentialFile"], message: "a separate owner credential file is required" });
   const permissions = new Set(value.task.permissions);
   for (const item of value.provider.availableOperations)
     if (!permissions.has(item)) context.addIssue({ code: "custom", path: ["provider", "availableOperations"], message: "available operation requires task permission" });
   for (const item of value.authorization.administrativeOperations)
     if (!permissions.has(item) || !administrativeOperations.includes(item))
       context.addIssue({ code: "custom", path: ["authorization", "administrativeOperations"], message: "a recognized administrative operation and its task permission are required" });
+}
+
+/** Original v2 parser stays available for historical consumers and artifacts. */
+export const productionHostConfigurationSchema = hostConfigurationShape.superRefine((value, context) => {
+  validateConfiguration(value, context);
+  if (value.ownerAdministration?.credentialFile === value.local.credentialFile)
+    context.addIssue({ code: "custom", path: ["ownerAdministration", "credentialFile"], message: "a separate owner credential file is required" });
 });
+
+/** v3 describes installation-owner intent; permission grants do not imply provider capability. */
+export const normalizedHostConfigurationSchema = hostConfigurationShape.extend({
+  version: z.literal(3),
+  ownerModel: z.enum(["installation-owner", "legacy-task"]),
+  activateAfterValidation: z.boolean(),
+  provider: hostConfigurationShape.shape.provider.extend({
+    phone: e164.optional(),
+    conversationId: hostConfigurationShape.shape.provider.shape.conversationId.optional(),
+    initialAddress: recipient.optional(),
+    projectSecretFormat: z.enum(["raw", "photon-project-secret-v1"]).default("raw"),
+  }),
+}).superRefine((value, context) => {
+  validateConfiguration(value, context);
+  for (const template of value.cards)
+    if (value.ownerModel === "installation-owner" && template.live && !template.extension)
+      context.addIssue({ code: "custom", path: ["cards", template.id, "live"], message: "live template extension required" });
+  if (!value.provider.conversationId && !value.provider.initialAddress)
+    context.addIssue({ code: "custom", path: ["provider"], message: "initial conversation or user address required" });
+  if (value.provider.dedicated && !value.provider.phone)
+    context.addIssue({ code: "custom", path: ["provider", "phone"], message: "dedicated serving phone required" });
+  if (value.ownerAdministration?.credentialFile === value.local.credentialFile &&
+      (value.ownerModel !== "installation-owner" || value.ownerAdministration.principalId !== value.local.principalId))
+    context.addIssue({ code: "custom", path: ["ownerAdministration"], message: "shared credential must identify the installation owner" });
+});
+export type NormalizedHostConfiguration = z.infer<typeof normalizedHostConfigurationSchema>;
+
+/** Pure migration: never changes tokens, grants, identities, expiry, activation or durable state. */
+export function normalizeProductionHostConfiguration(input: unknown): NormalizedHostConfiguration {
+  if (typeof input === "object" && input !== null && "version" in input && input.version === 3)
+    return normalizedHostConfigurationSchema.parse(input);
+  const legacy = productionHostConfigurationSchema.parse(input);
+  return normalizedHostConfigurationSchema.parse({ ...legacy, version: 3,
+    ownerModel: "legacy-task", activateAfterValidation: false });
+}
+
+/** Read a private discovery descriptor without copying its secret into configuration or logs. */
+export async function readConfiguredProjectSecret(config: ProductionHostConfiguration | NormalizedHostConfiguration): Promise<string> {
+  const value = (await readPrivateFile(config.provider.projectSecretFile, 16 * 1024)).trim();
+  let secret = value;
+  if ("projectSecretFormat" in config.provider && config.provider.projectSecretFormat === "photon-project-secret-v1") {
+    let descriptor: unknown;
+    try { descriptor = JSON.parse(value); } catch { throw new Error("INVALID_PROJECT_SECRET_DESCRIPTOR"); }
+    const result = z.strictObject({ version: z.literal(1), projectId: idSchema, projectSecret: z.string().min(1).max(8192) }).safeParse(descriptor);
+    if (!result.success || result.data.projectId !== config.provider.projectId) throw new Error("PROJECT_SECRET_IDENTITY_MISMATCH");
+    secret = result.data.projectSecret.trim();
+  }
+  if (!secret || secret.length > 8192) throw new Error("INVALID_PROJECT_SECRET");
+  return secret;
+}
+
+/** New installs authenticate administration with the same private installation-owner token.
+ * Existing explicit owner credentials retain their previous authority boundary. */
+export function installationOwnerCredential(input: ProductionHostConfiguration | NormalizedHostConfiguration) {
+  const config = normalizeProductionHostConfiguration(input);
+  if (config.ownerAdministration) return config.ownerAdministration;
+  if (config.ownerModel === "installation-owner")
+    return { principalId: config.local.principalId, credentialFile: config.local.credentialFile };
+  throw new Error("OWNER_ADMINISTRATION_NOT_CONFIGURED");
+}
 
 export type ProductionHostConfiguration = z.infer<typeof productionHostConfigurationSchema>;
 
@@ -149,13 +219,35 @@ export async function loadProductionHostConfiguration(root: string): Promise<Pro
   const runtime = join(root, "runtime");
   await assertPrivateDirectory(runtime);
   const config = productionHostConfigurationSchema.parse(JSON.parse(await readPrivateFile(join(runtime, "configuration.json"), 128 * 1024)));
+  assertRuntimePaths(config, root);
+  return config;
+}
+
+function assertRuntimePaths(config: ProductionHostConfiguration | NormalizedHostConfiguration, root: string): void {
+  const runtime = join(root, "runtime");
   for (const path of [...(config.ownerAdministration ? [config.ownerAdministration.credentialFile] : []), config.provider.projectSecretFile, config.local.socketPath, config.local.credentialFile,
     config.runtime.statePath, config.runtime.captureDirectory, config.runtime.stagingDirectory,
     config.runtime.importDirectory ?? join(runtime, "imports")])
     if (!beneath(runtime, resolve(path))) throw new Error("RUNTIME_PATH_OUTSIDE_INSTALLATION");
   if (config.local.socketPath !== join(runtime, "runtime.sock") || config.runtime.statePath !== join(runtime, "state.sqlite"))
     throw new Error("CANONICAL_RUNTIME_PATH_REQUIRED");
+}
+
+/** Read either persisted version for the integrated v3 production/lifecycle path. */
+export async function loadCompatibleHostConfiguration(root: string): Promise<ProductionHostConfiguration | NormalizedHostConfiguration> {
+  if (!isAbsolute(root)) throw new Error("ABSOLUTE_INSTALL_ROOT_REQUIRED");
+  root = resolve(root);
+  await assertPrivateDirectory(root);
+  await assertPrivateDirectory(join(root, "runtime"));
+  const raw = JSON.parse(await readPrivateFile(join(root, "runtime", "configuration.json"), 128 * 1024));
+  const config = raw.version === 2 ? productionHostConfigurationSchema.parse(raw) : normalizeProductionHostConfiguration(raw);
+  assertRuntimePaths(config, root);
   return config;
+}
+
+/** Deterministic read-only v2/v3 normalization for production integration. */
+export async function loadNormalizedHostConfiguration(root: string): Promise<NormalizedHostConfiguration> {
+  return normalizeProductionHostConfiguration(await loadCompatibleHostConfiguration(root));
 }
 
 /** Change only the activation bit; callers separately coordinate host/install ownership. */

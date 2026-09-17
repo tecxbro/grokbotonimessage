@@ -5,7 +5,7 @@ import { z } from "zod";
 import { idSchema, contextSchema, sameScope } from "../contracts/index.js";
 import { DurableSQLiteStore } from "../adapters/state/sqlite.js";
 import { configuredAuthority } from "./authority.js";
-import { loadProductionHostConfiguration, productionHostConfigurationSchema, readPrivateFile } from "./configuration.js";
+import { loadCompatibleHostConfiguration, normalizeProductionHostConfiguration, installationOwnerCredential, readPrivateFile } from "./configuration.js";
 import { acquireHostOwnership } from "./owner-lock.js";
 import { assertSelectedRelease } from "./selected-release.js";
 import { canonical } from "../runtime/core/idempotency.js";
@@ -63,21 +63,24 @@ export function transitionAuthority(store: DurableSQLiteStore, request: Transiti
   });
 }
 
-async function authenticateOwner(config: import("./configuration.js").ProductionHostConfiguration, credentialFile: string) {
-  if (!config.ownerAdministration || config.ownerAdministration.credentialFile === config.local.credentialFile)
-    throw new Error("OWNER_ADMINISTRATION_NOT_CONFIGURED");
+/** Authenticate an explicitly invoked stopped-host owner command; never expose it on the socket. */
+export async function authenticateOwner(config: import("./configuration.js").ProductionHostConfiguration | import("./configuration.js").NormalizedHostConfiguration, credentialFile: string) {
+  const owner = installationOwnerCredential(config);
   const token = (await readPrivateFile(credentialFile, 128)).trim();
-  const expected = (await readPrivateFile(config.ownerAdministration.credentialFile, 128)).trim();
-  const taskToken = (await readPrivateFile(config.local.credentialFile, 128)).trim();
-  if (!/^[a-f0-9]{64}$/i.test(token) || token.length !== expected.length || expected === taskToken ||
+  const expected = (await readPrivateFile(owner.credentialFile, 128)).trim();
+  if (!/^[a-f0-9]{64}$/i.test(token) || token.length !== expected.length ||
     !timingSafeEqual(Buffer.from(token), Buffer.from(expected))) throw new Error("OWNER_AUTHENTICATION_REQUIRED");
-  return config.ownerAdministration.principalId;
+  // A historical independent admin credential must still differ from the task token.
+  if (owner.credentialFile !== config.local.credentialFile &&
+      expected === (await readPrivateFile(config.local.credentialFile, 128)).trim())
+    throw new Error("OWNER_AUTHENTICATION_REQUIRED");
+  return owner.principalId;
 }
 
-/** Explicit owner readout; ordinary task credentials cannot inspect or renew authority. */
+/** Explicit owner readout; legacy task credentials retain their restricted role. */
 export async function inspectAuthority(root: string, releaseRoot: string, credentialFile: string) {
   const selected = await assertSelectedRelease(root, releaseRoot);
-  const config = await loadProductionHostConfiguration(root);
+  const config = await loadCompatibleHostConfiguration(root);
   await authenticateOwner(config, credentialFile);
   const ownership = await acquireHostOwnership(join(root, "runtime"), selected.release);
   let store: DurableSQLiteStore | undefined;
@@ -92,19 +95,23 @@ export async function inspectAuthority(root: string, releaseRoot: string, creden
   } finally { store?.close(); await ownership.release(); }
 }
 
-/** Stopped-host owner procedure. The ordinary local token cannot invoke it.
+/** Stopped-host owner procedure, authenticated by the installation owner.
  * A crash between DB commit and config replacement is repaired by replaying the
  * exact administration request; startup never reseeds or broadens authority. */
 export async function administerAuthority(root: string, releaseRoot: string, requestFile: string, credentialFile: string) {
   const selected = await assertSelectedRelease(root, releaseRoot);
-  const config = await loadProductionHostConfiguration(root);
-  await authenticateOwner(config, credentialFile);
+  const config = await loadCompatibleHostConfiguration(root);
+  const ownerId = await authenticateOwner(config, credentialFile);
   const request = authorityTransitionSchema.parse(JSON.parse(await readPrivateFile(requestFile, 32768)));
   const ownership = await acquireHostOwnership(join(root, "runtime"), selected.release);
   let store: DurableSQLiteStore | undefined;
   try {
+    // RFX-00 must replace the legacy configuredAuthority adapter with RFX-01's
+    // shared route model. Never invent a serving E.164 for authority transitions.
+    if (!config.provider.phone || !config.provider.conversationId) throw new Error("SHARED_AUTHORITY_ROUTE_INTEGRATION_REQUIRED");
     store = new DurableSQLiteStore(config.runtime.statePath);
-    const configured = configuredAuthority(config).context;
+    const configured = configuredAuthority({ ...config, version: 2,
+      provider: { ...config.provider, phone: config.provider.phone, conversationId: config.provider.conversationId } }).context;
     if (canonical(configured) !== canonical({ ...request.expectedContext, revokedAt: configured.revokedAt }) && canonical(configured) !== canonical(request.nextContext))
       throw new Error("AUTHORITY_CONFIGURATION_MISMATCH");
     const next = request.nextContext;
@@ -116,8 +123,8 @@ export async function administerAuthority(root: string, releaseRoot: string, req
     updated.provider = { ...config.provider, availableOperations: config.provider.availableOperations.filter(op => next.permissions.includes(op)) };
     updated.authorization = { ...config.authorization,
       administrativeOperations: config.authorization.administrativeOperations.filter(op => next.permissions.includes(op)) };
-    productionHostConfigurationSchema.parse(updated);
-    transitionAuthority(store, request, config.ownerAdministration!.principalId, Date.now());
+    normalizeProductionHostConfiguration(updated);
+    transitionAuthority(store, request, ownerId, Date.now());
     const path = join(root, "runtime", "configuration.json"), temporary = join(root, "runtime", `.authority-${randomUUID()}`);
     const file = await open(temporary, "wx", 0o600);
     try { await file.writeFile(JSON.stringify(updated) + "\n"); await file.sync(); } finally { await file.close(); }

@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "legacy": true,
   "profile": "messaging",
   "allowedOperations": [
     "typing.begin",
@@ -40,5 +41,5 @@
     "poll.unvote",
     "poll.addOption"
   ],
-  "note": "This is a selection profile, not an executable host configuration. Supply real owner inputs and explicit enable; generation always disables activation."
+  "note": "Legacy v1 compatibility example only. Normal setup consumes discovery with version 2 input and full-owner grants; generation does not activate."
 }
