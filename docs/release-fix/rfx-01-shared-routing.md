@@ -8,7 +8,7 @@ Status: lane implementation verified by focused offline tests; package integrati
 - Registered worktree: `/Users/darshan/Documents/ChatGPT/grokbotonimessage/worktrees/rfx-01-shared-routing`
 - Branch: `codex/rfx-01-shared-routing`
 - Exact starting/tested base: `b83e3afd7049a991de6daffedf831165890f0901`
-- Implementation commit: pending local commit; a documentation-only follow-up will record its exact SHA.
+- Implementation commit: `ef607dd457515d9ea367d4c7bfa70935a9ae28ab`. The subsequent documentation-only commit records this SHA; source and tests remain unchanged.
 - Preflight: clean staged/unstaged/untracked state; HEAD, primary main, origin/main and live remote main matched the base; no remote lane branch/upstream existed. Rechecked before commit; no pending deletions.
 - The user's release-fix assignment overrides historical foundation-wave lane locations and documentation ownership in AGENTS.md. No foundation-tree, primary-checkout, package or lock changes.
 
