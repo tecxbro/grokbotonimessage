@@ -136,6 +136,8 @@ Evidence log SHA-256 values:
 
 ## Commits and operating boundary
 
-Implementation commit: pending. Record the immutable implementation SHA in a
-subsequent documentation commit to avoid a self-referential commit hash.
+Implementation commit: `1476e17f51a657f9941860c19a6ae5a27d232a7d`.
+This subsequent documentation-only commit records that immutable implementation
+SHA. Final branch identity/ownership checks confirmed only the three assigned
+paths changed from the base, no file deletions, and no remote lane branch.
 No push, deployment, Photon activation, live messaging, or Grok VM/Mac operation.
