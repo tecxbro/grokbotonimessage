@@ -6,6 +6,7 @@ import { resolveContents, type Content, type ContentInput, type Message, type Sp
 import { privateTestRoot } from "../helpers/private-temp.js";
 import { createProductionComposition } from "../../src/host/production.js";
 import type { NormalizedHostConfiguration } from "../../src/host/configuration.js";
+import { FileCaptureStore } from "../../src/adapters/transport/capture.js";
 import { DurableSQLiteStore } from "../../src/adapters/state/sqlite.js";
 import type { OwnedSdk } from "../../src/adapters/transport/spectrum-owner.js";
 import type { IncomingEvent, LocalRequest, OperationResult } from "../../src/contracts/index.js";
@@ -22,7 +23,9 @@ async function eventually(check: () => boolean, label: string) {
 
 // External SDK stream/send and gateway calls are controlled boundaries. All
 // normalization, SQLite, batching, wake, work claim and execution are production.
-for (const servingPhone of ["+15555550101", undefined]) test(`Core Usability Gate: shared inbound to same-conversation reply (serving metadata ${servingPhone ? "present" : "absent"})`, async t => {
+for (const [servingPhone, secondary] of [["+15555550101", false], [undefined, false], [undefined, true]] as const)
+  test(secondary ? "RFX-03 production: create secondary DM, restart, receive, claim and reply through its durable grant" :
+    `Core Usability Gate: shared inbound to same-conversation reply (serving metadata ${servingPhone ? "present" : "absent"})`, async t => {
   const root = await privateTestRoot(t, "rfx-core-");
   const runtime = join(root, "runtime");
   await mkdir(runtime, { mode: 0o700 });
@@ -35,22 +38,24 @@ for (const servingPhone of ["+15555550101", undefined]) test(`Core Usability Gat
     provider: { kind: "spectrum-cloud-imessage", projectId: "project-1", projectSecretFile,
       projectSecretFormat: "photon-project-secret-v1", accountId: "account-1", lineId: "shared-line-1",
       ...(servingPhone ? { phone: servingPhone } : {}), conversationId: "authenticated-native-conversation", dedicated: false,
-      availableOperations: ["text.send"] },
+      availableOperations: secondary ? ["text.send", "space.create", "space.get", "typing.begin", "typing.end"] : ["text.send"] },
     local: { socketPath: join(runtime, "runtime.sock"), credentialFile, principalId: "owner-1", credentialId: "credential-1" },
-    task: { contextId: "context-1", taskId: "task-1", generation: 1, permissions: ["text.send"],
+    task: { contextId: "context-1", taskId: "task-1", generation: 1, permissions: secondary ? ["text.send", "space.create", "space.get", "typing.begin", "typing.end"] : ["text.send"],
       issuedAt: now - 1000, expiresAt: now + 120000, grokAgentId: "grok-1" },
     grok: { executable: "/fixture/gbot", timeoutMs: 1000 },
-    authorization: { administrativeOperations: [], allowedRecipients: [], allowNativeContent: false }, cards: [],
+    authorization: { administrativeOperations: secondary ? ["space.create"] : [], allowedRecipients: secondary ? ["+15555550777"] : [], allowNativeContent: false }, cards: [],
     runtime: { statePath: join(runtime, "state.sqlite"), captureDirectory: join(runtime, "captures"), stagingDirectory: join(runtime, "staging") },
   };
   const sent: Content[] = [], lookups: Array<{ id: string; route: unknown }> = [], wakes: string[][] = [];
   const queue: Array<[Space, Message]> = [];
+  let typingStarts = 0;
   let notify: (() => void) | undefined, closed = false, constructions = 0, listeners = 0;
-  const space = { id: configuration.provider.conversationId!, __platform: "imessage", platform: "imessage", phone: "shared", type: "dm",
+  const space = { id: secondary ? "created-secondary-dm" : configuration.provider.conversationId!, __platform: "imessage", platform: "imessage", phone: "shared", type: "dm",
     send: async (input: ContentInput) => {
       const content = (await resolveContents([input]))[0]!; sent.push(content);
       return { id: "outbound-1", platform: "imessage", space, content, direction: "outbound", timestamp: new Date(now) } as unknown as Message;
     }, getMessage: async () => undefined,
+    startTyping: async () => { typingStarts++; }, stopTyping: async () => undefined,
   } as unknown as Space;
   const sdk: OwnedSdk = {
     messages: () => ({ async *[Symbol.asyncIterator]() {
@@ -61,15 +66,26 @@ for (const servingPhone of ["+15555550101", undefined]) test(`Core Usability Gat
       }
     } }),
     space: async (id, route) => { lookups.push({ id, route }); assert.equal(id, space.id); assert.equal(route, undefined); return space; },
-    provider: () => ({ space: {}, getMembers: async () => [], getAttachment: async () => undefined }) as never,
+    provider: () => ({ space: {
+      create: async (recipient: string, route: { phone: string }) => {
+        assert.equal(recipient, "+15555550777"); assert.deepEqual(route, { phone: "shared" }); return space;
+      },
+      get: async (id: string, route: { phone: string }) => {
+        assert.equal(id, space.id); assert.deepEqual(route, { phone: "shared" }); return space;
+      },
+    }, getMembers: async () => [], getAttachment: async () => undefined }) as never,
     stop: async () => { closed = true; notify?.(); },
   };
-  const composition = await createProductionComposition(configuration, root, root, {
-    now: () => now, sdkFactory: async () => { constructions++; return sdk; },
+  const diagnostics: string[] = [];
+  const compose = () => createProductionComposition(configuration, root, root, {
+    report: code => diagnostics.push(code),
+    now: () => now, sdkFactory: async () => { constructions++; closed = false; return sdk; },
     grokCommandStyle: "gateway-flag", grokRunner: async (_executable, args) => { wakes.push([...args]); return "accepted"; },
   });
+  let composition = await compose();
+  let conversationScope = composition.scope;
   const observer = new DurableSQLiteStore(configuration.runtime.statePath, () => now);
-  const rows = () => observer.transaction(tx => tx.list("handoffs", composition.scope, 100));
+  const rows = () => observer.transaction(tx => tx.list("handoffs", conversationScope, 100));
   const request = async <T>(value: LocalRequest): Promise<T> => {
     const response = validateResponse(await composition.executor.dispatch(value, composition.principal), value);
     assert.equal(response.ok, true, JSON.stringify(response));
@@ -77,10 +93,45 @@ for (const servingPhone of ["+15555550101", undefined]) test(`Core Usability Gat
   };
   try {
     await composition.runtime.start();
+    if (secondary) {
+      const created = await request<OperationResult>({ version: 1, method: "submit", action: { version: 1,
+        contextId: "context-1", idempotencyKey: "create-dm", operation: "space.create", arguments: { members: ["+15555550777"] } } });
+      await eventually(() => {
+        const row = observer.transaction(tx => tx.get("outbox", created.requestId));
+        return !!row && !["queued", "running"].includes(row.result.status);
+      }, "secondary creation completes");
+      const result = observer.transaction(tx => tx.get("outbox", created.requestId))!.result;
+      assert.equal(result.status, "executor-completed", JSON.stringify(result));
+      const ref = result.references.find(ref => ref.kind === "space")!;
+      assert.ok(ref); assert.notDeepEqual(ref.scope, composition.scope);
+      conversationScope = ref.scope;
+      await composition.runtime.stop();
+      composition = await compose();
+      await composition.runtime.start();
+      const foreign = { ...ref, id: "guessed-chat", scope: { ...ref.scope, spaceId: "guessed-chat" } };
+      const denied = await composition.executor.dispatch({ version: 1, method: "submit", action: { version: 1,
+        contextId: "context-1", idempotencyKey: "foreign", operation: "text.send", arguments: { space: foreign as never, text: "denied" } } }, composition.principal);
+      assert.equal(denied.ok, false); assert.equal(sent.length, 0);
+      const unknownSpace = { ...space, id: "unknown-native-dm" } as Space;
+      queue.push([unknownSpace, { id: "unknown-event", platform: "imessage", space: unknownSpace,
+        direction: "inbound", timestamp: new Date(now), sender: { id: "+15555550888" },
+        content: { type: "text", text: "Unauthorized inbound" } } as unknown as Message]); notify?.();
+      await eventually(() => diagnostics.includes("UNRESOLVED_ROUTE"), "unknown inbound remains unresolved");
+      const captures = new FileCaptureStore(configuration.runtime.captureDirectory);
+      assert.ok([...captures.ids()].some(id => JSON.stringify(captures.read(id)).includes("unknown-native-dm")));
+      assert.equal(observer.scan("inbox", "").length, 0);
+      assert.equal(observer.scan("handoffs", "").length, 0);
+      assert.equal(wakes.length, 0);
+      const typing = await request<OperationResult>({ version: 1, method: "submit", action: { version: 1,
+        contextId: "context-1", idempotencyKey: "secondary-typing", operation: "typing.begin", arguments: { space: ref as never, ttlMs: 10000 } } });
+      await eventually(() => observer.transaction(tx => tx.get("outbox", typing.requestId))?.result.status === "executor-completed",
+        "secondary typing admitted and scheduled");
+      await eventually(() => typingStarts === 1, "typing resolves secondary route");
+    }
     const original = { id: "inbound-1", platform: "imessage", space, direction: "inbound", timestamp: new Date(now),
       sender: { id: "+15555550999" }, content: { type: "text", text: "Please reply here." } } as unknown as Message;
     queue.push([space, original]); notify?.();
-    await eventually(() => observer.transaction(tx => tx.list("inbox", composition.scope, 100)).length === 1, "durable inbox capture");
+    await eventually(() => observer.transaction(tx => tx.list("inbox", conversationScope, 100)).length === 1, "durable inbox capture");
     // Text batching is real; advance its clock without changing its policy.
     now += 2000;
     await eventually(() => wakes.length === 1 && rows()[0]?.wake?.lastStatus === "accepted", "one accepted wake");
@@ -100,7 +151,7 @@ for (const servingPhone of ["+15555550101", undefined]) test(`Core Usability Gat
     assert.equal(event.type, "message");
     if (event.type !== "message") throw new Error("expected original message event");
     assert.deepEqual(event.content, { type: "text", text: "Please reply here." });
-    assert.deepEqual(event.scope, composition.scope);
+    assert.deepEqual(event.scope, conversationScope);
     assert.deepEqual(claimed.handoff.eventIds, [event.eventId]);
     const action = { version: 1 as const, contextId: "context-1", idempotencyKey: "reply-1", operation: "text.send" as const,
       arguments: { space: { version: 1 as const, kind: "space" as const, id: event.scope.spaceId, scope: event.scope }, text: "Reply from the same host." } };
@@ -115,6 +166,7 @@ for (const servingPhone of ["+15555550101", undefined]) test(`Core Usability Gat
     const completed = observer.transaction(tx => tx.get("outbox", admitted.requestId))!.result;
     assert.equal(completed.status, "provider-accepted", JSON.stringify(completed));
     assert.equal(sent.length, 1, "same-host outbound text dispatch");
+    assert.ok(completed.references.every(ref => JSON.stringify(ref.scope) === JSON.stringify(conversationScope)));
     const replay = await request<OperationResult>({ version: 1, method: "submit", action });
     assert.equal(replay.requestId, admitted.requestId);
     assert.equal(sent.length, 1);
@@ -122,8 +174,8 @@ for (const servingPhone of ["+15555550101", undefined]) test(`Core Usability Gat
     assert.deepEqual(sent[0], { type: "text", text: "Reply from the same host." });
     const ack = await request<{ handoff: HandoffRecord }>({ version: 1, method: "work.ack", contextId: "context-1", handoffId: claimed.handoff.id, fence: claimed.handoff.claim!.fence });
     assert.equal(ack.handoff.state, "acknowledged");
-    assert.equal(observer.transaction(tx => tx.list("inbox", composition.scope, 100)).length, 1);
+    assert.equal(observer.transaction(tx => tx.list("inbox", conversationScope, 100)).length, 1);
     assert.equal(rows().length, 1);
-    assert.deepEqual({ constructions, listeners, wakes: wakes.length }, { constructions: 1, listeners: 1, wakes: 1 });
+    assert.deepEqual({ constructions, listeners, wakes: wakes.length }, { constructions: secondary ? 2 : 1, listeners: secondary ? 2 : 1, wakes: 1 });
   } finally { await composition.runtime.stop(); observer.close(); }
 });

@@ -1,6 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 import { resourceRefSchema, sameScope, type ResourceRef, type TrustedContext } from "../contracts/index.js";
 import type { Transaction } from "../state/ports.js";
+import { authorizedConversation } from "../runtime/core/conversation-routes.js";
 import { fault } from "../runtime/core/errors.js";
 
 export interface IncomingResourceBinding {
@@ -24,17 +25,17 @@ export function registerIncomingReferences(tx: Transaction, context: TrustedCont
   if (bindings.length > 256) fault("INVALID_REQUEST");
   const authorized = (ref: ResourceRef) => {
     const row = tx.get("references", ref.id);
-    return row && isDeepStrictEqual(row.reference, ref) && sameScope(row.scope, context.scope) &&
+    return row && isDeepStrictEqual(row.reference, ref) && sameScope(row.scope, ref.scope) &&
       row.ownedByPrincipalId === context.principalId && row.taskId === context.taskId && row.generation === context.generation;
   };
-  const space: ResourceRef = { version: 1, kind: "space", id: context.scope.spaceId, scope: context.scope };
-  if (!authorized(space)) fault("RESOURCE_NOT_FOUND");
+
   // Parents are persisted before attachments regardless of input order. Any collision rolls back the transaction.
   for (const binding of [...bindings].sort((a, b) => Number(a.reference.kind === "attachment") - Number(b.reference.kind === "attachment"))) {
     const reference = resourceRefSchema.parse(binding.reference);
     if ((reference.kind !== "message" && reference.kind !== "attachment") ||
         typeof binding.providerId !== "string" || binding.providerId.length < 1 || binding.providerId.length > 1000 ||
-        !sameScope(reference.scope, context.scope)) fault("INVALID_REQUEST");
+        !authorizedConversation(tx, context, reference.scope)) fault("INVALID_REQUEST");
+    if (!authorized({ version: 1, kind: "space", id: reference.scope.spaceId, scope: reference.scope })) fault("RESOURCE_NOT_FOUND");
     if (reference.kind === "attachment" && !authorized({ version: 1, kind: "message", id: reference.messageId, scope: reference.scope }))
       fault("RESOURCE_NOT_FOUND");
     const prior = tx.get("references", reference.id);
@@ -42,7 +43,7 @@ export function registerIncomingReferences(tx: Transaction, context: TrustedCont
       if (!authorized(reference) || prior.providerId !== binding.providerId) fault("IDEMPOTENCY_CONFLICT");
       continue;
     }
-    tx.put("references", { id: reference.id, reference, scope: context.scope, revision: 0,
+    tx.put("references", { id: reference.id, reference, scope: reference.scope, revision: 0,
       providerId: binding.providerId, ownedByPrincipalId: context.principalId,
       taskId: context.taskId, generation: context.generation }, null);
   }

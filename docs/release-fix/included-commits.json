@@ -69,6 +69,13 @@
       "reviewedCommit": "c9ff0d46e379554d8c8e671451674f8c2fe27a71",
       "laneNote": "docs/release-fix/rfx-11-lifecycle.md",
       "reason": "Characterize authority expiry/renewal limits without unsafe automatic reseeding."
+    },
+    {
+      "lane": "RFX-03",
+      "branch": "codex/rfx-03-multi-conversation",
+      "reviewedCommit": "3f223bad52f8e17a22ec4a21c3df348f76bc18dd",
+      "implementationCommit": "903041c0d468d74b72a23a364320b4020d8f2b86",
+      "laneNote": "docs/release-fix/rfx-03-multi-conversation.md"
     }
   ],
   "pendingLanes": [
@@ -136,9 +143,9 @@
         "packages/photon-features/tests/lanes/wt-07/unit.test.ts"
       ],
       "laneNote": "docs/release-fix/rfx-03-multi-conversation.md",
-      "integrationStatus": "not-merged",
+      "integrationStatus": "merged",
       "reviewStatus": "User-confirmed already-reviewed immutable lane; handoff and identity audited by RFX-00",
-      "testEvidence": "lane-reported only; see immutable lane note; not rerun by RFX-00",
+      "testEvidence": "rfx03-verified",
       "postImplementationChanges": [
         "docs/release-fix/rfx-03-multi-conversation.md"
       ]

@@ -17,6 +17,7 @@ import type {
 import type { Claim } from "../../state/index.js";
 import type { ExecutionClaims } from "../../runtime/core/claims.js";
 import { digest, canonical } from "../../runtime/core/idempotency.js";
+import { authorizedConversation, authorizedResource } from "../../runtime/core/conversation-routes.js";
 import { fault } from "../../runtime/core/errors.js";
 function stableEvent(event: IncomingEvent): unknown {
   const { receivedAt: _, ...identity } = event;
@@ -169,12 +170,20 @@ function domainRecordAllowed<K extends DomainTable>(
   row: StateTables[K],
   context: TrustedContext,
 ): boolean {
-  if (!domainTables.includes(table) || !sameScope(row.scope, context.scope))
+  if (!domainTables.includes(table) || !authorizedConversation(tx, context, row.scope))
     return false;
   if (table === "references") {
     const reference = row as StateTables["references"];
     return (
-      sameScope(reference.reference.scope, context.scope) &&
+      sameScope(reference.reference.scope, reference.scope) &&
+      (reference.reference.kind !== "space" || reference.reference.id === reference.scope.spaceId) &&
+      (!("messageId" in reference.reference || "pollId" in reference.reference || "cardId" in reference.reference) || (() => {
+        const ref = reference.reference;
+        const parentId = "messageId" in ref ? ref.messageId : "pollId" in ref ? ref.pollId : "cardId" in ref ? ref.cardId : "";
+        const kind = "messageId" in ref ? "message" : "pollId" in ref ? "poll" : "card";
+        const parent = tx.get("references", parentId);
+        return !!parent && parent.reference.kind === kind && sameScope(parent.scope, ref.scope) && authorizedResource(tx, context, parent.reference);
+      })()) &&
       reference.ownedByPrincipalId === context.principalId &&
       reference.taskId === context.taskId &&
       reference.generation === context.generation
@@ -183,7 +192,7 @@ function domainRecordAllowed<K extends DomainTable>(
   if (table === "stagedMedia") {
     const media = row as StateTables["stagedMedia"];
     return (
-      media.principalId === context.principalId &&
+      sameScope(media.scope, context.scope) && media.principalId === context.principalId &&
       media.taskId === context.taskId &&
       media.generation === context.generation
     );
@@ -210,7 +219,7 @@ function domainRecordAllowed<K extends DomainTable>(
     owner.ownedByPrincipalId === context.principalId &&
     owner.taskId === context.taskId &&
     owner.generation === context.generation &&
-    sameScope(owner.scope, context.scope)
+    sameScope(owner.scope, row.scope) && authorizedResource(tx, context, owner.reference)
   );
 }
 

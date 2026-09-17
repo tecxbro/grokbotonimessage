@@ -144,7 +144,7 @@ export function productionCapability(
     add("The requested action does not match this operation and trusted context.");
   const refs = action ? references(action.arguments) : [];
   for (const reference of refs) {
-    if (!sameScope(reference.scope, context.scope)) add(`Request resource ${reference.kind}:${reference.id} belongs to another scope.`);
+    if (!sameScope(reference.scope, context.scope) && !inventory.requestResources?.some(row => row.available && sameReference(row.reference, reference))) add(`Request resource ${reference.kind}:${reference.id} belongs to another scope.`);
     if (inventory.requestResources !== undefined) {
       const resource = inventory.requestResources.find(row => sameReference(row.reference, reference));
       if (!resource?.available) add(`Request resource ${reference.kind}:${reference.id} is unavailable${resource?.reason ? `: ${resource.reason}` : "."}`.slice(0, 500));

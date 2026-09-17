@@ -1,3 +1,4 @@
+import { authorizedResource } from "./conversation-routes.js";
 import { sameScope, type OperationResult } from "../../contracts/index.js";
 import type { Claim } from "../../state/index.js";
 import { ExecutionClaims } from "./claims.js";
@@ -119,7 +120,7 @@ export class ChildExecution {
       }
       try {
         this.claims.store.transaction((tx) => {
-          const { row } = this.claims.writable(tx, id, held);
+          const { row, context } = this.claims.writable(tx, id, held);
           if (
             result.references.some((ref) =>
               row.action.operation === "space.create"
@@ -127,8 +128,8 @@ export class ChildExecution {
                   ref.scope.projectId !== row.scope.projectId ||
                   ref.scope.provider !== row.scope.provider ||
                   ref.scope.accountId !== row.scope.accountId ||
-                  ref.scope.lineId !== row.scope.lineId
-                : !sameScope(ref.scope, row.scope),
+                  ref.scope.lineId !== row.scope.lineId || !authorizedResource(tx, context, ref)
+                : !sameScope(ref.scope, row.scope) && !authorizedResource(tx, context, ref),
             )
           )
             fault("SCOPE_MISMATCH");

@@ -17,7 +17,7 @@ export interface Binding {
 }
 /** Host callbacks are trusted configuration, never action JSON. No client is created here. */
 export interface TextMessageOptions {
-  binding(context: TrustedContext): Binding;
+  binding(context: TrustedContext, target?: Scope): Binding;
   requestId(action: Action, services: ExecutionServices): string;
   compilers?: () => readonly ContentCompiler[];
 }
@@ -86,7 +86,7 @@ export interface PublicContentCompiler {
 export interface PublicTextMessageOptions {
   streamDelivery?: "progressive" | "buffered";
   provider: ProviderContext;
-  binding(context: TrustedContext): Binding;
+  binding(context: TrustedContext, target?: Scope): Binding;
   resources: Pick<ResourceResolver, "space" | "message">;
   compilers?: () => readonly PublicContentCompiler[];
 }
@@ -138,9 +138,10 @@ export function checkPublicSpace(
   space: Space,
   s: PublicServices,
   o: PublicTextMessageOptions,
+  target: Scope = s.context.scope,
 ): void {
   assertTextProvider(s, o);
-  const b = o.binding(s.context);
+  const b = o.binding(s.context, target);
   requireThat(
     space.__platform === "imessage",
     "UNSUPPORTED",
@@ -161,6 +162,8 @@ export function mapTextMessageOperation(
   reactionParent?: string,
 ): PublicResult {
   const result = textResult(action, s);
+  const args = action.arguments;
+  const target = "space" in args ? args.space.scope : "message" in args ? args.message.scope : "reaction" in args ? args.reaction.scope : s.context.scope;
   const envelopes =
     returned === undefined
       ? []
@@ -170,7 +173,7 @@ export function mapTextMessageOperation(
   // Spectrum returns grouped member handles inside a single group envelope. Preserve their real IDs
   // after the opaque call completes without claiming per-member dispatch/recovery checkpoints.
   const messages = envelopes.flatMap((message) => {
-    checkPublicSpace(message.space, s, o);
+    checkPublicSpace(message.space, s, o, target);
     requireThat(
       message.platform === "imessage" && message.direction === "outbound",
       "SCOPE_MISMATCH",
@@ -184,7 +187,7 @@ export function mapTextMessageOperation(
     "SDK returned too many message handles.",
   );
   for (const message of messages) {
-    checkPublicSpace(message.space, s, o);
+    checkPublicSpace(message.space, s, o, target);
     requireThat(
       message.platform === "imessage" &&
         message.direction === "outbound" &&
@@ -201,10 +204,10 @@ export function mapTextMessageOperation(
       const parent = s.transaction((unit) =>
         unit.get("references", reactionParent),
       );
-      checkPublicSpace(message.content.target.space, s, o);
+      checkPublicSpace(message.content.target.space, s, o, target);
       requireThat(
         parent &&
-          sameScope(parent.scope, s.context.scope) &&
+          sameScope(parent.scope, target) &&
           parent.providerId === message.content.target.id &&
           message.content.target.platform === "imessage",
         "SCOPE_MISMATCH",
@@ -212,7 +215,7 @@ export function mapTextMessageOperation(
       );
     }
     const id = digestTextInput([
-      s.context.scope,
+      target,
       message.id,
       reactionParent ?? "message",
     ]);
@@ -221,10 +224,10 @@ export function mapTextMessageOperation(
           version: 1,
           kind: "reaction",
           id,
-          scope: s.context.scope,
+          scope: target,
           messageId: reactionParent,
         }
-      : { version: 1, kind: "message", id, scope: s.context.scope };
+      : { version: 1, kind: "message", id, scope: target };
     s.transaction((unit) => {
       const prior = unit.get("references", id);
       if (prior)

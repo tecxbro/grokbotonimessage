@@ -85,8 +85,9 @@ export function createFeatureModule(dependencies: NativeDependencies): FeatureMo
       if (action.operation === "space.create") {
         await createSpace(action, services, binding, result, dispatch, dependencies.registerCreatedSpace);
       } else {
+        const targetScope = action.operation === "metadata.get" ? action.arguments.message.scope : services.context.scope;
         const ref = "space" in action.arguments ? action.arguments.space :
-          { version: 1 as const, kind: "space" as const, id: services.context.scope.spaceId, scope: services.context.scope };
+          { version: 1 as const, kind: "space" as const, id: targetScope.spaceId, scope: targetScope };
         if (action.operation === "metadata.get") await resolveReference(action.arguments.message, services);
         const space = await getSpace(ref, services, binding, () => checkContext(action, services));
         checkContext(action, services);
@@ -98,7 +99,7 @@ export function createFeatureModule(dependencies: NativeDependencies): FeatureMo
           const sent = await dispatch(() => space.send(typeof built === "string" ? built : { build: async () => built }));
           if (sent) {
             nativeSpace(sent.space, binding, space.id);
-            result.references.push(remember("message", sent.id, services));
+            result.references.push(remember("message", sent.id, services, false, ref.scope));
           } else if (expectsMessage) {
             throw new NativeError("UNKNOWN_OUTCOME", "The provider returned no message evidence.");
           }

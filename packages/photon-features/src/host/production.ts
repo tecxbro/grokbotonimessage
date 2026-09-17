@@ -26,6 +26,7 @@ import { ProviderContext, resolveProviderContext } from "../adapters/transport/p
 import { SpectrumEventSource } from "../adapters/transport/event-source.js";
 import { SpectrumOwner, cloudSdkFactory, type SdkFactory } from "../adapters/transport/spectrum-owner.js";
 import { DurableContexts, type AuthorizationPolicy } from "../runtime/core/authorization.js";
+import { authorizedResource } from "../runtime/core/conversation-routes.js";
 import { DurableSubmission } from "../runtime/core/submission.js";
 import { DurableRecovery, scanAll } from "../runtime/core/recovery.js";
 import { DurableWork } from "../runtime/core/work-handoff.js";
@@ -33,7 +34,7 @@ import { DurableLocalProtocol, listenDurableLocal } from "../runtime/core/local-
 import { ExecutionClaims } from "../runtime/core/claims.js";
 import { executeOperation } from "../runtime/core/executor.js";
 import { requestIdentity } from "../runtime/core/idempotency.js";
-import { InboundRouter, activeRoute } from "../runtime/inbound/router.js";
+import { InboundRouter, activeRoute, routeConversation } from "../runtime/inbound/router.js";
 import { TextBatcher } from "../runtime/inbound/batching.js";
 import { recoverCaptures } from "../runtime/inbound/recovery.js";
 import type { Correlations, CapturedMessage } from "../runtime/inbound/normalize.js";
@@ -75,15 +76,17 @@ const adminOperations = new Set<Operation>([
   "space.setAvatar", "space.clearAvatar", "space.setBackground", "space.clearBackground", "account.shareContact",
 ]);
 
-function rowFor(store: DurableSQLiteStore, reference: ResourceRef, context: TrustedContext, tx?: Transaction) {
-  const row = tx ? tx.get("references", reference.id) : store.transaction(tx => tx.get("references", reference.id));
-  if (!row || !sameScope(row.scope, context.scope) || !isDeepStrictEqual(row.reference, reference) ||
+function rowFor(store: DurableSQLiteStore, reference: ResourceRef, context: TrustedContext, tx?: Transaction, clock: () => number = Date.now): import("../state/ports.js").ReferenceRecord {
+  if (!tx) return store.transaction(tx => rowFor(store, reference, context, tx, clock));
+  new DurableContexts(store, { now: clock }).refresh(tx, context);
+  const row = tx.get("references", reference.id);
+  if (!row || !authorizedResource(tx, context, reference) || !isDeepStrictEqual(row.reference, reference) ||
     row.ownedByPrincipalId !== context.principalId || row.taskId !== context.taskId ||
     row.generation !== context.generation || !row.providerId) throw new Error("RESOURCE_NOT_FOUND");
   return row;
 }
 
-function createResources(store: DurableSQLiteStore, owner: SpectrumOwner): ResourceResolver {
+function createResources(store: DurableSQLiteStore, owner: SpectrumOwner, now: () => number): ResourceResolver {
   return {
     resolve: async (reference, context) => {
       if (reference.kind === "stream") {
@@ -93,19 +96,19 @@ function createResources(store: DurableSQLiteStore, owner: SpectrumOwner): Resou
           reference.generation !== context.generation) throw new Error("RESOURCE_NOT_FOUND");
         return row.reference;
       }
-      return rowFor(store, reference, context).reference;
+      return rowFor(store, reference, context, undefined, now).reference;
     },
     space: async (reference, context) => {
       if (reference.kind !== "space") throw new Error("RESOURCE_NOT_FOUND");
-      const row = rowFor(store, reference, context);
-      return owner.space(context.scope, row.providerId);
+      const row = rowFor(store, reference, context, undefined, now);
+      return owner.space(reference.scope, row.providerId);
     },
     message: async (reference, context) => {
       if (reference.kind !== "message" && reference.kind !== "reaction") throw new Error("RESOURCE_NOT_FOUND");
-      const message = rowFor(store, reference, context);
-      const spaceRef: ResourceRef = { version: 1, kind: "space", id: context.scope.spaceId, scope: context.scope };
-      const spaceRow = rowFor(store, spaceRef, context);
-      const space = await owner.space(context.scope, spaceRow.providerId);
+      const message = rowFor(store, reference, context, undefined, now);
+      const spaceRef: ResourceRef = { version: 1, kind: "space", id: reference.scope.spaceId, scope: reference.scope };
+      const spaceRow = rowFor(store, spaceRef, context, undefined, now);
+      const space = await owner.space(reference.scope, spaceRow.providerId);
       const resolved = await space.getMessage(message.providerId);
       if (!resolved || resolved.id !== message.providerId || resolved.space.id !== space.id)
         throw new Error("RESOURCE_NOT_FOUND");
@@ -310,13 +313,21 @@ export async function createProductionComposition(
   const submission = new DurableSubmission(store, contexts);
   const claims = new ExecutionClaims(store, contexts);
   const recovery = new DurableRecovery(store, contexts);
-  const work = new DurableWork(store, contexts);
+  const conversationScopes = (tx: Transaction, trusted: TrustedContext) => {
+    contexts.refresh(tx, trusted);
+    const scopes = [trusted.scope];
+    for (const row of scanAll(store, "references"))
+      if (row.reference.kind === "space" && !sameScope(row.scope, trusted.scope) &&
+          authorizedResource(tx, trusted, row.reference)) scopes.push(row.scope);
+    return scopes;
+  };
+  const work = new DurableWork(store, contexts, conversationScopes);
   const owner = new SpectrumOwner(
     { inbound: "photon-stream", outbound: "imessage", wake: "existing-grok-task-handoff" },
     providerRoutes,
     dependencies.sdkFactory ?? cloudSdkFactory({ projectId: configuration.provider.projectId, projectSecret }),
   );
-  const resources = createResources(store, owner);
+  const resources = createResources(store, owner, now);
   const mediaProvider = async (trusted: TrustedContext) => {
     if (!sameScope(trusted.scope, scope)) throw new Error("SCOPE_MISMATCH");
     const provider = owner.provider();
@@ -335,16 +346,15 @@ export async function createProductionComposition(
     contexts,
     principal,
   });
-  const binding = () => ({ scope, phone: providerRoutePhone, nativeSpaceId: configuration.provider.conversationId });
+  const binding = (trusted: TrustedContext, target = trusted.scope) => {
+    const row = rowFor(store, { version: 1, kind: "space", id: target.spaceId, scope: target }, trusted, undefined, now);
+    return { scope: target, phone: providerRoutePhone, nativeSpaceId: row.providerId };
+  };
   const request = (action: Action, services: { context: TrustedContext }) => requestIdentity(action, services.context);
   const typing = new TypingLeases(
     { now },
     async target => {
-      if (!sameScope(target, scope)) {
-        throw new Error("SCOPE_MISMATCH");
-      }
-
-      return owner.space(scope, configuration.provider.conversationId);
+      return resources.space({ version: 1, kind: "space", id: target.spaceId, scope: target }, context);
     },
     undefined, // Keep the existing default timers.
     dependencies.report, // Forward typing diagnostics to the host.
@@ -535,7 +545,7 @@ export async function createProductionComposition(
             const row = tx ? tx.get("streams", reference.id) : store.transaction(tx => tx.get("streams", reference.id));
             available = !!row && sameScope(row.scope, trusted.scope) && isDeepStrictEqual(row.reference, reference) &&
               row.principalId === trusted.principalId && row.taskId === trusted.taskId && reference.generation === trusted.generation;
-          } else { rowFor(store, reference, trusted, tx); available = true; }
+          } else { rowFor(store, reference, trusted, tx, now); available = true; }
         } catch { /* An absent authorized local row remains an execution blocker. */ }
         return { reference, available };
       }) : undefined,
@@ -581,9 +591,7 @@ export async function createProductionComposition(
     route: (event, tx) => {
       if (event.type === "poll" || (event.type === "poll-answer" && event.correlation))
         return routePollEvent(event, tx);
-      return sameScope(event.scope, scope) ? {
-        taskId: context.taskId, generation: context.generation, principalId: context.principalId,
-      } : undefined;
+      return routeConversation(tx, event, context, now());
     },
     continuation: event => event.type === "poll" || event.type === "app-interaction",
   }, [...assembled.compatibilityRegistry.reducers.values()]);
@@ -608,9 +616,12 @@ export async function createProductionComposition(
     wake,
   });
   const batcher = new TextBatcher(router);
-  const pump = new InboundPump(() => [{ scope, task: {
-    taskId: context.taskId, generation: context.generation, principalId: context.principalId,
-  } }], batcher, dispatcher, dependencies.report ?? (() => undefined));
+  const pump = new InboundPump(() => store.transaction(tx => {
+    if (!routeConversation(tx, { scope }, context, now())) return [];
+    return conversationScopes(tx, context).map(scope => ({ scope, task: {
+      taskId: context.taskId, generation: context.generation, principalId: context.principalId,
+    } }));
+  }), batcher, dispatcher, dependencies.report ?? (() => undefined));
   let diagnostics: () => { ready: boolean; activation: "disabled" | "enabled" } =
     () => ({ ready: false, activation: configuration.activation });
   const protocol = new DurableLocalProtocol({ contexts, submission, work,
@@ -621,14 +632,13 @@ export async function createProductionComposition(
   });
   const correlations = createPollCorrelations(store, dependencies.nativePollIdentity ?? (() => undefined));
   const registerReferences: CaptureProcessing["registerReferences"] = async (snapshot, event) => {
-    if (!sameScope(event.scope, scope)) throw new Error("SCOPE_MISMATCH");
     const bindings = incomingReferenceBindings(snapshot, event);
     store.transaction(tx => registerIncomingReferences(tx, context, bindings, now()));
   };
   const receipts: ReceiptAcquisition = {
     writer: store,
     resolveTarget: (receiptScope, providerTargetId) => {
-      if (!sameScope(receiptScope, scope)) return;
+      if (!store.transaction(tx => routeConversation(tx, { scope: receiptScope }, context, now()))) return;
       const matches = [...scanAll(store, "references")].filter(row =>
         row.reference.kind === "message" && row.providerId === providerTargetId &&
         sameScope(row.scope, receiptScope) && row.ownedByPrincipalId === context.principalId &&
@@ -643,7 +653,7 @@ export async function createProductionComposition(
     // A new owner grant does not authorize historical captures. Preserve them
     // unresolved, and do not reassign already accepted resources or work to the
     // successor generation during restart/reconnect replay.
-    if (!sameScope(event.scope, scope) || event.receivedAt < context.issuedAt) return false;
+    if (event.receivedAt < context.issuedAt) return false;
     return store.transaction(tx => {
       const prior = tx.get("inbox", event.eventId);
       if (prior && prior.event.receivedAt < context.issuedAt) return false;
@@ -658,7 +668,7 @@ export async function createProductionComposition(
         principalId: context.principalId,
       };
       const grant = tx.get("contexts", context.contextId);
-      return activeRoute(tx, scope, route) &&
+      return activeRoute(tx, event.scope, route) &&
         !!grant && isDeepStrictEqual(grant.context, context) &&
         grant.context.revokedAt === null && grant.context.issuedAt <= now() &&
         grant.context.expiresAt > now();

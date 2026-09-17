@@ -1,29 +1,33 @@
 import {
   sameScope,
+  type Scope,
   type TrustedContext,
   type IncomingEvent,
 } from "../../contracts/index.js";
 import type { TransactionStore, HandoffRecord } from "../../state/index.js";
+import { authorizedConversation } from "./conversation-routes.js";
+import type { Transaction } from "../../state/ports.js";
 import { DurableContexts } from "./authorization.js";
 import { fault } from "./errors.js";
 export class DurableWork {
   constructor(
     private readonly store: TransactionStore,
     private readonly contexts: DurableContexts,
+    private readonly scopes: (tx: Transaction, context: TrustedContext) => Scope[] = (_tx, context) => [context.scope],
   ) {}
   list(c: TrustedContext, limit: number): HandoffRecord[] {
     if (!Number.isInteger(limit) || limit < 1 || limit > 100)
       fault("INVALID_REQUEST");
     return this.store.transaction((tx) => {
       const current = this.contexts.refresh(tx, c);
-      return tx.listWork(
-        current.scope,
+      return this.scopes(tx, current).filter(scope => authorizedConversation(tx, current, scope)).flatMap(scope => tx.listWork(
+        scope,
         current.principalId,
         current.taskId,
         current.generation,
         this.contexts.clock.now(),
         limit,
-      );
+      )).sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id)).slice(0, limit);
     });
   }
   change(
@@ -44,7 +48,7 @@ export class DurableWork {
         h.principalId !== c.principalId ||
         h.taskId !== c.taskId ||
         h.generation !== c.generation ||
-        !sameScope(h.scope, c.scope)
+        !authorizedConversation(tx, c, h.scope)
       )
         return fault("RESOURCE_NOT_FOUND");
       if (h.state === "cancelled") fault("CANCELLED");
@@ -80,8 +84,8 @@ export class DurableWork {
         const e = tx.get("inbox", eventId);
         if (
           !e ||
-          !sameScope(e.scope, c.scope) ||
-          !sameScope(e.event.scope, c.scope)
+          !sameScope(e.scope, h.scope) ||
+          !sameScope(e.event.scope, h.scope)
         )
           return fault("RESOURCE_NOT_FOUND");
         return e.event;

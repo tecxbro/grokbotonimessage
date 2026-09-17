@@ -1,3 +1,5 @@
+import { authorizedResource, type ConversationOwner } from "./conversation-routes.js";
+import type { Transaction } from "../../state/ports.js";
 import type { ChildExecution as ChildSpec } from "../../contracts/services.js";
 import {
   sameScope,
@@ -23,8 +25,10 @@ export interface ExecuteChildOptions {
 function validateReturnedResult(
   result: OperationResult,
   operation: string,
-  scope: Parameters<typeof sameScope>[0],
+  owner: ConversationOwner,
+  tx: Transaction,
 ): void {
+  const scope = owner.scope;
   if (
     result.references.some((reference) =>
       operation === "space.create"
@@ -32,8 +36,8 @@ function validateReturnedResult(
           reference.scope.projectId !== scope.projectId ||
           reference.scope.provider !== scope.provider ||
           reference.scope.accountId !== scope.accountId ||
-          reference.scope.lineId !== scope.lineId
-        : !sameScope(reference.scope, scope),
+          reference.scope.lineId !== scope.lineId || !authorizedResource(tx, owner, reference)
+        : !sameScope(reference.scope, scope) && !authorizedResource(tx, owner, reference),
     )
   )
     fault("SCOPE_MISMATCH");
@@ -210,10 +214,10 @@ export async function executeChild(
         options.deadlineMs,
       ),
     );
-    const row = claims.store.transaction((tx) =>
-      claims.held(tx, requestId, claim),
-    );
-    validateReturnedResult(result, row.action.operation, row.scope);
+    claims.store.transaction((tx) => {
+      const row = claims.held(tx, requestId, claim);
+      validateReturnedResult(result, row.action.operation, row, tx);
+    });
   } catch {
     markUnknown(options, attemptId, childId);
     throw new RuntimeFault("UNKNOWN_OUTCOME", "reconcile-first");
@@ -226,7 +230,7 @@ export async function executeChild(
       const attempt = tx.get("attempts", attemptId);
       const savedChild = tx.get("children", childId);
       if (!attempt || !savedChild) fault("INTERNAL");
-      validateReturnedResult(result, row.action.operation, row.scope);
+      validateReturnedResult(result, row.action.operation, row, tx);
       const now = claims.contexts.clock.now();
       const attemptRevision = attempt.revision;
       attempt.phase = "returned";

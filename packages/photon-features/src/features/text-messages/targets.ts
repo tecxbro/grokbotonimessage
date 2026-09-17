@@ -2,6 +2,7 @@ import { equivalent } from "./identity.js";
 import type { Message, Space } from "spectrum-ts";
 import {
   assertScope,
+  sameLineScope,
   sameScope,
   type ExecutionServices,
   type ResourceRef,
@@ -31,7 +32,7 @@ export async function recordFor(
   ref: ResourceRef,
   s: ExecutionServices,
 ): Promise<ReferenceRecord> {
-  assertScope(ref, s.context.scope);
+  requireThat(sameLineScope(ref.scope, s.context.scope), "SCOPE_MISMATCH", "Resource line mismatch.");
   const resolved = await s.resources.resolve(ref, s.context);
   requireThat(
     equivalent(resolved, ref),
@@ -137,7 +138,7 @@ export async function publicRecordFor(
   s: PublicServices,
 ): Promise<ReferenceRecord> {
   s.assertActiveClaim();
-  assertScope(ref, s.context.scope);
+  requireThat(sameLineScope(ref.scope, s.context.scope), "SCOPE_MISMATCH", "Resource line mismatch.");
   const resolved = await s.resolveResource(ref);
   s.assertActiveClaim();
   requireThat(
@@ -163,7 +164,7 @@ export async function resolveTextSpace(
   const record = await publicRecordFor(ref, s);
   const space = await o.resources.space(ref, s.context);
   s.assertActiveClaim();
-  checkPublicSpace(space, s, o);
+  checkPublicSpace(space, s, o, ref.scope);
   requireThat(
     space.id === record.providerId,
     "SCOPE_MISMATCH",
@@ -192,7 +193,7 @@ export async function resolveMessageTarget(
     "RESOURCE_NOT_FOUND",
     "Actual SDK target is unavailable.",
   );
-  checkPublicSpace(message.space, s, o);
+  checkPublicSpace(message.space, s, o, ref.scope);
   requireThat(
     message.id === record.providerId && message.platform === "imessage",
     "SCOPE_MISMATCH",
@@ -228,7 +229,7 @@ export async function resolveReactionTarget(
     s,
     o,
   );
-  checkPublicSpace(reaction.content.target.space, s, o);
+  checkPublicSpace(reaction.content.target.space, s, o, ref.scope);
   requireThat(
     reaction.content.target.id === parent.id &&
       reaction.content.target.platform === parent.platform,
@@ -252,7 +253,7 @@ export async function getMessageTarget(
     "RESOURCE_NOT_FOUND",
     "Provider could not retrieve the authorized target.",
   );
-  checkPublicSpace(current.space, s, o);
+  checkPublicSpace(current.space, s, o, ref.scope);
   requireThat(
     current.id === resolved.id &&
       current.platform === "imessage" &&

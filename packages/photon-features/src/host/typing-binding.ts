@@ -5,7 +5,7 @@ import type { ExecutionServices } from "../contracts/services.js";
 import type { Claim, OutboxRecord, Transaction } from "../state/index.js";
 import { canonicalJson } from "../adapters/transport/provider-context.js";
 import { ProviderContext } from "../adapters/transport/provider-context.js";
-import { sameScope } from "../contracts/resources.js";
+import { sameScope, sameLineScope } from "../contracts/resources.js";
 import { ExecutionClaims } from "../runtime/core/claims.js";
 import { fault } from "../runtime/core/errors.js";
 import {
@@ -137,7 +137,7 @@ export class HostTypingBinding {
     assertSchedulingClaim();
     const now = this.claims.contexts.clock.now();
     if (
-      !sameScope(descriptor.scope, binding.context.scope) ||
+      !sameScope(descriptor.scope, binding.action.arguments.space.scope) ||
       descriptor.generation !== binding.context.generation ||
       !Number.isSafeInteger(descriptor.token) ||
       descriptor.token < 1 ||
@@ -270,10 +270,10 @@ export class HostTypingBinding {
       !sameScope(current.scope, this.route.scope)
     )
       fault("STALE_GENERATION");
-    this.assertRoute(binding);
+
     this.claims.contexts.action(tx, current, binding.action);
     const row = this.claims.contexts.owned(tx, binding.requestId, current);
-    const target = tx.get("references", this.route.scope.spaceId);
+    const target = tx.get("references", binding.action.arguments.space.id);
     if (
       row.id !== binding.requestId ||
       row.principalId !== binding.context.principalId ||
@@ -286,26 +286,27 @@ export class HostTypingBinding {
       row.result.requestId !== binding.requestId ||
       row.cancellationRequestedAt !== null ||
       !target ||
-      target.providerId !== this.route.conversationId ||
+      !target.providerId ||
       target.ownedByPrincipalId !== binding.context.principalId ||
       target.taskId !== binding.context.taskId ||
       target.generation !== binding.context.generation ||
-      !sameScope(target.scope, binding.context.scope) ||
+      !sameScope(target.scope, binding.action.arguments.space.scope) ||
       !isDeepStrictEqual(target.reference, binding.action.arguments.space)
     )
       fault("FORBIDDEN");
+    this.assertRoute(binding, target.providerId!);
     return row;
   }
 
-  private assertRoute(binding: BoundExecution): void {
+  private assertRoute(binding: BoundExecution, conversationId: string): void {
     if (
-      !sameScope(binding.action.arguments.space.scope, this.route.scope) ||
-      binding.action.arguments.space.id !== this.route.scope.spaceId
+      !sameLineScope(binding.action.arguments.space.scope, this.route.scope) ||
+      binding.action.arguments.space.id !== binding.action.arguments.space.scope.spaceId
     )
       fault("SCOPE_MISMATCH");
     try {
       if (
-        !sameScope(this.routes.inbound(this.route.phone, this.route.conversationId), binding.context.scope)
+        !sameScope(this.routes.inbound(this.route.phone, conversationId), binding.action.arguments.space.scope)
       )
         fault("SCOPE_MISMATCH");
     } catch {

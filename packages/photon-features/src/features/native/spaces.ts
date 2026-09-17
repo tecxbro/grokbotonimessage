@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import {
-  sameScope, type Action, type ExecutionServices, type OperationResult, type ResourceRef,
+  sameScope, type Scope, type Action, type ExecutionServices, type OperationResult, type ResourceRef,
 } from "../../contracts/index.js";
 import { authorizedResource } from "../../runtime/core/conversation-routes.js";
 import { nativeSpace, requireNative, resolveReference, validatedMembers } from "./guards.js";
@@ -80,11 +80,12 @@ export async function getSpace(ref: ResourceRef, services: ExecutionServices, bi
 export function remember(
   kind: "space" | "message", providerId: string, services: ExecutionServices,
   newConversation = false,
+  target: Scope = services.context.scope,
 ): ResourceRef {
   const context = services.context;
-  const digest = createHash("sha256").update(JSON.stringify([kind, context.scope, providerId])).digest("hex");
+  const digest = createHash("sha256").update(JSON.stringify([kind, target, providerId])).digest("hex");
   const id = `native-${kind}-${digest}`;
-  const scope = { ...context.scope, ...(newConversation ? { spaceId: id } : {}) };
+  const scope = { ...target, ...(newConversation ? { spaceId: id } : {}) };
   const reference: ResourceRef = { version: 1, kind, id, scope };
   services.transactions.transaction(tx => {
     const previous = tx.get("references", id);

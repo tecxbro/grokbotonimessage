@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { canonicalJson } from "../../adapters/transport/provider-context.js";
 import {
   assertScope,
+  sameLineScope,
   type Action,
   type Capability,
   type ExecutionServices,
@@ -86,7 +87,7 @@ export function createTypingModule(
             action.operation !== "typing.end")
         )
           throw new Error("INVALID_REQUEST");
-        assertScope(action.arguments.space, services.context.scope);
+        if (!sameLineScope(action.arguments.space.scope, services.context.scope)) throw new Error("SCOPE_MISMATCH");
         await services.resources.resolve(
           action.arguments.space,
           services.context,
@@ -118,14 +119,14 @@ export function createTypingModule(
           );
           if (remaining >= 100)
             leases.begin(
-              services.context.scope,
+              action.arguments.space.scope,
               services.context.generation,
               remaining,
               { signal: services.signal, validate },
             );
         } else
           leases.end({
-            scope: services.context.scope,
+            scope: action.arguments.space.scope,
             generation: services.context.generation,
           });
         return {
@@ -172,7 +173,7 @@ export async function executeTypingOperation(
     if (binding.expiresAt <= services.clock.now()) throw new Error("TYPING_WORK_EXPIRED");
   };
   validate();
-  assertScope(action.arguments.space, services.context.scope);
+  if (!sameLineScope(action.arguments.space.scope, services.context.scope)) throw new Error("SCOPE_MISMATCH");
   await services.resolveResource(action.arguments.space);
   validate();
   let issued: IssuedTypingLeaseAuthorization | undefined;
@@ -186,14 +187,14 @@ export async function executeTypingOperation(
         if (action.operation === "typing.begin") {
           const ttl = Math.min(action.arguments.ttlMs, binding.expiresAt - services.clock.now(),
             services.claim.leaseUntil - services.clock.now(), services.context.expiresAt - services.clock.now());
-          unavailable = ttl < 100 || !leases.begin(services.context.scope, services.context.generation,
+          unavailable = ttl < 100 || !leases.begin(action.arguments.space.scope, services.context.generation,
             ttl, binding.issueLease
               ? {
                   signal: services.signal,
                   authorize: lease => issued = binding.issueLease!(lease),
                 }
               : {signal: services.signal, validate});
-        } else leases.end({scope: services.context.scope, generation: services.context.generation});
+        } else leases.end({scope: action.arguments.space.scope, generation: services.context.generation});
         return {
           version: 1, requestId: binding.requestId, revision: binding.resultRevision,
           updatedAt: services.clock.now(), status: unavailable ? "failed" : "executor-completed",
