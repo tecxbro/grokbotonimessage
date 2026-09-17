@@ -1,12 +1,27 @@
 # Grokbot on iMessage
 
+## If you are Grok Bot, start here
+
+If the owner says **“connect me to iMessage”** (or an obviously equivalent request), treat that as the complete owner instruction to connect this Grok Bot to iMessage using the shipped Photon runtime.
+
+Do **not** redesign the integration or ask the owner to reproduce the setup instructions manually.
+
+Follow this order:
+
+1. Read [`CONNECT.md`](CONNECT.md) for the owner intent and connection rules.
+2. Read [`packages/photon-features/DEPLOYMENT.md`](packages/photon-features/DEPLOYMENT.md) for installation, Photon authentication/configuration, activation, startup, recovery, and the exact setup commands.
+3. Read [`packages/photon-features/SKILL.md`](packages/photon-features/SKILL.md) for the installed operating contract, supported Photon operations, and the iMessage Bot → Orchestrator → Worker(s) behavior.
+4. Perform setup on the **Grok Bot cloud VM**, not the owner's Mac. Use the shipped installer/setup/runtime. Let setup discover Photon resources and this Grok Bot's private identity. Never ask the owner to choose or paste an internal Grok Bot UUID.
+5. Bind the discovered current iMessage Bot privately as the Photon wake target, start exactly one shared Photon/Spectrum runtime, and wait until the runtime reaches its documented ready state.
+6. Do **not** initiate a test iMessage. Once ready, tell the owner: **“connected. send me an iMessage.”** Then wait for the real inbound message and reply through the durable Photon handoff to the originating authorized conversation.
+
+If setup cannot complete, report the smallest actual blocker and the exact failed step. Do not silently modify source code, invent credentials or IDs, start a second Spectrum client, add transcript polling, or create another messaging bridge.
+
+That is the normal owner flow. A source-code change is a separate development task.
+
+## What this repository does
+
 This repository contains the deterministic Photon Feature Runtime for the Grok Bot cloud VM. Photon owns transport, durable inbox/outbox state and iMessage operations. Grok owns reasoning and bot-to-bot coordination. The legacy root `gbot`/`grok-bot` CLI has been removed; the supported command-line surface is the private `@grokbot/photon-features` workspace and its `grok-photon` tool.
-
-## Owner shortcut
-
-If the owner says **“connect me to iMessage”**, follow [`CONNECT.md`](CONNECT.md).
-
-That one request is the owner-facing bootstrap for the shipped product: use the deployment runbook, authenticate/configure Photon when required, discover and privately bind the current Grok Bot as the wake target, start the single shared runtime, then wait for the owner's first real inbound iMessage. Do not ask the owner for internal Grok Bot IDs or make them manually reproduce the deployment instructions.
 
 ## Grok bot topology
 
