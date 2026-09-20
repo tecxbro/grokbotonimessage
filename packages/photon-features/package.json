@@ -20,7 +20,12 @@
     "./foundation": "./dist/src/host/main.js",
     "./feature": "./dist/src/contracts/feature.js",
     "./services": "./dist/src/contracts/services.js",
-    "./integration": "./dist/src/integration/index.js"
+    "./integration": "./dist/src/integration/index.js",
+    "./features": "./dist/src/feature-library.js",
+    "./feature-client": {
+      "types": "./features-only/client.d.mts",
+      "import": "./features-only/client.mjs"
+    }
   },
   "files": [
     "dist/src",
@@ -33,7 +38,8 @@
     "README.md",
     "scripts",
     "examples",
-    "npm-shrinkwrap.json"
+    "npm-shrinkwrap.json",
+    "features-only"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

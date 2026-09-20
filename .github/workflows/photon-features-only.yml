@@ -1,0 +1,58 @@
+name: Photon feature-only profile
+on:
+  push:
+    branches: [improving-friends-bot]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: photon-features-only-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    name: Feature-only checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.13.0
+          cache: npm
+      - name: Verify toolchain
+        run: |
+          npm install --global npm@10.9.2 --ignore-scripts --no-audit --no-fund
+          test "$(node --version)" = v24.13.0
+          test "$(npm --version)" = 10.9.2
+      - name: Feature-client and profile tests
+        run: node --test packages/photon-features/features-only/tests/*.unit.test.mjs
+      - name: Locked dependencies
+        id: install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build actual package
+        id: build
+        run: npm run photon:build
+      - name: Canonical examples, imports and packaging
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          node --test packages/photon-features/features-only/tests/contracts.test.mjs
+          node packages/photon-features/features-only/verify.mjs --full
+          node_modules/.bin/tsc --strict --skipLibCheck --noEmit --module NodeNext --moduleResolution NodeNext --target ES2022 packages/photon-features/features-only/tests/client-types.mts
+      - name: Existing schema and foundation checks
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          npm run photon:check
+          npm run photon:test
+      - name: Existing assembled integration tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run photon:test:integration
+      - name: Existing installed-archive tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run photon:test:installed

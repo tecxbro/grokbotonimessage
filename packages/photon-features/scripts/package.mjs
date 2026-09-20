@@ -26,6 +26,7 @@ export const packageSupportFiles = Object.freeze([
   'scripts/prepare-npm-lock.mjs', 'scripts/generate-production-inventory.mjs', 'npm-shrinkwrap.json',
 ]);
 export const packagePayloadDirectories = Object.freeze([
+  Object.freeze({ source: 'features-only', archive: 'features-only/' }),
   Object.freeze({ source: 'dist/src', archive: 'dist/src/' }),
   Object.freeze({ source: 'schemas', archive: 'schemas/' }),
   Object.freeze({ source: 'examples', archive: 'examples/' }),

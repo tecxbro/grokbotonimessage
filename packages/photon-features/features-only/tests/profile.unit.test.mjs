@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile,readdir} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {loadCatalog,profileRoot,sourceArguments,verifyProfile} from '../verify.mjs';
+const catalog=await loadCatalog();
+const source=await readFile(resolve(profileRoot,'../src/contracts/actions.ts'),'utf8');
+const declarations=sourceArguments(source);
+test('all canonical operations are covered once',()=>{assert.equal(declarations.size,44);assert.deepEqual(catalog.operations.map(x=>x.operation).sort(),[...declarations.keys()].sort());});
+for(const row of catalog.operations)test(`manual argument keys match ${row.operation}`,()=>{const fields=declarations.get(row.operation);assert.deepEqual([...row.required].sort(),[...fields.required].sort());assert.deepEqual([...row.optional].sort(),[...fields.optional].sort());});
+test('every operation links code, schema, original example and focused guide',()=>{for(const row of catalog.operations){assert.ok(row.code.endsWith('.ts'));assert.equal(row.schema,`../schemas/${row.operation}.json`);assert.equal(row.example,`../examples/wt-08/${row.operation}.json`);assert.ok(row.guide.startsWith('guides/'));assert.ok(row.purpose&&row.boundary);}});
+test('all four baseline-native poll limitations remain explicit',()=>{assert.deepEqual(catalog.operations.filter(x=>x.availability==='blocked-in-reviewed-binding').map(x=>x.operation).sort(),['poll.addOption','poll.get','poll.unvote','poll.vote']);});
+test('catalog does not claim live support',()=>{assert.ok(catalog.operations.every(x=>x.liveVerification==='not-established-by-this-profile'));});
+test('dependency-free profile verification reports its actual boundary',async()=>{const r=await verifyProfile();assert.equal(r.operations,44);assert.equal(r.canonicalParser,'not-run');assert.equal(r.validatedExamples,0);assert.equal(r.liveProvider,'not-tested');});
+test('new usage guides contain no role, delegation or personality instructions',async()=>{const files=['../SKILL.md',...(await readdir(resolve(profileRoot,'guides'))).map(n=>`../guides/${n}`)];for(const relative of files){const text=await readFile(new URL(relative,import.meta.url),'utf8');assert.doesNotMatch(text,/\b(?:orchestrator|workers?|delegat(?:e|ion)|Grok|Auto[- ]?review|personality)\b/i,relative);}});
+test('request client has no transport, process or retry implementation',async()=>{const text=await readFile(resolve(profileRoot,'client-core.mjs'),'utf8');assert.doesNotMatch(text,/\b(?:fetch|setInterval|setTimeout|spawn|execFile|Spectrum)\s*\(/);assert.doesNotMatch(text,/node:(?:child_process|net|http)/);});
+test('neutral library exports no host bootstrap',async()=>{const text=await readFile(resolve(profileRoot,'../src/feature-library.ts'),'utf8');assert.doesNotMatch(text,/from\s+["'][^"']*host\//);assert.doesNotMatch(text,/Spectrum\s*\(|createRuntimeHost|GrokGatewayTaskHandoff/);for(const name of ['createTextFeatures','createMediaFeatures','createPollFeatures','createCardFeatures','createNativeFeatures','createTypingFeatures'])assert.ok(text.includes(name));});
+test('package exports and files include the feature profile without changing SDK pin',async()=>{const p=JSON.parse(await readFile(resolve(profileRoot,'../package.json'),'utf8'));assert.equal(p.dependencies['spectrum-ts'],'12.8.0');assert.equal(p.exports['./features'],'./dist/src/feature-library.js');assert.equal(p.exports['./feature-client'].import,'./features-only/client.mjs');assert.ok(p.files.includes('features-only'));assert.equal(p.exports['./host'],'./dist/src/host/index.js');});
+test('source-shape checker fails rather than silently dropping unknown declarations',()=>{assert.throws(()=>sourceArguments('nothing'),/SOURCE/);assert.throws(()=>sourceArguments('export const operationArguments = { "other": schema() } as const;'),/DECLARATION/);});
+
+test('human catalog rows and boundaries match the machine-readable inventory',async()=>{const text=await readFile(resolve(profileRoot,'CATALOG.md'),'utf8');assert.equal([...text.matchAll(/^\| `([^`]+)` \|/gm)].length,44);for(const row of catalog.operations)assert.ok(text.includes('**`'+row.operation+'`:** '+row.boundary));});
