@@ -9,10 +9,35 @@ concurrency:
   group: photon-features-only-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  identity:
+    name: Read-only candidate identity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.13.0
+      - name: Print current and recorded contract digest without changing files
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,readdirSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          const files=[];
+          function walk(path){for(const e of readdirSync(path,{withFileTypes:true})){const p=path+'/'+e.name;if(e.isDirectory())walk(p);else if(/\.(ts|sql)$/.test(p))files.push(p);}}
+          for(const name of ['contracts','state','registry','host'])walk('packages/photon-features/src/'+name);
+          files.push('packages/photon-features/src/index.ts','packages/photon-features/src/capabilities.ts','packages/photon-features/package.json','package-lock.json');
+          for(const name of ['action','event','result'])files.push('packages/photon-features/schemas/'+name+'.schema.json');
+          files.sort();const hash=createHash('sha256');
+          for(const path of files)hash.update(path+'\0').update(readFileSync(path)).update('\0');
+          const recorded=JSON.parse(readFileSync('docs/worktrees/integration/candidate-contract.json','utf8'));
+          console.log(JSON.stringify({commit:process.env.GITHUB_SHA,computedDigest:hash.digest('hex'),fileCount:files.length,recordedDigest:recorded.contractDigest},null,2));
+          JS
   verify:
     name: Feature-only checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -34,25 +59,53 @@ jobs:
       - name: Feature-client and profile tests
         run: node --test packages/photon-features/features-only/tests/*.unit.test.mjs
       - name: Locked dependencies
-        id: install
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Build actual package
-        id: build
         run: npm run photon:build
       - name: Canonical examples, imports and packaging
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           node --test packages/photon-features/features-only/tests/contracts.test.mjs
           node packages/photon-features/features-only/verify.mjs --full
           node_modules/.bin/tsc --strict --skipLibCheck --noEmit --module NodeNext --moduleResolution NodeNext --target ES2022 packages/photon-features/features-only/tests/client-types.mts
-      - name: Existing schema and foundation checks
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+  regressions:
+    name: Existing regression gates (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.13.0
+          cache: npm
+      - name: Verify toolchain and install locked dependencies
         run: |
-          npm run photon:check
-          npm run photon:test
+          npm install --global npm@10.9.2 --ignore-scripts --no-audit --no-fund
+          test "$(node --version)" = v24.13.0
+          test "$(npm --version)" = 10.9.2
+          npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build actual package
+        id: build
+        run: npm run photon:build
+      - name: Existing schema check
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run photon:check
+      - name: Existing foundation tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run photon:test
       - name: Existing assembled integration tests
+        timeout-minutes: 10
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: npm run photon:test:integration
       - name: Existing installed-archive tests
+        timeout-minutes: 10
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: npm run photon:test:installed
