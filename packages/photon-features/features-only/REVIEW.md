@@ -2,30 +2,84 @@
 
 Date: 2026-09-20. Scope: the new feature-only profile/client/export/packaging changes.
 Base: `3d34354e85b1c64a3c165498d9e904f3c0182d26`.
+Fully tested implementation commit: `d7452fdb22d72cd71ee83b5488c60179d04fecba`.
+This subsequent evidence update changes this document only, not executable code,
+configuration, schemas, tests, dependencies or the tested workflow.
 
-## Executed checks
+## Completed pinned GitHub verification
 
-Local environment: Linux x64, Node 22.16.0, npm 10.9.2. This is not the product's
-pinned Node 24.13.0 environment. Dependencies and a full clone could not be obtained
-because the editing container could not resolve the GitHub/npm download hosts.
-The canonical action source was read through the connector and its reconstructed
-bytes matched Git blob `d98954021e7e91415ee9014ca389e58884f0da85` exactly.
+[Photon feature-only profile run 35540197700](https://github.com/tecxbro/grokbotonimessage/actions/runs/35540197700)
+completed successfully for the exact implementation commit above. All five jobs
+passed: candidate identity, Linux/macOS feature checks, and Linux/macOS existing
+regression gates. Both operating systems used Node 24.13.0, npm 10.9.2, a complete
+checkout and locked dependencies, including unchanged spectrum-ts 12.8.0.
 
-| Check actually run | Result |
+| Executed check | Linux | macOS |
+| --- | --- | --- |
+| New feature-client/profile/packaging unit suite | 145 passed | 145 passed |
+| Actual locked-dependency package build | Passed | Passed |
+| Compiled canonical contracts/examples/imports/package checks | 93 passed | 93 passed |
+| Full profile verification | All 44 original examples and source/schema/import references checked | All 44 checked |
+| Public client declaration, positive and negative TypeScript cases | Passed | Passed |
+| Existing schema and candidate digest check | SCHEMAS_AND_DIGEST_OK | SCHEMAS_AND_DIGEST_OK |
+| Existing foundation tests | 64 passed | 64 passed |
+| Existing assembled integration tests | 483 passed | 483 passed |
+| Existing installed-archive tests | 26 passed | 26 passed |
+| Isolated installed-runtime canary | COMPLETION_INSTALLED_CANARY_OK | COMPLETION_INSTALLED_CANARY_OK |
+
+The numbered suites each recorded zero failures, skipped tests and cancellations.
+Counts are reported per suite and per platform; repeated runs are not additional
+distinct tests. Installed-archive tests ran in isolated CI fixtures, not in the
+friend's live VM. Provider/Grok external boundaries were not live accounts.
+
+Job evidence:
+- [Linux feature checks, 106156379384](https://github.com/tecxbro/grokbotonimessage/actions/runs/35540197700/job/106156379384)
+- [macOS feature checks, 106156379258](https://github.com/tecxbro/grokbotonimessage/actions/runs/35540197700/job/106156379258)
+- [Linux regression and installed-archive checks, 106156379339](https://github.com/tecxbro/grokbotonimessage/actions/runs/35540197700/job/106156379339)
+- [macOS regression and installed-archive checks, 106156379404](https://github.com/tecxbro/grokbotonimessage/actions/runs/35540197700/job/106156379404)
+
+The separate inherited [Photon foundation run 35540197726](https://github.com/tecxbro/grokbotonimessage/actions/runs/35540197726)
+also passed on this implementation commit.
+
+### Defects found and corrected before the passing run
+
+The first local run found a missing source-reference document, which was added.
+The first remote run exposed CONTRACT_DIGEST_DRIFT: adding package exports changes
+the assembled candidate fingerprint. A read-only CI job computed the exact digest;
+only the assembled candidate record was updated. The frozen photon-v3-f0 checkpoint,
+action schemas and checker assertions were not modified. Regression CI now fetches
+full Git history so the original foundation tag is available to its existing tests.
+
+The final computed candidate digest is
+`91a8c5354761bc26ccd95995e1c99fd83a5f1327466adb3b0b57226779f74e7e`
+over the existing algorithm's 60 files. No continue-on-error, assertion reductions,
+required-test skips or fictitious identity were used to turn failures green.
+
+## Earlier local checks
+
+The editing container supplied Linux x64, Node 22.16.0 and npm 10.9.2. It could not
+resolve the GitHub/npm download hosts, so it did not provide a complete installed
+SDK environment. The pinned remote verification above subsequently supplied that
+missing build/test environment. The canonical action source read through the
+connector was reconstructed with bytes matching Git blob
+`d98954021e7e91415ee9014ca389e58884f0da85` exactly.
+
+| Local check actually run | Result |
 | --- | --- |
-| New dependency-free unit suite | 145 tests passed, 0 failed, 0 skipped, 0 cancelled. |
-| Same suite from a separate clean copy with unrelated working directory | 145 passed again. This is not a second set of 145 different tests. |
-| JavaScript syntax | All eight new/affected `.mjs` files passed `node --check`. |
-| Catalog/source-key comparison | All 44 names, required keys and optional keys match the canonical source. |
-| Markdown catalog consistency | Human table and all per-operation boundaries match the JSON catalog. |
-| Skill-scope scan | The skill and ten guides contain no role/delegation/personality instructions. |
-| Packaging delta | Exactly one payload-directory addition to the original custom archive builder; original Git blob was verified before patching. |
-| Archive codec fixture | Real encoder/decoder preserves the new skill and client bytes; unsafe paths and invalid checksums remain rejected. |
-| Workflow syntax | YAML parsed; Linux/macOS matrix, read-only repository permissions and no continue-on-error verified. Workflow execution is separate. |
+| New dependency-free unit suite | 145 passed, zero failed/skipped/cancelled |
+| Same suite from a separate clean copy and unrelated working directory | 145 passed again, not another set of distinct tests |
+| JavaScript syntax | All eight new/affected .mjs files passed node --check |
+| Catalog/source-key comparison | All 44 names and required/optional keys matched |
+| Human and JSON catalog consistency | Table and per-operation boundaries matched |
+| Skill-scope scan | Skill and ten guides contained no role/delegation/personality instructions |
+| Packaging delta | One payload-directory addition; original package-builder blob verified before patching |
+| Archive codec fixture | New skill/client bytes preserved; unsafe paths and invalid checksums rejected |
+| Workflow syntax | YAML parsed; matrix, read-only permissions and absence of continue-on-error checked |
 
-The initial 140-test run found one missing source-reference file. That defect was
-fixed; subsequent 141-test and final 145-test runs passed. Additional tests cover
-human-catalog drift and custom archive inclusion rather than merely repeating a run.
+The local client unit tests deliberately use a labeled parser-boundary double.
+They establish client behavior, not canonical parser or SDK compatibility. The
+subsequent 93-test remote suite uses the real compiled canonical parser, inherited
+examples and actual package imports instead of that double.
 
 ## Ten review passes
 
@@ -51,25 +105,21 @@ human-catalog drift and custom archive inclusion rather than merely repeating a 
     local profile links, Markdown structure and known private-traffic exclusion.
 
 These are distinct review passes over the addition, not ten independent reviewers
-and not a claim of ten live deployments. The remaining integration checks below
-are not upgraded by these reviews.
+or ten live deployments. Remote regression evidence is reported separately above.
 
-## Required checks not established by local unit tests
+## Remaining live-integration boundaries
 
-`tests/contracts.test.mjs` uses the real compiled action parser, inherited examples,
-feature import and inspection assembly. It has no dependency-missing skip. The
-compile-only `tests/client-types.mts` checks the public declaration. The dedicated
-GitHub workflow runs those plus the existing schema, integration and installed
-archive suites on the pinned Node/npm versions. Check the actual workflow run on
-the branch; a committed workflow is not evidence that it passed.
+The branch exposes existing real feature implementations and a client bound to
+caller-supplied authenticated execution ports. It does not supply or install a
+verified adapter for an unseen running friend installation. Loading a skill does
+not turn a text-only enqueue helper into a complete rich-feature executor.
 
-The unit client's parser is deliberately a labeled boundary double. It proves
-client behavior, not Zod/SDK compatibility. The archive codec fixture does not prove
-a complete installed release. Source links and full canonical examples require
-the complete checkout and build, not the partial local reconstruction.
+Still unverified: the actual friend-runtime binding, live Photon network execution,
+real sending/receiving, visible typing, human poll votes, device card rendering,
+live cold-session recovery and deployment on that VM. Installed package tests and
+SDK-compatible builds do not establish those device/account observations.
 
-Not verified here: real friend-runtime binding, installed SDK execution, the full
-existing application test suite, live sending/receiving, native typing display,
-poll votes, cold recovery, device rendering or any deployment. Those require their
-actual dependencies, configuration and authorized environment. The feature-only
-client is not a finished adapter for an unseen running bot.
+Inherited feature limits remain explicit: the reviewed shared-owner binding blocks
+poll.get, poll.vote, poll.unvote and poll.addOption; reaction removal and card
+updates require their actual restorable handles/sessions. No guide upgrades those
+limitations into a claim that every declared operation is available or live-proven.
