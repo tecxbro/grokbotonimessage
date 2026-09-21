@@ -1,0 +1,40 @@
+name: Photon scratch setup
+on:
+  push:
+    branches: [improving-friends-bot]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.13.0'
+      - name: Pinned npm
+        run: npm install --global npm@10.9.2
+      - name: Dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build
+        run: npm run photon:build
+      - name: Scratch setup tests when present
+        run: |
+          if test -f packages/photon-features/scratch-setup/test.mjs; then
+            node --test packages/photon-features/scratch-setup/test.mjs
+          fi
+      - name: Source and offline build evidence
+        run: |
+          mkdir -p /tmp/photon-build
+          git archive --format=tar HEAD > /tmp/photon-build/source.tar
+          tar -czf /tmp/photon-build/build.tgz node_modules packages/photon-features/dist
+          cp "$(command -v node)" /tmp/photon-build/node
+          git rev-parse HEAD > /tmp/photon-build/COMMIT
+          node --version > /tmp/photon-build/NODE_VERSION
+      - uses: actions/upload-artifact@v4
+        with:
+          name: photon-scratch-build
+          path: /tmp/photon-build/
+          retention-days: 3
