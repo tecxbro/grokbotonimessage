@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p /tmp/photon-build
           git archive --format=tar HEAD > /tmp/photon-build/source.tar
-          tar -czf /tmp/photon-build/build.tgz node_modules packages/photon-features/dist
+          tar -czf /tmp/photon-build/build.tgz node_modules packages/photon-features/node_modules packages/photon-features/dist
           cp "$(command -v node)" /tmp/photon-build/node
           git rev-parse HEAD > /tmp/photon-build/COMMIT
           node --version > /tmp/photon-build/NODE_VERSION
