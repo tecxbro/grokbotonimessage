@@ -14,7 +14,7 @@ jobs:
       contents: write
     env:
       BASE: 2a4545abc7a03eaf4ee9f7386760b61ceb4d8011
-      EXPECTED_TREE: f35b5188f9302113e2494a61ccf36450dddb7eb2
+      EXPECTED_TREE: de7383bf99378a97c92a3c561a856b9933de4cb2
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,7 +30,7 @@ jobs:
           base = os.environ['BASE']
           subprocess.run(['git','merge-base','--is-ancestor',base,'HEAD'],check=True)
           changed = subprocess.check_output(['git','diff','--name-only',base,'HEAD'],text=True).splitlines()
-          allowed = {'.github/workflows/photon-scratch-import.yml'} | {f'.photon-import/chunk-{i}' for i in range(1,5)}
+          allowed = {'.github/workflows/photon-scratch-import.yml', '.photon-import/clock-fix.patch'} | {f'.photon-import/chunk-{i}' for i in range(1,5)}
           assert set(changed) == allowed, 'Unexpected concurrent source change'
           raw = b''.join(pathlib.Path(f'.photon-import/chunk-{i}').read_bytes() for i in range(1,5))
           assert len(raw) == 44292
@@ -43,6 +43,10 @@ jobs:
           filename.write_bytes(patch)
           subprocess.run(['git','apply','--check',str(filename)],check=True)
           subprocess.run(['git','apply','--index',str(filename)],check=True)
+          fix=pathlib.Path('.photon-import/clock-fix.patch')
+          assert hashlib.sha256(fix.read_bytes()).hexdigest() == '70db0edf096624e4d025fc8d41bbeeee01b55c4dcb4844b427282ff39735b6ff'
+          subprocess.run(['git','apply','--check',str(fix)],check=True)
+          subprocess.run(['git','apply','--index',str(fix)],check=True)
           PY
       - name: Install pinned build dependencies and regenerate protocol schema
         run: |
@@ -53,7 +57,7 @@ jobs:
           npm run photon:build
           node packages/photon-features/scripts/generate-configuration.mjs --profiles
           git add packages/photon-features/schemas/protocol.json
-          git rm .photon-import/chunk-1 .photon-import/chunk-2 .photon-import/chunk-3 .photon-import/chunk-4 .github/workflows/photon-scratch-import.yml
+          git rm .photon-import/chunk-1 .photon-import/chunk-2 .photon-import/chunk-3 .photon-import/chunk-4 .photon-import/clock-fix.patch .github/workflows/photon-scratch-import.yml
           test "$(git write-tree)" = "$EXPECTED_TREE"
           test -z "$(git diff --name-only)"
           git config user.name 'Photon implementation assistant'

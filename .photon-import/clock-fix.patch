@@ -1,0 +1,99 @@
+diff --git a/packages/photon-features/src/runtime/typing/leases.ts b/packages/photon-features/src/runtime/typing/leases.ts
+index f600c70..03dbd4e 100644
+--- a/packages/photon-features/src/runtime/typing/leases.ts
++++ b/packages/photon-features/src/runtime/typing/leases.ts
+@@ -68,6 +68,8 @@ export class TypingLeases {
+     ttlMs: number,
+     options: {
+       delayMs?: number;
++      /** Absolute authority deadline, clamped using the issuance clock reading. */
++      notAfter?: number;
+       signal?: AbortSignal;
+       validate?: () => void;
+       authorize?: (
+@@ -82,6 +84,7 @@ export class TypingLeases {
+       !Number.isFinite(ttlMs) ||
+       ttlMs < 100 ||
+       ttlMs > 30000 ||
++      (options.notAfter !== undefined && !Number.isSafeInteger(options.notAfter)) ||
+       (options.delayMs !== undefined &&
+         (!Number.isFinite(options.delayMs) || options.delayMs < 0))
+     )
+@@ -101,11 +104,14 @@ export class TypingLeases {
+     if (generation < state.highestGeneration) return;
+     const ticket = { scope, generation, token: ++this.token };
+     const issuedAt = this.clock.now();
++    // A duration computed by the caller can become too long before issuance.
++    const remaining = Math.min(ttlMs, (options.notAfter ?? Infinity) - issuedAt);
++    if (remaining < 100) return;
+     const descriptor = Object.freeze({
+       ...ticket,
+       issuedAt,
+-      ttlMs,
+-      expiresAt: issuedAt + ttlMs,
++      ttlMs: remaining,
++      expiresAt: issuedAt + remaining,
+     });
+     const authorization = options.authorize?.(descriptor);
+     state.highestGeneration = generation;
+diff --git a/packages/photon-features/src/runtime/typing/operations.ts b/packages/photon-features/src/runtime/typing/operations.ts
+index 4a630c5..f3afd6f 100644
+--- a/packages/photon-features/src/runtime/typing/operations.ts
++++ b/packages/photon-features/src/runtime/typing/operations.ts
+@@ -122,7 +122,7 @@ export function createTypingModule(
+               action.arguments.space.scope,
+               services.context.generation,
+               remaining,
+-              { signal: services.signal, validate },
++              { signal: services.signal, validate, notAfter: Math.min(binding.expiresAt, services.claim.leaseUntil, services.context.expiresAt) },
+             );
+         } else
+           leases.end({
+@@ -185,15 +185,16 @@ export async function executeTypingOperation(
+         validate();
+         let unavailable = false;
+         if (action.operation === "typing.begin") {
+-          const ttl = Math.min(action.arguments.ttlMs, binding.expiresAt - services.clock.now(),
+-            services.claim.leaseUntil - services.clock.now(), services.context.expiresAt - services.clock.now());
++          const notAfter = Math.min(binding.expiresAt, services.claim.leaseUntil, services.context.expiresAt);
++          const ttl = Math.min(action.arguments.ttlMs, notAfter - services.clock.now());
+           unavailable = ttl < 100 || !leases.begin(action.arguments.space.scope, services.context.generation,
+             ttl, binding.issueLease
+               ? {
+                   signal: services.signal,
++                  notAfter,
+                   authorize: lease => issued = binding.issueLease!(lease),
+                 }
+-              : {signal: services.signal, validate});
++              : {signal: services.signal, validate, notAfter});
+         } else leases.end({scope: action.arguments.space.scope, generation: services.context.generation});
+         return {
+           version: 1, requestId: binding.requestId, revision: binding.resultRevision,
+diff --git a/packages/photon-features/tests/integration/typing-start-lifetime.test.ts b/packages/photon-features/tests/integration/typing-start-lifetime.test.ts
+index 296d2ba..30eff6f 100644
+--- a/packages/photon-features/tests/integration/typing-start-lifetime.test.ts
++++ b/packages/photon-features/tests/integration/typing-start-lifetime.test.ts
+@@ -735,3 +735,23 @@ test(
+   assert.ok(!reports.includes("TYPING_AUTHORIZATION_REJECTED"));
+ });
+ }
++
++
++test("typing issuance clamps to the absolute claim deadline when the clock advances between TTL calculation and begin", async t => {
++  const f = await fixture(t);
++  let starts = 0;
++  class DelayedIssuance extends TypingLeases {
++    override begin(...args: Parameters<TypingLeases["begin"]>) {
++      f.clock.advance(1); // The production wall clock can advance here under CI load.
++      return super.begin(...args);
++    }
++  }
++  const leases = new DelayedIssuance(f.clock, async () => ({
++    startTyping: async () => { starts++; }, stopTyping: async () => {},
++  }));
++  t.after(() => leases.shutdown());
++  const result = await (await startTypingExecution(f, leases, f.begin("deadline-race", 30000))).execution;
++  assert.equal(result?.status, "executor-completed", JSON.stringify(result));
++  await settle();
++  assert.equal(starts, 1);
++});
