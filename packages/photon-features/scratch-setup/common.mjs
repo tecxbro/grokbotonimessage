@@ -7,7 +7,7 @@ export function errorCode(error) { return /^[A-Z][A-Z0-9_]{0,99}$/.test(error?.c
 export function parseArgs(argv) {
   const [command, ...args] = argv, options = {};
   for (let i = 0; i < args.length; i++) {
-    const flag = args[i]; check(/^--[a-z-]+$/.test(flag) && !Object.hasOwn(options, flag), 'INVALID_ARGUMENTS');
+    const flag = args[i]; check(/^--[a-z][a-z0-9-]*$/.test(flag) && !Object.hasOwn(options, flag), 'INVALID_ARGUMENTS');
     if (flag === '--json-stdin' || flag === '--next') options[flag] = true;
     else { check(args[i+1] && !args[i+1].startsWith('--'), 'MISSING_ARGUMENT'); options[flag] = args[++i]; }
   }
