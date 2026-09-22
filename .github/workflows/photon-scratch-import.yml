@@ -1,0 +1,108 @@
+name: Import tested Photon fresh setup
+on:
+  push:
+    branches: [improving-friends-bot]
+    paths: ['.photon-import/**', '.github/workflows/photon-scratch-import.yml']
+permissions:
+  contents: read
+jobs:
+  import:
+    if: github.repository == 'tecxbro/grokbotonimessage' && github.ref == 'refs/heads/improving-friends-bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      BASE: 2a4545abc7a03eaf4ee9f7386760b61ceb4d8011
+      EXPECTED_TREE: f35b5188f9302113e2494a61ccf36450dddb7eb2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.13.0'
+      - name: Verify and apply exact reviewed source payload
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, subprocess, hashlib, lzma
+          base = os.environ['BASE']
+          subprocess.run(['git','merge-base','--is-ancestor',base,'HEAD'],check=True)
+          changed = subprocess.check_output(['git','diff','--name-only',base,'HEAD'],text=True).splitlines()
+          allowed = {'.github/workflows/photon-scratch-import.yml'} | {f'.photon-import/chunk-{i}' for i in range(1,5)}
+          assert set(changed) == allowed, 'Unexpected concurrent source change'
+          raw = b''.join(pathlib.Path(f'.photon-import/chunk-{i}').read_bytes() for i in range(1,5))
+          assert len(raw) == 44292
+          assert hashlib.sha256(raw).hexdigest() == '96cdd16e0c221f337c4ec648ca1f3bb693d357b564fcacc3df81ebac306daa24'
+          decoder = lzma.LZMADecompressor()
+          patch = decoder.decompress(raw, max_length=1024*1024)
+          assert decoder.eof and not decoder.unused_data
+          assert hashlib.sha256(patch).hexdigest() == '720f24336d59d276578fd220c66440447bf459fbbd96e7fd8499101b1ad97af6'
+          filename = pathlib.Path(os.environ['RUNNER_TEMP']) / 'photon-reviewed.patch'
+          filename.write_bytes(patch)
+          subprocess.run(['git','apply','--check',str(filename)],check=True)
+          subprocess.run(['git','apply','--index',str(filename)],check=True)
+          PY
+      - name: Install pinned build dependencies and regenerate protocol schema
+        run: |
+          npm install --global npm@10.9.2 --ignore-scripts --no-audit --no-fund
+          test "$(node --version)" = v24.13.0
+          test "$(npm --version)" = 10.9.2
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run photon:build
+          node packages/photon-features/scripts/generate-configuration.mjs --profiles
+          git add packages/photon-features/schemas/protocol.json
+          git rm .photon-import/chunk-1 .photon-import/chunk-2 .photon-import/chunk-3 .photon-import/chunk-4 .github/workflows/photon-scratch-import.yml
+          test "$(git write-tree)" = "$EXPECTED_TREE"
+          test -z "$(git diff --name-only)"
+          git config user.name 'Photon implementation assistant'
+          git config user.email 'photon-implementation@users.noreply.github.com'
+          git commit -m 'feat: fresh Photon setup with native webhook and supervised shared runtime'
+      - name: Verify actual composed runtime before publishing objects
+        run: |
+          mkdir -p "$RUNNER_TEMP/photon-import-result"
+          npm run photon:check
+          node packages/photon-features/scripts/generate-configuration.mjs --check
+          npm run photon:test:integration > "$RUNNER_TEMP/photon-import-result/integration.log" 2>&1
+          tail -15 "$RUNNER_TEMP/photon-import-result/integration.log"
+          test "$(git rev-parse HEAD^{tree})" = "$EXPECTED_TREE"
+          test -z "$(git status --porcelain)"
+      - name: Publish verified Git objects without moving any branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, subprocess, json, base64
+          repository='tecxbro/grokbotonimessage'
+          def api(endpoint, payload):
+            result=subprocess.run(['gh','api','--method','POST',f'repos/{repository}/git/{endpoint}','--input','-'],input=json.dumps(payload),text=True,capture_output=True)
+            if result.returncode:
+              raise RuntimeError(f'Git object publication failed: {endpoint}: {result.stderr}')
+            return json.loads(result.stdout)
+          entries=[]
+          for path in subprocess.check_output(['git','diff','--name-only',os.environ['BASE'],'HEAD'],text=True).splitlines():
+            info=subprocess.check_output(['git','ls-tree','HEAD','--',path],text=True).strip()
+            if not info:
+              entries.append({'path':path,'mode':'100644','type':'blob','sha':None}); continue
+            header,_=info.split('\t',1)
+            mode,kind,expected=header.split()
+            assert kind=='blob'
+            data=subprocess.check_output(['git','show',f'HEAD:{path}'])
+            blob=api('blobs',{'content':base64.b64encode(data).decode(),'encoding':'base64'})
+            assert blob['sha']==expected, f'Blob mismatch: {path}'
+            entries.append({'path':path,'mode':mode,'type':'blob','sha':blob['sha']})
+          tree=api('trees',{'base_tree':'80f648833ee1a09d934e7cd77c13197937b37a5a','tree':entries})
+          assert tree['sha']==os.environ['EXPECTED_TREE']
+          commit=api('commits',{'message':'feat: fresh Photon setup with native webhook and supervised shared runtime','tree':tree['sha'],'parents':[os.environ['GITHUB_SHA']]})
+          result={'repository':repository,'parent':os.environ['GITHUB_SHA'],'commit':commit['sha'],'tree':tree['sha'],'files':len(entries),'branchUpdated':False}
+          pathlib.Path(os.environ['RUNNER_TEMP'],'photon-import-result','objects.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps(result))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: photon-import-result
+          path: ${{ runner.temp }}/photon-import-result/
+          retention-days: 3
+          if-no-files-found: warn
