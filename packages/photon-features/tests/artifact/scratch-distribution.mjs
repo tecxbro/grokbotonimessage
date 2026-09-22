@@ -5,17 +5,26 @@ import assert from 'node:assert/strict';
 import { mkdtemp, realpath, rm, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 import { install } from '../../scratch-setup/install.mjs';
+import { parseArgs } from '../../scratch-setup/common.mjs';
 const [archivePath, checksum] = process.argv.slice(2);
 assert.ok(archivePath && checksum, 'archive and checksum required');
+assert.equal(parseArgs(['install', '--root', '/tmp/example', '--archive', archivePath, '--sha256', checksum]).options['--sha256'], checksum);
+for (const flag of ['--SHA256', '--sha256=value', '--1', '--bad_flag'])
+  assert.throws(() => parseArgs(['install', '--root', '/tmp/example', flag, 'value']), /INVALID_ARGUMENTS/);
 const parent = await mkdtemp(join(await realpath(tmpdir()), 'ph-dist-'));
 // The installer must create its own marked root, not adopt an existing directory.
 const root = join(parent, 'install');
 let composition, local, stop;
 try {
-  const first = await install(root, { archivePath, checksum });
+  // Exercise the literal documented command, including its argument parser.
+  const first = spawnSync(process.execPath, [fileURLToPath(new URL('../../scratch-setup/install.mjs', import.meta.url)),
+    '--root', root, '--archive', archivePath, '--sha256', checksum], { encoding: 'utf8', timeout: 60000, maxBuffer: 1024 * 1024 });
+  assert.equal(first.status, 0, first.stderr);
+  assert.equal(JSON.parse(first.stdout).runtimeStartedByThisCommand, false);
   const pointer = JSON.parse(await readFile(join(root, 'selected-release.json'), 'utf8'));
   const releaseRoot = join(root, 'releases', pointer.release);
   const load = name => import(pathToFileURL(join(releaseRoot, name)).href);
