@@ -10,7 +10,9 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { install } from '../../scratch-setup/install.mjs';
 const [archivePath, checksum] = process.argv.slice(2);
 assert.ok(archivePath && checksum, 'archive and checksum required');
-const root = await mkdtemp(join(await realpath(tmpdir()), 'ph-dist-'));
+const parent = await mkdtemp(join(await realpath(tmpdir()), 'ph-dist-'));
+// The installer must create its own marked root, not adopt an existing directory.
+const root = join(parent, 'install');
 let composition, local, stop;
 try {
   const first = await install(root, { archivePath, checksum });
@@ -68,5 +70,5 @@ try {
   console.log(JSON.stringify({installedArchive:'passed',compiledModules:'actual-extracted-artifact',registeredOperations:44,
     nativeWakeRoundtrip:'offline-fixture-passed',duplicateFinal:'one-provider-call',repeatInstall:'authority-preserved',liveProvider:'not-tested'}));
 } finally {
-  await local?.close();stop?.();await composition?.runtime.stop();await rm(root,{recursive:true,force:true});
+  await local?.close();stop?.();await composition?.runtime.stop();await rm(parent,{recursive:true,force:true});
 }
