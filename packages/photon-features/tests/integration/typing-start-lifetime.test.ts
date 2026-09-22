@@ -735,3 +735,23 @@ test(
   assert.ok(!reports.includes("TYPING_AUTHORIZATION_REJECTED"));
 });
 }
+
+
+test("typing issuance clamps to the absolute claim deadline when the clock advances between TTL calculation and begin", async t => {
+  const f = await fixture(t);
+  let starts = 0;
+  class DelayedIssuance extends TypingLeases {
+    override begin(...args: Parameters<TypingLeases["begin"]>) {
+      f.clock.advance(1); // The production wall clock can advance here under CI load.
+      return super.begin(...args);
+    }
+  }
+  const leases = new DelayedIssuance(f.clock, async () => ({
+    startTyping: async () => { starts++; }, stopTyping: async () => {},
+  }));
+  t.after(() => leases.shutdown());
+  const result = await (await startTypingExecution(f, leases, f.begin("deadline-race", 30000))).execution;
+  assert.equal(result?.status, "executor-completed", JSON.stringify(result));
+  await settle();
+  assert.equal(starts, 1);
+});

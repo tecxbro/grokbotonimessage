@@ -10,7 +10,7 @@ import { isAbsolute, join, resolve } from "node:path";
 import { CliError } from "./output.js";
 import { commandVersion, discoverGrok, runDiscoveryProcess, type CommandResult, type DiscoveryRunner, type GrokDiscovery, type GrokCommandStyleResolver } from "../host/grok-discovery.js";
 
-export interface SetupOptions { installationRoot: string; projectId?: string; toolRoot?: string; photonExecutable?: string; grokExecutable?: string }
+export interface SetupOptions { installationRoot: string; projectId?: string; toolRoot?: string; photonExecutable?: string; grokExecutable?: string; wakeMode?: "webhook" }
 export interface SetupServices {
   env?: NodeJS.ProcessEnv;
   /** Host injection for fixture tests only; main always uses the real process platform. */
@@ -41,7 +41,7 @@ export interface SetupDiscovery {
 interface Installer {
   privateDirectory(path: string): Promise<string>;
   findExecutable(name: string, env: NodeJS.ProcessEnv): Promise<string | null>;
-  resolvePhotonCli(options: { configured?: string; toolRoot: string; env: NodeJS.ProcessEnv; run: DiscoveryRunner; platform: NodeJS.Platform }): Promise<{ path: string; source: SetupDiscovery["photon"]["source"] }>;
+  resolvePhotonCli(options: { configured?: string; toolRoot: string; env: NodeJS.ProcessEnv; run: DiscoveryRunner; platform: NodeJS.Platform; preferPrivate?: boolean }): Promise<{ path: string; source: SetupDiscovery["photon"]["source"] }>;
 }
 const object = (value: unknown): Record<string, unknown> => {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new CliError("SETUP_INVALID_RESPONSE", 5);
@@ -152,10 +152,11 @@ export async function setupDiscovery(options: SetupOptions, services: SetupServi
       cwd: session, env, signal: services.signal, timeoutMs: args[0] === "install" ? 180_000 : 30_000,
       captureStderr: args[0] === "whoami" || args.at(-1) === "--help",
     });
-    const cli = await installer.resolvePhotonCli({ configured: options.photonExecutable, toolRoot, env, run, platform });
+    const cli = await installer.resolvePhotonCli({ configured: options.photonExecutable, toolRoot, env, run, platform, preferPrivate: options.wakeMode === "webhook" });
     const versionResult = await run(cli.path, ["--version"]);
     const version = versionResult.exitCode === 0 ? commandVersion(versionResult.stdout) : null;
     if (!version) throw new CliError("PHOTON_VERSION_UNAVAILABLE", 5);
+    if (options.wakeMode === "webhook" && version !== "2.2.0") throw new CliError("PHOTON_VERSION_MISMATCH", 5);
     const existing = await run(cli.path, ["whoami"]);
     if (existing.exitCode !== 0) {
       // Public Photon 2.2.0 error messages distinguish missing/expired auth from
@@ -250,9 +251,11 @@ export async function setupDiscovery(options: SetupOptions, services: SetupServi
       if (result.spectrum.mode === "dedicated" && !result.spectrum.servingE164) unresolved.push("spectrum.servingE164");
     }
     if (!authenticated) unresolved.push("photon.identity");
-    const grokExecutable = await installer.findExecutable(options.grokExecutable ?? "gbot", env);
-    result.grok = await discoverGrok(grokExecutable, run, services.discoverGrokCommandStyle);
-    unresolved.push(...result.grok.unresolved);
+    if (options.wakeMode !== "webhook") {
+      const grokExecutable = await installer.findExecutable(options.grokExecutable ?? "gbot", env);
+      result.grok = await discoverGrok(grokExecutable, run, services.discoverGrokCommandStyle);
+      unresolved.push(...result.grok.unresolved);
+    }
     result.status = unresolved.length ? "needs-input" : "discovered";
     result.nextDecision = nextDecision(unresolved);
     return result;

@@ -1,3 +1,25 @@
+# Fresh setup profile on improving-friends-bot
+
+The default handoff is now [the fresh-setup guide](packages/photon-features/scratch-setup/README.md).
+It composes the existing full feature runtime with a native wake-only Grok webhook
+and an independent process supervisor. The neutral feature-only profile remains
+available for existing integrations. No new bot roles or orchestration policy are added.
+
+`phone → Photon → one hosted Spectrum owner → SQLite batch → native routine →
+private feature helper → same owner → phone`.
+
+The full executor, resource ports and all 44 operation contracts are retained.
+`work.complete` adds atomic final output admission plus work acknowledgement;
+activity and completion metadata are additive in the existing JSON-backed handoff
+records. The database version and applied migrations are not rewritten. Legacy
+configuration remains readable; native webhook mode has no gateway executable.
+The supervisor handles child restart while its host runs, not whole-VM suspension.
+
+The following foundation architecture remains reference material; it is not a
+request to rebuild the foundation or load the old bot-topology instructions.
+
+---
+
 # Foundation architecture
 
 ## Planned implementation

@@ -87,6 +87,7 @@ export class LocalProtocol {
         return ok(await s.submission.cancel(req.requestId, c));
       if (req.method === "capabilities") return ok(s.capabilities(c));
       if (req.method === "diagnostics") return ok(s.diagnostics());
+      if (req.method === "work.complete") throw new Error("UNAVAILABLE");
       const visible = (h: HandoffRecord) =>
         h.principalId === principal.id &&
         h.taskId === c.taskId &&

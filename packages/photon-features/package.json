@@ -39,7 +39,8 @@
     "scripts",
     "examples",
     "npm-shrinkwrap.json",
-    "features-only"
+    "features-only",
+    "scratch-setup"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

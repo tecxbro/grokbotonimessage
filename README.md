@@ -1,68 +1,76 @@
-# Photon features for an existing integration
+# Grok Bot on iMessage, through Photon
 
-**Branch: `improving-friends-bot`.** This is the feature-only edition: the existing
-Photon implementation, a neutral library import, and instructions for using its
-features. It is not a replacement bot or a new connection setup.
+**Branch: `improving-friends-bot`.** A new bot can install the supplied runtime,
+connect Photon, bind its own native wake routine, and use the existing feature code.
+No Grok gateway executable, bot roster, replacement agent, or transcript polling is
+required by this setup profile.
 
-**Start with [the feature skill](packages/photon-features/features-only/SKILL.md).**
-For code and the one-time binding boundary, read
-[FEATURE LIBRARY](packages/photon-features/features-only/LIBRARY.md).
+## Start from scratch
 
-| What is included | Where |
-| --- | --- |
-| Feature-only usage skill | `packages/photon-features/features-only/SKILL.md` |
-| Every operation, its inputs, code, schema and example | `packages/photon-features/features-only/CATALOG.md` |
-| Focused feature guides | `packages/photon-features/features-only/guides/` |
-| Existing implementations, unchanged | `packages/photon-features/src/features/` and `src/runtime/typing/` |
-| Neutral factory import | `@grokbot/photon-features/features` |
-| Request helper bound to an existing authenticated executor | `@grokbot/photon-features/feature-client` |
-| Source/limit notes and test evidence | `packages/photon-features/features-only/SOURCES.md`, `REVIEW.md` |
+**Read [Fresh setup](packages/photon-features/scratch-setup/README.md) first.**
+It contains the actual installer, Photon login/account steps, private webhook
+binding, process supervision, commands and live verification checklist.
 
-All **44 existing operation contracts** remain in the branch. Their availability is
-not uniform: native poll-management bindings, cold reaction/card recovery and
-provider-specific configuration retain their documented limits. The skill reports
-those instead of pretending that every registry entry works everywhere.
+The bot installs this code on **its cloud VM**, not the owner's Mac:
 
-## Applying this edition
-
-Keep the existing working connection, sending/receiving path, typing behavior and
-all non-feature behavior. Give the existing integration the feature skill and the
-code linked from it. Use the neutral factories through the integration's existing
-authorized execution and resource ports; do not launch this repository's full host
-or its connection installer merely to load these features.
-
-The helper prepares and submits requests to a **binding supplied by the existing
-integration**. It does not discover or create that binding. A text-only enqueue
-script does not become a 44-operation executor by loading Markdown. Rich operations
-are usable only after their actual feature modules and prerequisites are bound.
-No claim is made that your live installation has already received this change.
-
-The inherited root CONNECT.md and package SKILL.md/DEPLOYMENT.md belong to the old
-full-application profile. They are retained as source history, not instructions for
-this feature-only edition. Do not load them as part of its skill set.
-
-## Verification
-
-Dependency-free checks for this addition:
-
-```sh
-node --test packages/photon-features/features-only/tests/*.unit.test.mjs
+```text
+iMessage → Photon hosted line → one persistent Spectrum runtime
+        → durable batch → native Grok webhook {batchId}
+        → bot reads batch and submits explicit feature operations
+        → same Spectrum runtime sends the response
 ```
 
-With the repository-pinned Node/npm and locked dependencies:
+The Spectrum process keeps listening after the bot's current turn ends. The
+supervisor restarts an unexpectedly exited or unresponsive child while the VM is
+running. A separate user-service installation is available when the host supports
+it. Neither mechanism can execute while the entire VM is suspended.
+
+Give the bot this repository and: **“Connect me to iMessage. Start with the fresh
+setup linked in README.md.”** It uses finished code; it should not implement an
+adapter, choose an internal bot ID, or rewrite the integration.
+
+Authentication and enrollment still require real account access and the intended
+sender's details. Grok must create/reuse its actual native routine through its
+available tools. The code accepts that routine's private URL/key; it does not
+invent an undocumented routine-registration API or bypass platform approvals.
+
+## Already connected: feature-only use remains available
+
+Keep the working connection unchanged and use the separate
+[feature skill](packages/photon-features/features-only/SKILL.md),
+[44-operation catalog](packages/photon-features/features-only/CATALOG.md), and
+[neutral library](packages/photon-features/features-only/LIBRARY.md).
+Those instructions remain about Photon features, not personality or delegation.
+The fresh setup now supplies the actual authenticated executor binding that the
+neutral client requires; an unrelated existing runtime still needs its own adapter.
+
+All 44 operation contracts and feature modules remain. Availability is conditional:
+normal shared messaging does not require a dedicated line; some native operations
+require one, configured cards require their actual templates/backend, four native
+poll-management bindings retain their existing limitation, and cold card/reaction
+recovery is not upgraded by this setup change. Inspect `capabilities`, not a count
+of catalog entries, before promising an effect.
+
+## Evidence and development
+
+See [review and tests](packages/photon-features/scratch-setup/REVIEW.md) and
+[sources](packages/photon-features/scratch-setup/SOURCES.md).
+The inherited `CONNECT.md` and the older full-host `SKILL.md` describe the gateway
+profile. They are not the fresh webhook routine's instructions. Use the fresh
+profile's `ROUTINE.md` plus the neutral feature skill instead.
+
+With Node 24.13.0 and npm 10.9.2:
 
 ```sh
 npm ci --ignore-scripts --no-audit --no-fund
 npm run photon:build
-node --test packages/photon-features/features-only/tests/*.unit.test.mjs
-node --test packages/photon-features/features-only/tests/contracts.test.mjs
-node packages/photon-features/features-only/verify.mjs --full
+node --test packages/photon-features/tests/integration/scratch-profile.test.mjs
 npm run photon:check
 npm run photon:test
 npm run photon:test:integration
 npm run photon:test:installed
 ```
 
-These commands never authorize a live message. The review record distinguishes
-what actually ran from pending SDK, integration and device checks. No deployment,
-new phone line or security-setting change is part of this branch.
+Offline checks never authorize a live send. Installation, native wake acceptance,
+provider acceptance, device rendering and overnight availability are separate
+states. See the fresh setup checklist before declaring a live installation done.

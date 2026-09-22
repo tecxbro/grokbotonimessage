@@ -68,6 +68,10 @@ export interface HandoffRecord extends StoredRecord {
   state: "pending" | "claimed" | "acknowledged" | "cancelled";
   claim: Claim | null;
   createdAt: number;
+  /** Genuine pickup/activity report, not the runtime's own process heartbeat. */
+  activityUpdatedAt?: number;
+  /** Additive JSON; older handoffs have no final-submission record. */
+  completion?: { digest: string; requestIds: string[]; finishedAt: number };
   /** Notification ledger only; acceptance never claims or acknowledges user work.
    * Optional so pre-existing handoff JSON remains readable without migration. */
   wake?: {

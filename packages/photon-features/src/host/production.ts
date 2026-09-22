@@ -1,3 +1,4 @@
+import { WorkTyping } from "./work-typing.js";
 import { configurationBlockers } from "./configuration-inventory.js";
 import { SignedCardBackend } from "./card-backend.js";
 import { ProductionTextProducer } from "./text-producer.js";
@@ -73,6 +74,7 @@ import { productionCapability } from "./capabilities.js";
 import { registerIncomingReferences } from "./incoming-resources.js";
 import { createPollCorrelations, routePollEvent, type NativePollVoteIdentity } from "./poll-correlations.js";
 import { HostTypingBinding } from "./typing-binding.js";
+import { GrokWebhookTaskHandoff } from "./grok-webhook.js";
 
 const adminOperations = new Set<Operation>([
   "space.create", "space.rename", "space.addMembers", "space.removeMembers", "space.leave",
@@ -152,12 +154,14 @@ class ProductionLocalExecutor implements LocalExecutor {
     private readonly stopTyping: () => Promise<void>,
     private readonly report: (code: string) => void,
     private readonly concurrency = 4,
+    private readonly activity?: WorkTyping,
   ) {}
 
   async dispatch(request: LocalRequest, principal: AuthenticatedPrincipal): Promise<LocalResponse> {
     const response = await this.protocol.dispatch(request, principal) as LocalResponse;
     if (request.method === "request.cancel") this.running.get(request.requestId)?.();
-    if (request.method === "submit" || request.method === "request.cancel") this.kick();
+    if (request.method === "submit" || request.method === "work.complete" || request.method === "request.cancel") this.kick();
+    this.activity?.tick();
     return response;
   }
   registerFeatures(modules: readonly FeatureModule[]): void {
@@ -174,11 +178,13 @@ class ProductionLocalExecutor implements LocalExecutor {
     if (this.active) throw new Error("OUTBOX_ALREADY_STARTED");
     this.active = true;
     this.failed = false;
+    this.activity?.start();
     await this.pump.start();
     this.kick();
   }
   async stopOutbox(): Promise<void> {
     this.active = false;
+    this.activity?.stop();
     for (const abort of this.running.values()) abort();
     const failures: unknown[] = [];
     const typingCleanup = this.stopTyping();
@@ -227,6 +233,7 @@ class ProductionLocalExecutor implements LocalExecutor {
           });
         });
         const settled = await Promise.allSettled(batch);
+        this.activity?.tick();
         if (settled.some(result => result.status === "fulfilled" && result.value !== null)) this.dirty = true;
         if (settled.some(result => result.status === "rejected")) {
           this.report("OUTBOX_ITEM_FAILED");
@@ -239,6 +246,8 @@ class ProductionLocalExecutor implements LocalExecutor {
 
 export interface ProductionCompositionDependencies {
   sdkFactory?: SdkFactory;
+  /** Offline test injection at the external HTTPS boundary only. */
+  webhookFetch?: typeof fetch;
   /** Internal lifecycle handoff: reuses the same owner after first-address resolution. */
   startedOwner?: SpectrumOwner;
   grokRunner?: GrokCommandRunner;
@@ -369,6 +378,8 @@ export async function createProductionComposition(
     undefined, // Keep the existing default timers.
     dependencies.report, // Forward typing diagnostics to the host.
   );
+  const workTyping = configuration.grok.mode === "webhook"
+    ? new WorkTyping(store, contexts, context, typing, resources, now, dependencies.report) : undefined;
   const legacyTypingBind: BindTypingExecution = (action, services) => ({
     requestId: requestIdentity(action, services.context),
     resultRevision: 0,
@@ -641,7 +652,11 @@ export async function createProductionComposition(
     continuation: event => event.type === "poll" || event.type === "app-interaction",
   }, [...assembled.compatibilityRegistry.reducers.values()]);
   const captures = new FileCaptureStore(configuration.runtime.captureDirectory);
-  const handoff = new GrokGatewayTaskHandoff({
+  const handoff = configuration.grok.mode === "webhook"
+    ? await GrokWebhookTaskHandoff.load(configuration.grok.bindingFile, {
+      taskId: context.taskId, generation: context.generation, timeoutMs: configuration.grok.timeoutMs,
+    }, dependencies.webhookFetch, now)
+    : new GrokGatewayTaskHandoff({
     executable: configuration.grok.executable,
     agentId: configuration.task.grokAgentId,
     taskId: context.taskId,
@@ -670,6 +685,7 @@ export async function createProductionComposition(
   let diagnostics: () => { ready: boolean; activation: "disabled" | "enabled" } =
     () => ({ ready: false, activation: configuration.activation });
   const protocol = new DurableLocalProtocol({ contexts, submission, work,
+    completeWork: (trusted, request) => work.complete(trusted, request.handoffId, request.fence, request.actions, submission),
     streamProducer: (caller, request) => textProducer.dispatch(caller, request),
     importMedia: (caller, contextId, input) => resourcePorts.importFile(caller, contextId, input.filename, input.metadata),
     capabilities: trusted => configuration.task.permissions.map(operation => capability(operation, trusted)),
@@ -734,7 +750,7 @@ export async function createProductionComposition(
       typing.shutdown();
       await typing.drain();
     },
-    dependencies.report ?? (() => undefined));
+    dependencies.report ?? (() => undefined), 4, workTyping);
   const ingressSource = new SpectrumEventSource(owner, captures, { now }, diagnostic =>
     (dependencies.report ?? (() => undefined))(diagnostic.code), correlations,
     { receipts, registerReferences, authorize: authorizeCapture });

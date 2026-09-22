@@ -26,6 +26,8 @@ export const streamOpenedSchema = z.strictObject({ stream: streamRefSchema,
 export const streamAcceptedSchema = z.strictObject({ accepted: z.literal(true) });
 const work = { contextId: idSchema };
 export const localRequestSchema = z.discriminatedUnion("method", [
+  z.strictObject({ version: z.literal(1), method: z.literal("work.complete"), ...work,
+    handoffId: idSchema, fence: z.number().int().nonnegative(), actions: z.array(actionSchema).max(16) }),
   z.strictObject({ ...streamProducerInputSchemas["stream.open"].shape, method: z.literal("stream.open"), ...work }),
   z.strictObject({ ...streamProducerInputSchemas["stream.append"].shape, method: z.literal("stream.append"), ...work }),
   z.strictObject({ ...streamProducerInputSchemas["stream.close"].shape, method: z.literal("stream.close"), ...work }),

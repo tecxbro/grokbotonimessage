@@ -5,10 +5,54 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: photon-scratch-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  package:
+  verify:
+    name: Fresh setup and recovery (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.13.0'
+      - name: Pinned toolchain and dependencies
+        run: |
+          npm install --global npm@10.9.2 --ignore-scripts --no-audit --no-fund
+          test "$(node --version)" = v24.13.0
+          test "$(npm --version)" = 10.9.2
+          npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build and strict schema checks
+        run: |
+          npm run photon:build
+          npm run photon:check
+          node packages/photon-features/scripts/generate-configuration.mjs --check
+      - name: Actual fresh setup, IPC, output and child-restart regressions
+        run: node --test packages/photon-features/tests/integration/scratch-profile.test.mjs
+      - name: Existing feature skill and canonical contract parity
+        run: |
+          node --test packages/photon-features/features-only/tests/*.unit.test.mjs
+          node --test packages/photon-features/features-only/tests/contracts.test.mjs
+          node packages/photon-features/features-only/verify.mjs --full
+  distribution:
+    name: Complete tested distribution
+    needs: verify
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,27 +61,22 @@ jobs:
         with:
           node-version: '24.13.0'
       - name: Pinned npm
-        run: npm install --global npm@10.9.2
-      - name: Dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Build
-        run: npm run photon:build
-      - name: Scratch setup tests when present
+        run: npm install --global npm@10.9.2 --ignore-scripts --no-audit --no-fund
+      - name: Build the full archive through every existing release gate
         run: |
-          if test -f packages/photon-features/scratch-setup/test.mjs; then
-            node --test packages/photon-features/scratch-setup/test.mjs
-          fi
-      - name: Source and offline build evidence
+          mkdir -p "$RUNNER_TEMP/photon-distribution"
+          node packages/photon-features/scripts/package.mjs --owner-local "$GITHUB_WORKSPACE" "$RUNNER_TEMP/photon-distribution/photon-imessage.gpf.gz" > "$RUNNER_TEMP/photon-distribution/build.log" 2>&1
+      - name: Verify actual extracted fresh setup and repeat installation
+        run: node packages/photon-features/tests/artifact/scratch-distribution.mjs "$RUNNER_TEMP/photon-distribution/photon-imessage.gpf.gz" "$(cat "$RUNNER_TEMP/photon-distribution/photon-imessage.gpf.gz.sha256")" | tee "$RUNNER_TEMP/photon-distribution/installed-scratch.log"
+      - name: Save exact source identity
+        if: success()
         run: |
-          mkdir -p /tmp/photon-build
-          git archive --format=tar HEAD > /tmp/photon-build/source.tar
-          git bundle create /tmp/photon-build/repository.bundle --all
-          tar -czf /tmp/photon-build/build.tgz node_modules packages/photon-features/node_modules packages/photon-features/dist
-          cp "$(command -v node)" /tmp/photon-build/node
-          git rev-parse HEAD > /tmp/photon-build/COMMIT
-          node --version > /tmp/photon-build/NODE_VERSION
+          git rev-parse HEAD > "$RUNNER_TEMP/photon-distribution/COMMIT"
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/photon-distribution/source.tar.gz"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: photon-scratch-build
-          path: /tmp/photon-build/
-          retention-days: 3
+          name: photon-imessage-scratch-distribution
+          path: ${{ runner.temp }}/photon-distribution/
+          retention-days: 7
+          if-no-files-found: error

@@ -1,0 +1,28 @@
+Connect me to iMessage using this branch's fresh setup.
+
+Start with the root README, then packages/photon-features/scratch-setup/README.md.
+Use your Linux cloud VM, not my Mac. Install the supplied program and use its actual
+commands. Do not rebuild the integration or load the older gateway/role profile.
+
+Use one persistent hosted Spectrum runtime and your own real native webhook routine.
+Save the routine's URL/key privately; the webhook carries only batchId. Keep the
+existing feature code and the neutral feature skill. Do not add delegation or
+personality rules, create extra bots, poll transcripts or discover a gateway.
+
+Complete Photon sign-in using the real login link/code. Discover or create the
+selected iMessage project and enroll my actual sender only as needed. Ask for any
+missing real account/contact detail, not an internal bot UUID. Do not buy a line,
+change billing, rotate a working secret or change approval settings.
+
+Install supported process supervision and verify child readiness. Report VM sleep
+or boot-persistence limitations explicitly. A bot going idle must not own the
+Spectrum process's lifetime.
+
+After setup, ask me to send a fresh iMessage. Replying to that real inbound message
+is the requested operation. Do not initiate unrelated test messages, label live
+sends as offline actions or bypass a platform review.
+
+Use the installed batch/feature/heartbeat/final-response helpers, with stable
+request identities and original references. Report installed, configured, runtime
+ready, native wake verified, provider accepted and device observed separately.
+Existing unsupported/configuration-dependent feature limits remain explicit.

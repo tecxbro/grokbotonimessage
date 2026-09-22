@@ -34,51 +34,55 @@ export class DurableSubmission implements SubmissionPort {
     input: Action,
     supplied: TrustedContext,
   ): Promise<OperationResult> {
-    const action = admit(input);
-    return this.store.transaction((tx) => {
-      const c = this.contexts.refresh(tx, supplied),
-        id = requestIdentity(action, c),
-        hash = argumentDigest(action),
-        old = tx.get("outbox", id);
-      if (old) {
-        this.contexts.owned(tx, id, c);
-        if (old.argumentDigest !== hash) fault("IDEMPOTENCY_CONFLICT");
-        // Completed/unknown child replay returns its durable result without
-        // reacquiring a single-use stream or other consumed input.
-        return old.result;
-      }
-      this.contexts.action(tx, c, action);
-      const admission = captureAdmission(tx, action, c, this.contexts.clock.now());
-      const result: OperationResult = {
-        version: 1,
-        requestId: id,
-        status: "queued",
-        revision: 0,
-        updatedAt: this.contexts.clock.now(),
-        references: [],
-        observations: [],
-      };
-      tx.put(
-        "outbox",
-        {
-          id,
-          scope: c.scope,
-          revision: 0,
-          action,
-          admission,
-          principalId: c.principalId,
-          taskId: c.taskId,
-          generation: c.generation,
-          argumentDigest: hash,
-          result,
-          claim: null,
-          cancellationRequestedAt: null,
-        },
-        null,
-      );
-      return result;
-    });
+    return this.store.transaction(tx => this.submitInTransaction(tx, input, supplied));
   }
+  /** Shared admission transaction used by final-output + handoff completion.
+   * No provider I/O occurs here; existing claims still fence actual execution. */
+  submitInTransaction(tx: Transaction, input: Action, supplied: TrustedContext): OperationResult {
+    const action = admit(input);
+    const c = this.contexts.refresh(tx, supplied),
+      id = requestIdentity(action, c),
+      hash = argumentDigest(action),
+      old = tx.get("outbox", id);
+    if (old) {
+      this.contexts.owned(tx, id, c);
+      if (old.argumentDigest !== hash) fault("IDEMPOTENCY_CONFLICT");
+      // Completed/unknown child replay returns its durable result without
+      // reacquiring a single-use stream or other consumed input.
+      return old.result;
+    }
+    this.contexts.action(tx, c, action);
+    const admission = captureAdmission(tx, action, c, this.contexts.clock.now());
+    const result: OperationResult = {
+      version: 1,
+      requestId: id,
+      status: "queued",
+      revision: 0,
+      updatedAt: this.contexts.clock.now(),
+      references: [],
+      observations: [],
+    };
+    tx.put(
+      "outbox",
+      {
+        id,
+        scope: c.scope,
+        revision: 0,
+        action,
+        admission,
+        principalId: c.principalId,
+        taskId: c.taskId,
+        generation: c.generation,
+        argumentDigest: hash,
+        result,
+        claim: null,
+        cancellationRequestedAt: null,
+      },
+      null,
+    );
+    return result;
+  }
+
   async status(id: string, c: TrustedContext): Promise<OperationResult> {
     return this.store.transaction(
       (tx) => this.contexts.owned(tx, id, c).result,

@@ -68,6 +68,8 @@ export class TypingLeases {
     ttlMs: number,
     options: {
       delayMs?: number;
+      /** Absolute authority deadline, clamped using the issuance clock reading. */
+      notAfter?: number;
       signal?: AbortSignal;
       validate?: () => void;
       authorize?: (
@@ -82,6 +84,7 @@ export class TypingLeases {
       !Number.isFinite(ttlMs) ||
       ttlMs < 100 ||
       ttlMs > 30000 ||
+      (options.notAfter !== undefined && !Number.isSafeInteger(options.notAfter)) ||
       (options.delayMs !== undefined &&
         (!Number.isFinite(options.delayMs) || options.delayMs < 0))
     )
@@ -101,11 +104,14 @@ export class TypingLeases {
     if (generation < state.highestGeneration) return;
     const ticket = { scope, generation, token: ++this.token };
     const issuedAt = this.clock.now();
+    // A duration computed by the caller can become too long before issuance.
+    const remaining = Math.min(ttlMs, (options.notAfter ?? Infinity) - issuedAt);
+    if (remaining < 100) return;
     const descriptor = Object.freeze({
       ...ticket,
       issuedAt,
-      ttlMs,
-      expiresAt: issuedAt + ttlMs,
+      ttlMs: remaining,
+      expiresAt: issuedAt + remaining,
     });
     const authorization = options.authorize?.(descriptor);
     state.highestGeneration = generation;
@@ -140,6 +146,14 @@ export class TypingLeases {
       return;
     this.clearLease(state);
     this.schedule(state);
+    this.dispatch(state);
+  }
+  /** Refresh native dots without extending the underlying work's authority. */
+  reassert(ticket: TypingTicket): void {
+    const state = this.conversations.get(scopeKey(ticket.scope));
+    if (!state?.lease || state.lease.token !== ticket.token || state.lease.generation !== ticket.generation ||
+        !this.desired(state) || state.running || state.blocked) return;
+    state.observed = false;
     this.dispatch(state);
   }
   private clearLease(state: Conversation) {

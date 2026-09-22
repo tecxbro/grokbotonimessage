@@ -272,36 +272,70 @@
       "additionalProperties": false
     },
     "grok": {
-      "type": "object",
-      "properties": {
-        "executable": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 1024
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "executable": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "timeoutMs": {
+              "default": 15000,
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 60000
+            },
+            "mode": {
+              "type": "string",
+              "const": "gateway"
+            },
+            "commandStyle": {
+              "type": "string",
+              "enum": [
+                "gateway-flag",
+                "gateway-subcommand"
+              ]
+            },
+            "commandStyleEvidence": {
+              "type": "string",
+              "const": "installed-cli-help"
+            }
+          },
+          "required": [
+            "executable",
+            "timeoutMs"
+          ],
+          "additionalProperties": false
         },
-        "timeoutMs": {
-          "default": 15000,
-          "type": "integer",
-          "minimum": 1000,
-          "maximum": 60000
-        },
-        "commandStyle": {
-          "type": "string",
-          "enum": [
-            "gateway-flag",
-            "gateway-subcommand"
-          ]
-        },
-        "commandStyleEvidence": {
-          "type": "string",
-          "const": "installed-cli-help"
+        {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "const": "webhook"
+            },
+            "bindingFile": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "timeoutMs": {
+              "default": 10000,
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 60000
+            }
+          },
+          "required": [
+            "mode",
+            "bindingFile",
+            "timeoutMs"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "executable",
-        "timeoutMs"
-      ],
-      "additionalProperties": false
+      ]
     },
     "authorization": {
       "type": "object",

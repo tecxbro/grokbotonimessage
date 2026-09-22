@@ -24,6 +24,8 @@ export interface RuntimeProtocolServices {
   importMedia?: import("../../host/protocol.js").MediaImportPort;
   contexts: DurableContexts;
   submission: SubmissionPort;
+  completeWork?: (context: TrustedContext, request: Extract<import("../../contracts/protocol.js").LocalRequest,
+    { method: "work.complete" }>) => unknown;
   work: DurableWork;
   capabilities(context: TrustedContext): Capability[];
   diagnostics(): { ready: boolean; activation: "disabled" | "enabled" };
@@ -52,6 +54,10 @@ export class DurableLocalProtocol {
         );
       let result: unknown;
       switch (request.method) {
+        case "work.complete":
+          if (!s.completeWork) throw new RuntimeFault("UNAVAILABLE");
+          result = s.completeWork(c, request);
+          break;
         case "stream.open": case "stream.append": case "stream.close": case "stream.abort":
           if (!s.streamProducer || !c.permissions.includes("text.stream")) throw new RuntimeFault("FORBIDDEN");
           result = await s.streamProducer(principal, request);

@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import { actionSchema, type Action } from "../../contracts/actions.js";
+import type { DurableSubmission } from "./submission.js";
 import {
   sameScope,
   type Scope,
@@ -30,6 +33,41 @@ export class DurableWork {
       )).sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id)).slice(0, limit);
     });
   }
+
+  /** Atomically admit final operations and close the exact claim. Replays of an
+   * identical completion return the same work; changed payloads fail closed. */
+  complete(c: TrustedContext, id: string, fence: number, inputs: Action[], submission: DurableSubmission) {
+    if (!Array.isArray(inputs) || inputs.length > 16) fault("INVALID_REQUEST");
+    const actions = inputs.map(value => actionSchema.parse(value));
+    if (actions.some(action => action.contextId !== c.contextId)) fault("FORBIDDEN");
+    const digest = createHash("sha256").update(JSON.stringify(actions)).digest("hex");
+    return this.store.transaction(tx => {
+      c = this.contexts.refresh(tx, c);
+      const h = tx.get("handoffs", id), now = this.contexts.clock.now();
+      if (!h || h.principalId !== c.principalId || h.taskId !== c.taskId || h.generation !== c.generation ||
+          !authorizedConversation(tx, c, h.scope)) return fault("RESOURCE_NOT_FOUND");
+      if (h.state === "cancelled") fault("CANCELLED");
+      if (!h.claim || h.claim.owner !== c.principalId || h.claim.fence !== fence || h.claim.generation !== c.generation)
+        fault("STALE_FENCE");
+      if (h.completion) {
+        if (h.completion.digest !== digest) fault("IDEMPOTENCY_CONFLICT");
+      } else {
+        if (h.state !== "claimed" || h.claim.leaseUntil <= now) fault("STALE_FENCE");
+        const requestIds = actions.map(action => submission.submitInTransaction(tx, action, c).requestId);
+        h.completion = { digest, requestIds, finishedAt: now };
+        h.state = "acknowledged";
+        const revision = h.revision++;
+        tx.put("handoffs", h, revision);
+      }
+      const events = h.eventIds.map(id => {
+        const row = tx.get("inbox", id);
+        if (!row || !sameScope(row.scope, h.scope)) return fault("RESOURCE_NOT_FOUND");
+        return row.event;
+      });
+      return { handoff: h, events };
+    });
+  }
+
   change(
     c: TrustedContext,
     id: string,
@@ -76,6 +114,7 @@ export class DurableWork {
           if (method === "ack") h.state = "acknowledged";
           else h.claim.leaseUntil = now + leaseMs;
         }
+        if (method !== "ack") h.activityUpdatedAt = now;
         const rev = h.revision;
         h.revision++;
         tx.put("handoffs", h, rev);

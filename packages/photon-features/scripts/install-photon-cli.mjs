@@ -28,14 +28,14 @@ export async function findExecutable(name, env) {
 }
 
 /** VM-only, private npm prefix; run is supplied by setup's bounded spawn adapter. */
-export async function resolvePhotonCli({ configured, toolRoot, env, run, platform = process.platform }) {
+export async function resolvePhotonCli({ configured, toolRoot, env, run, platform = process.platform, preferPrivate = false }) {
   if (platform !== 'linux') throw new Error('SETUP_VM_REQUIRED');
   if (configured) {
     const path = await findExecutable(configured, env);
     if (!path) throw new Error('PHOTON_EXECUTABLE_NOT_FOUND');
     return { path, source: 'configured' };
   }
-  const onPath = await findExecutable('photon', env);
+  const onPath = preferPrivate ? null : await findExecutable('photon', env);
   if (onPath) return { path: onPath, source: 'path' };
   const prefix = join(toolRoot, 'photon-cli');
   await privateDirectory(prefix);

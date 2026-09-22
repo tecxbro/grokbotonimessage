@@ -22,6 +22,7 @@ import { supervisorGuidance } from "./supervisor.js";
 import { assertSelectedRelease } from "./selected-release.js";
 import { DurableSQLiteStore } from "../adapters/state/sqlite.js";
 import { bootstrapOrValidateAuthority, configuredAuthority } from "./authority.js";
+import { readGrokWebhookBinding } from "./grok-webhook.js";
 
 type HostCommand = "validate" | "enable" | "disable" | "run" | "setup" | "supervisor" | "reconcile" | "recover-stale";
 
@@ -48,16 +49,20 @@ export async function validateProductionInstallation(root: string, releaseRoot: 
   const localToken = (await readPrivateFile(configuration.local.credentialFile, 128)).trim();
   if (!projectSecret || projectSecret.length > 8192) throw new Error("INVALID_PROJECT_SECRET");
   if (!/^[a-fA-F0-9]{64}$/.test(localToken)) throw new Error("INVALID_LOCAL_CREDENTIAL");
-  const executable = await realpath(configuration.grok.executable);
-  const stat = await lstat(executable);
-  if (!stat.isFile()) throw new Error("INVALID_GROK_EXECUTABLE");
-  await access(executable, constants.X_OK);
+  if (configuration.grok.mode === "webhook") {
+    await readGrokWebhookBinding(configuration.grok.bindingFile);
+  } else {
+    const executable = await realpath(configuration.grok.executable);
+    const stat = await lstat(executable);
+    if (!stat.isFile()) throw new Error("INVALID_GROK_EXECUTABLE");
+    await access(executable, constants.X_OK);
+  }
   const now = Date.now();
   if (configuration.task.issuedAt > now || configuration.task.expiresAt <= now)
     throw new Error("EXPIRED_TASK_BINDING");
   await validateInitialConversationPrerequisites(configuration, now);
-  if (configuration.ownerModel === "installation-owner" && configuration.grok.commandStyle) {
-    const style = await discoverGrokCommandStyle(executable, configuration.grok.timeoutMs, dependencies.grokHelpInspector);
+  if (configuration.ownerModel === "installation-owner" && configuration.grok.mode !== "webhook" && configuration.grok.commandStyle) {
+    const style = await discoverGrokCommandStyle(configuration.grok.executable, configuration.grok.timeoutMs, dependencies.grokHelpInspector);
     if (style !== configuration.grok.commandStyle) throw new Error("GROK_WAKE_COMMAND_STYLE_CHANGED");
   }
   if (configuration.provider.conversationId) {
@@ -133,6 +138,7 @@ export async function runProductionHost(root: string, releaseRoot: string,
   const requestStop = () => { signalRequested = true; resolveSignal(); };
   process.on("SIGINT", requestStop);
   process.on("SIGTERM", requestStop);
+  if (process.send) process.on("disconnect", requestStop);
   const stop = async (): Promise<void> => {
     const failures: unknown[] = startupCleanupFailure ? [startupCleanupFailure] : [];
     if (cardBackend) try { await cardBackend.close(); } catch (error) { failures.push(error); }
@@ -183,6 +189,7 @@ export async function runProductionHost(root: string, releaseRoot: string,
       socketPath: configuration.local.socketPath }) + "\n");
     await Promise.race([signal, new Promise<void>((_resolve, reject) => {
       monitor = setInterval(() => {
+        if (process.connected) process.send?.({ type: "photon-health", ready: composition?.runtime.doctor().ready === true });
         if (!composition?.runtime.doctor().ready) {
           clearInterval(monitor);
           reject(new Error("HOST_LOST_READINESS"));
@@ -195,6 +202,7 @@ export async function runProductionHost(root: string, releaseRoot: string,
     finally {
       process.off("SIGINT", requestStop);
       process.off("SIGTERM", requestStop);
+      process.off("disconnect", requestStop);
     }
   }
 }

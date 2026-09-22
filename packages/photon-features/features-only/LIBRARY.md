@@ -1,5 +1,9 @@
 # Feature library and existing-integration binding
 
+For a fresh bot, [the separately supplied setup profile](../scratch-setup/README.md)
+now provides the actual authenticated binding and full runtime. This neutral
+library profile still does not start that runtime by importing a feature.
+
 ## What this adds
 
 A neutral public import exposes the existing feature factories, without importing

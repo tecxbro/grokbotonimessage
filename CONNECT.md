@@ -1,3 +1,7 @@
+> **For `improving-friends-bot`, start with [fresh setup](packages/photon-features/scratch-setup/README.md).**
+> The connection instructions below belong to the retained legacy gateway profile.
+> Do not combine them with the new native-webhook setup.
+
 # Connect me to iMessage
 
 This is the owner-facing bootstrap for the finished Photon × Grok Bot runtime.

@@ -1,3 +1,7 @@
+> **Fresh Grok setup:** [scratch-setup/README.md](scratch-setup/README.md).
+> **Existing integration, feature usage only:** [features-only/SKILL.md](features-only/SKILL.md).
+> The historical full-host instructions below are not the native-webhook setup entry point.
+
 # Grok Photon features
 
 A release-pinned authenticated local executable and operating skill for the

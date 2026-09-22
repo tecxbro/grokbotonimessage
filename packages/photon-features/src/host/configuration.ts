@@ -129,10 +129,18 @@ export const productionHostConfigurationSchema = hostConfigurationShape.superRef
 /** v3 describes installation-owner intent; permission grants do not imply provider capability. */
 export const normalizedHostConfigurationSchema = hostConfigurationShape.extend({
   version: z.literal(3),
-  grok: hostConfigurationShape.shape.grok.extend({
-    commandStyle: z.enum(["gateway-flag", "gateway-subcommand"]).optional(),
-    commandStyleEvidence: z.literal("installed-cli-help").optional(),
-  }),
+  grok: z.union([
+    hostConfigurationShape.shape.grok.extend({
+      mode: z.literal("gateway").optional(),
+      commandStyle: z.enum(["gateway-flag", "gateway-subcommand"]).optional(),
+      commandStyleEvidence: z.literal("installed-cli-help").optional(),
+    }),
+    z.strictObject({
+      mode: z.literal("webhook"),
+      bindingFile: absolutePath,
+      timeoutMs: z.number().int().min(1000).max(60000).default(10000),
+    }),
+  ]),
   ownerModel: z.enum(["installation-owner", "legacy-task"]),
   activateAfterValidation: z.boolean(),
   provider: hostConfigurationShape.shape.provider.extend({
@@ -143,7 +151,7 @@ export const normalizedHostConfigurationSchema = hostConfigurationShape.extend({
   }),
 }).superRefine((value, context) => {
   validateConfiguration(value, context);
-  if (Boolean(value.grok.commandStyle) !== Boolean(value.grok.commandStyleEvidence))
+  if (value.grok.mode !== "webhook" && Boolean(value.grok.commandStyle) !== Boolean(value.grok.commandStyleEvidence))
     context.addIssue({ code: "custom", path: ["grok"], message: "command style requires installed CLI help evidence" });
   for (const template of value.cards)
     if (value.ownerModel === "installation-owner" && template.live && !template.extension)
@@ -234,7 +242,8 @@ export async function loadProductionHostConfiguration(root: string): Promise<Pro
 
 function assertRuntimePaths(config: ProductionHostConfiguration | NormalizedHostConfiguration, root: string): void {
   const runtime = join(root, "runtime");
-  for (const path of [...(config.ownerAdministration ? [config.ownerAdministration.credentialFile] : []), config.provider.projectSecretFile, config.local.socketPath, config.local.credentialFile,
+  const wakeFiles = "mode" in config.grok && config.grok.mode === "webhook" ? [config.grok.bindingFile] : [];
+  for (const path of [...wakeFiles, ...(config.ownerAdministration ? [config.ownerAdministration.credentialFile] : []), config.provider.projectSecretFile, config.local.socketPath, config.local.credentialFile,
     config.runtime.statePath, config.runtime.captureDirectory, config.runtime.stagingDirectory,
     config.runtime.importDirectory ?? join(runtime, "imports")])
     if (!beneath(runtime, resolve(path))) throw new Error("RUNTIME_PATH_OUTSIDE_INSTALLATION");

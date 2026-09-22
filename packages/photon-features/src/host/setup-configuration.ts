@@ -2,6 +2,7 @@ import { mkdir, open, lstat } from "node:fs/promises";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { z } from "zod";
+import { readGrokWebhookBinding, webhookBindingId } from "./grok-webhook.js";
 import { operations } from "../contracts/actions.js";
 import { administrativeOperations, upstreamPollOperations } from "./configuration-inventory.js";
 import { INSTALLATION_OWNER_EXPIRES_AT, normalizedHostConfigurationSchema,
@@ -18,6 +19,7 @@ const setupInputSchema = z.strictObject({
   version: z.literal(2), discovery: z.unknown(),
   choices: choicesSchema.default({}),
   activateAfterValidation: z.boolean().default(false),
+  webhookFile: z.string().refine(isAbsolute).optional(),
   cards: normalizedHostConfigurationSchema.shape.cards.default([]),
   cardBackend: normalizedHostConfigurationSchema.shape.cardBackend,
 });
@@ -41,7 +43,7 @@ const discoverySchema = z.object({
   unresolved: z.array(z.string()),
 });
 
-function resolveSetupDiscovery(input: unknown, choices: z.infer<typeof choicesSchema>) {
+function resolveSetupDiscovery(input: unknown, choices: z.infer<typeof choicesSchema>, webhookTargetId?: string) {
   const discovery = discoverySchema.parse(input);
   const projectId = choices.projectId ?? discovery.project?.id;
   if (!projectId) throw new Error('PROJECT_SELECTION_REQUIRED');
@@ -60,11 +62,12 @@ function resolveSetupDiscovery(input: unknown, choices: z.infer<typeof choicesSc
   if (!user) throw new Error('INITIAL_USER_ADDRESS_REQUIRED');
   if (spectrum.user && JSON.stringify(spectrumUserSchema.parse(spectrum.user)) !== JSON.stringify(user))
     throw new Error('SPECTRUM_USER_IDENTITY_MISMATCH');
-  const agentId = choices.grokAgentId ?? grok.agentId ?? (grok.candidates.length === 1 ? grok.candidates[0]!.id : undefined);
+  if (webhookTargetId && choices.grokAgentId) throw new Error('WEBHOOK_HAS_NO_GATEWAY_AGENT');
+  const agentId = webhookTargetId ?? choices.grokAgentId ?? grok.agentId ?? (grok.candidates.length === 1 ? grok.candidates[0]!.id : undefined);
   if (!agentId) throw new Error('GROK_AGENT_SELECTION_REQUIRED');
-  if (!grok.executable || grok.evidence !== 'live-gateway-roster' || !grok.candidates.some(row => row.id === agentId))
+  if (!webhookTargetId && (!grok.executable || grok.evidence !== 'live-gateway-roster' || !grok.candidates.some(row => row.id === agentId)))
     throw new Error('LIVE_GROK_AGENT_REQUIRED');
-  if (!grok.commandStyle || grok.commandStyleEvidence !== 'installed-cli-help') throw new Error('GROK_WAKE_COMMAND_STYLE_UNAVAILABLE');
+  if (!webhookTargetId && (!grok.commandStyle || grok.commandStyleEvidence !== 'installed-cli-help')) throw new Error('GROK_WAKE_COMMAND_STYLE_UNAVAILABLE');
   const resolvable = new Set(['project', 'spectrum.user', 'spectrum.servingE164', 'grok.agentId']);
   if ([...discovery.unresolved, ...grok.unresolved].some(field => !resolvable.has(field)))
     throw new Error('SETUP_DISCOVERY_INCOMPLETE');
@@ -102,7 +105,8 @@ export async function assertAbsent(path: string) {
 /** Generate fresh owner authority without activation or overwriting existing state. */
 export async function generateInitialOwnerConfiguration(input: unknown) {
   const parsed = setupInputSchema.parse(input);
-  const resolved = resolveSetupDiscovery(parsed.discovery, parsed.choices);
+  const webhook = parsed.webhookFile ? await readGrokWebhookBinding(parsed.webhookFile) : undefined;
+  const resolved = resolveSetupDiscovery(parsed.discovery, parsed.choices, webhook ? webhookBindingId(webhook) : undefined);
   const root = resolve(resolved.installationRoot), runtime = join(root, 'runtime');
   await assertPrivateDirectory(root);
   await assertPrivateDirectory(runtime);
@@ -110,6 +114,10 @@ export async function generateInitialOwnerConfiguration(input: unknown) {
   const secretRelative = relative(runtime, secretPath);
   if (!secretRelative || secretRelative.startsWith('..') || isAbsolute(secretRelative))
     throw new Error('RUNTIME_PATH_OUTSIDE_INSTALLATION');
+  if (parsed.webhookFile) {
+    const wakeRelative = relative(runtime, resolve(parsed.webhookFile));
+    if (!wakeRelative || wakeRelative.startsWith('..') || isAbsolute(wakeRelative)) throw new Error('RUNTIME_PATH_OUTSIDE_INSTALLATION');
+  }
   // Never rotate/copy the provider secret, overwrite credentials, or reset state.
   for (const name of ['configuration.json', 'local-token', 'state.sqlite', 'runtime.sock'])
     await assertAbsent(join(runtime, name));
@@ -128,7 +136,8 @@ export async function generateInitialOwnerConfiguration(input: unknown) {
       principalId: randomUUID(), credentialId: randomUUID() },
     task: { contextId: randomUUID(), taskId: randomUUID(), generation: 0, permissions: [...operations],
       issuedAt, expiresAt: INSTALLATION_OWNER_EXPIRES_AT, grokAgentId: resolved.grokAgentId },
-    grok: { executable: resolved.grokExecutable, timeoutMs: 15000, commandStyle: resolved.commandStyle, commandStyleEvidence: resolved.commandStyleEvidence },
+    grok: parsed.webhookFile ? { mode: 'webhook', bindingFile: parsed.webhookFile, timeoutMs: 10000 } :
+      { executable: resolved.grokExecutable, timeoutMs: 15000, commandStyle: resolved.commandStyle, commandStyleEvidence: resolved.commandStyleEvidence },
     authorization: { administrativeOperations: [...administrativeOperations],
       allowedRecipients: resolved.initialAddress ? [resolved.initialAddress] : [], allowNativeContent: true },
     cards: parsed.cards, ...(parsed.cardBackend ? { cardBackend: parsed.cardBackend } : {}),

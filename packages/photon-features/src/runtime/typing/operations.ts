@@ -122,7 +122,7 @@ export function createTypingModule(
               action.arguments.space.scope,
               services.context.generation,
               remaining,
-              { signal: services.signal, validate },
+              { signal: services.signal, validate, notAfter: Math.min(binding.expiresAt, services.claim.leaseUntil, services.context.expiresAt) },
             );
         } else
           leases.end({
@@ -185,15 +185,16 @@ export async function executeTypingOperation(
         validate();
         let unavailable = false;
         if (action.operation === "typing.begin") {
-          const ttl = Math.min(action.arguments.ttlMs, binding.expiresAt - services.clock.now(),
-            services.claim.leaseUntil - services.clock.now(), services.context.expiresAt - services.clock.now());
+          const notAfter = Math.min(binding.expiresAt, services.claim.leaseUntil, services.context.expiresAt);
+          const ttl = Math.min(action.arguments.ttlMs, notAfter - services.clock.now());
           unavailable = ttl < 100 || !leases.begin(action.arguments.space.scope, services.context.generation,
             ttl, binding.issueLease
               ? {
                   signal: services.signal,
+                  notAfter,
                   authorize: lease => issued = binding.issueLease!(lease),
                 }
-              : {signal: services.signal, validate});
+              : {signal: services.signal, validate, notAfter});
         } else leases.end({scope: action.arguments.space.scope, generation: services.context.generation});
         return {
           version: 1, requestId: binding.requestId, revision: binding.resultRevision,
