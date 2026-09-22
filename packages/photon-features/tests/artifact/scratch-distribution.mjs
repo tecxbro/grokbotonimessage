@@ -59,6 +59,10 @@ try {
   assert.equal(owners,1);assert.equal(sends,1);
   await local.close();local=null;stop();await composition.runtime.stop();composition=null;
   const credential=await readFile(actual.local.credentialFile,'utf8');
+  // Stopping a process does not revoke its activation. Upgrade/repeat install
+  // must respect the real installer's explicit inactive-configuration boundary.
+  await assert.rejects(install(root,{archivePath,checksum}), /DEACTIVATION_REQUIRED/);
+  await changeProductionActivation(root,releaseRoot,'disabled');
   await install(root,{archivePath,checksum});
   assert.equal(await readFile(actual.local.credentialFile,'utf8'),credential);
   console.log(JSON.stringify({installedArchive:'passed',compiledModules:'actual-extracted-artifact',registeredOperations:44,

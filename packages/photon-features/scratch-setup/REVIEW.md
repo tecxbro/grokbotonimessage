@@ -14,8 +14,18 @@ Node 24.13.0, npm 10.9.2 and Spectrum 12.8.0 are unchanged.
   the immutable foundation history and HEAD did not yet contain the source edits.
   The real Git history was restored from a repository bundle, without modifying
   the verifier or changing the frozen foundation checkpoint. The assembled candidate
-  then passed **1,115 tests with zero failures, skips or cancellations**. The actual
-  complete archive still requires its separate build and extracted-package check.
+  then passed **1,115 tests with zero failures, skips or cancellations**. A later CI
+  pass exposed a timing-sensitive typing failure. A deterministic one-millisecond
+  clock-advance regression reproduced an absolute-deadline overrun; the implementation
+  now clamps the lease at issuance without extending authority. All 33 focused
+  typing/lifecycle tests and the complete **1,116-test** local suite then passed
+  with zero failures, skips or cancellations. The same 1,116-test suite also passed
+  in GitHub run 35673834240; its later Git-object publication failure was separate
+  from the successful product tests.
+- The local installed-archive suite ran 50 tests: 49 passed; one clean-install
+  journey timed out while fetching fresh npm dependencies in the network-restricted
+  editing container. It is not recorded as a pass. The unchanged clean-install
+  gate and the actual extracted-distribution check must pass in networked CI.
 
 The new tests use actual SQLite, local authenticated IPC, feature execution and
 production composition. Only the external Photon/Grok providers are doubles.
@@ -63,3 +73,17 @@ No real Photon account was configured, native Grok routine registered, iMessage
 sent, approval setting changed or target VM deployed during implementation.
 Actual owner authentication, native routine accessibility, visible typing, rich
 interaction prerequisites and host boot/overnight behavior remain live checks.
+
+## Final verification corrections
+
+The post-package fixture originally stopped its runtime without deactivating the
+installation before repeating install. The installer correctly requires explicit
+deactivation. The fixture now verifies that enabled reinstall is rejected, uses the
+real deactivation operation, then verifies repeat installation preserves authority.
+No production installer protection was changed.
+
+The inherited feature-only branch did not declare its newer files in the historical
+integration ownership ledger or retain the documentation sections required by the
+legacy checker. The fresh profile now has an exact maintenance manifest and the
+required current-scope documentation. Both unchanged documentation/ownership
+checkers passed locally. Historical reviewed commits and verifiers were not changed.

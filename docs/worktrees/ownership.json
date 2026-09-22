@@ -1069,6 +1069,12 @@
       "manifest": "docs/release-fix/FILES.json",
       "coordinator": "RFX-00",
       "rule": "Exact release-wave paths at immutable base; required reviewed integration glue is explicitly authorized. Historical owner and repair manifests remain intact."
+    },
+    "friend-scratch": {
+      "base": "3d34354e85b1c64a3c165498d9e904f3c0182d26",
+      "manifest": "docs/worktrees/friend-scratch/FILES.json",
+      "coordinator": "improving-friends-bot",
+      "rule": "Exact reviewed feature-only/fresh-setup branch paths. Other maintenance assignments and immutable foundation history remain unchanged."
     }
   }
 }

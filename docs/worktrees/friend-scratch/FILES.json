@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "repairBase": "3d34354e85b1c64a3c165498d9e904f3c0182d26",
+  "coordinator": "improving-friends-bot",
+  "authorization": "Existing feature-only branch addition and user-requested fresh setup using one Spectrum owner and native Grok webhook. No live installation authorized by these code changes.",
+  "files": [
+    {
+      "path": ".github/workflows/photon-features-only.yml",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": ".github/workflows/photon-scratch-setup.yml",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "CONNECT.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "docs/worktrees/friend-scratch/FILES.json",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/CATALOG.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/LIBRARY.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/REVIEW.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/SKILL.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/SOURCES.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/catalog.json",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/client-core.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/client.d.mts",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/client.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/guides/cards.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/guides/events.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/guides/inputs.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/guides/media.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/guides/messages.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/guides/native.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/guides/polls.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/guides/results.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/guides/text.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/guides/typing.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/tests/client-types.mts",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/tests/client.unit.test.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/tests/contracts.test.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/tests/packaging.unit.test.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/tests/profile.unit.test.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/features-only/verify.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/schemas/protocol.json",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/scratch-setup/HANDOFF.txt",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/scratch-setup/LIVE-CHECKLIST.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/scratch-setup/README.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/scratch-setup/REVIEW.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/scratch-setup/ROUTINE.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/scratch-setup/SOURCES.md",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/scratch-setup/cli.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/scratch-setup/common.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/scratch-setup/install.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/scratch-setup/service.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/scratch-setup/setup.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/src/feature-library.ts",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/src/host/grok-webhook.ts",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/src/host/setup-configuration.ts",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/src/host/work-typing.ts",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/tests/artifact/scratch-distribution.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    },
+    {
+      "path": "packages/photon-features/tests/integration/scratch-profile.test.mjs",
+      "purpose": "User-authorized feature-only and fresh webhook setup branch maintenance; exact path, no historical owner reassignment."
+    }
+  ]
+}
