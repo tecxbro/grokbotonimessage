@@ -1,3 +1,0 @@
-#!/usr/bin/env node
-import { taskLauncherMain } from '../dist/src/host/task-launcher.js';
-process.exitCode = await taskLauncherMain(process.argv.slice(2));
